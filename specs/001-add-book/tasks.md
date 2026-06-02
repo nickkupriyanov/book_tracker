@@ -116,7 +116,7 @@ foundation (no UI); T7–T12 are UI on top.
 
 ## T7. shadcn/ui primitives
 
-- **Files:** `components.json`, `src/components/ui/button.tsx`,
+- [x] **Files:** `components.json`, `src/components/ui/button.tsx`,
   `src/components/ui/dialog.tsx`, `src/components/ui/input.tsx`,
   `src/components/ui/label.tsx`, `src/components/ui/select.tsx`,
   `src/components/ui/sonner.tsx`, `src/app/layout.tsx` (add `<Toaster />`).
@@ -126,7 +126,7 @@ foundation (no UI); T7–T12 are UI on top.
   - No raw HTML `<button>` / `<input>` / `<dialog>` in the app from this
     point on (constitution UI §1).
   - `npm run lint && npm run test` still pass.
-- **Notes:** shadcn default theme is fine; we'll tint with our warm palette
+- [x] **Notes:** shadcn default theme is fine; we'll tint with our warm palette
   in `globals.css`. No glassmorphism classes (constitution §2).
 
 ## T8. AddBookButton
