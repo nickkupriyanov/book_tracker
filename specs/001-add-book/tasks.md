@@ -99,7 +99,7 @@ foundation (no UI); T7–T12 are UI on top.
 
 ## T6. Zustand store (TDD)
 
-- **Files:** `src/state/book-library.ts`, `tests/state/useBookLibrary.test.ts`.
+- [x] **Files:** `src/state/book-library.ts`, `tests/state/useBookLibrary.test.ts`.
 - **Acceptance:**
   - `useBookLibrary` created with `create<BookLibraryState>(...)`.
   - State shape: `{ books: Book[], status: 'loading' | 'ready' | 'error',
@@ -111,7 +111,7 @@ foundation (no UI); T7–T12 are UI on top.
   - `books` is empty and `status: 'loading'` until `init` resolves.
   - No React imports in the store file.
   - Tests use a fake `StorageAdapter` to avoid touching `localStorage`.
-- **Notes:** no `BookLibraryProvider` — Zustand stores have no provider.
+- [x] **Notes:** no `BookLibraryProvider` — Zustand stores have no provider.
   Components consume via `useBookLibrary(selector)`.
 
 ## T7. shadcn/ui primitives
