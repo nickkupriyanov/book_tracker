@@ -80,7 +80,7 @@ foundation (no UI); T7–T12 are UI on top.
 
 ## T5. LocalStorageAdapter (TDD)
 
-- **Files:** `src/storage/local-storage-adapter.ts`,
+- [x] **Files:** `src/storage/local-storage-adapter.ts`,
   `tests/storage/local-storage-adapter.test.ts`.
 - **Acceptance:**
   - Implements `StorageAdapter`.
@@ -94,7 +94,7 @@ foundation (no UI); T7–T12 are UI on top.
   - Throws on `QuotaExceededError` (do not swallow).
   - Tests use a fresh `localStorage` stub per case (Vitest's `beforeEach`
     clearing).
-- **Notes:** TDD-first. The adapter is the only place that touches
+- [x] **Notes:** TDD-first. The adapter is the only place that touches
   `localStorage` directly (constitution §3).
 
 ## T6. Zustand store (TDD)
