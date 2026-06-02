@@ -3,12 +3,22 @@
 @theme {
   --color-background: oklch(0.98 0.01 60);
   --color-foreground: oklch(0.25 0.02 50);
+  --color-card: oklch(1 0 0);
+  --color-card-foreground: oklch(0.25 0.02 50);
+  --color-popover: oklch(1 0 0);
+  --color-popover-foreground: oklch(0.25 0.02 50);
   --color-primary: oklch(0.55 0.12 35);
   --color-primary-foreground: oklch(0.98 0.01 60);
+  --color-secondary: oklch(0.94 0.01 60);
+  --color-secondary-foreground: oklch(0.25 0.02 50);
   --color-muted: oklch(0.94 0.01 60);
   --color-muted-foreground: oklch(0.45 0.02 50);
-  --color-card: oklch(1 0 0);
+  --color-accent: oklch(0.92 0.02 50);
+  --color-accent-foreground: oklch(0.25 0.02 50);
+  --color-destructive: oklch(0.55 0.18 25);
+  --color-destructive-foreground: oklch(0.98 0.01 60);
   --color-border: oklch(0.9 0.01 60);
+  --color-input: oklch(0.9 0.01 60);
   --color-ring: oklch(0.55 0.12 35);
 
   --font-sans: ui-sans-serif, system-ui, -apple-system, sans-serif;
