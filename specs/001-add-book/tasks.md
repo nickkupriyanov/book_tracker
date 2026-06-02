@@ -43,13 +43,13 @@ foundation (no UI); T7–T12 are UI on top.
 
 ## T2. Domain types
 
-- **Files:** `src/types/book.ts`.
+- [x] **Files:** `src/types/book.ts`.
 - **Acceptance:**
   - Exports `ReadingStatus` (`'want' | 'reading' | 'read'`).
   - Exports `Book` matching the spec §7 shape.
   - Exports `BookInput = Omit<Book, 'id' \| 'createdAt'>`.
   - No `any`. No `as` casts.
-- **Notes:** this file is the contract. Backend, when it arrives, conforms
+- [x] **Notes:** this file is the contract. Backend, when it arrives, conforms
   to these types. Edit here only via a spec amendment.
 
 ## T3. Pure validator (TDD)
