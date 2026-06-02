@@ -54,7 +54,7 @@ foundation (no UI); T7–T12 are UI on top.
 
 ## T3. Pure validator (TDD)
 
-- **Files:** `src/lib/validation/book.ts`, `tests/validation/book.test.ts`.
+- [x] **Files:** `src/lib/validation/book.ts`, `tests/validation/book.test.ts`.
 - **Acceptance:**
   - `validateBookInput(input: unknown): ValidationResult<BookInput>`.
   - All rules from plan §4 are covered by tests (title length, author length,
@@ -64,7 +64,7 @@ foundation (no UI); T7–T12 are UI on top.
     (ok), 11 tags (rejected), 24-char tag (ok), 25-char tag (rejected),
     `tags` of `""`/`"   "`/`","` → `[]`, mixed-case tags deduped.
   - Returns errors keyed by field name.
-- **Notes:** TDD-first: write failing tests, then implement. No React
+- [x] **Notes:** TDD-first: write failing tests, then implement. No React
   imports in this file.
 
 ## T4. Storage adapter interface
