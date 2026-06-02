@@ -1,1 +1,16 @@
-.commandcode
+node_modules/
+.next/
+out/
+build/
+dist/
+
+.DS_Store
+*.log
+.env*.local
+
+.vscode/
+.idea/
+
+.commandcode/
+coverage/
+next-env.d.ts
