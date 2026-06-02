@@ -1,6 +1,6 @@
 # Tasks: Add Book
 
-> **Status:** Draft
+> **Status:** In Progress
 > **Spec:** `../spec.md` (`Approved`)
 > **Plan:** `../plan.md` (`Approved`)
 > **Author:** nickkupriyanov
@@ -16,7 +16,7 @@ foundation (no UI); T7–T12 are UI on top.
 
 ## T1. Bootstrap the project
 
-- **Files:** `package.json`, `tsconfig.json`, `next.config.*`,
+- [x] **Files:** `package.json`, `tsconfig.json`, `next.config.*`,
   `postcss.config.mjs`, `.eslintrc.*`, `vitest.config.ts`,
   `src/app/layout.tsx`, `src/app/globals.css`, `src/app/page.tsx` (placeholder).
 - **Acceptance:**
@@ -35,7 +35,7 @@ foundation (no UI); T7–T12 are UI on top.
     `--color-foreground`, `--color-primary`, `--color-muted`, etc.) and
     the shadcn CSS-variable bridge (`--color-background` →
     `--background` etc. via `@theme inline`).
-- **Notes:** scaffold with `npx create-next-app@latest` (TypeScript, Tailwind
+- [x] **Notes:** scaffold with `npx create-next-app@latest` (TypeScript, Tailwind
   v4, App Router, no `src/` toggle, no default ESLint). If the CLI ships
   Tailwind v3 by default, install `tailwindcss@^4` and `@tailwindcss/postcss`
   manually and replace the v3 files. Tokens live in `globals.css` only
