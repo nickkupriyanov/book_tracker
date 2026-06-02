@@ -69,13 +69,13 @@ foundation (no UI); T7–T12 are UI on top.
 
 ## T4. Storage adapter interface
 
-- **Files:** `src/storage/storage-adapter.ts`.
+- [x] **Files:** `src/storage/storage-adapter.ts`.
 - **Acceptance:**
   - Exports `StorageAdapter` interface with `listBooks(): Promise<Book[]>`
     and `addBook(input: BookInput): Promise<Book>`.
   - Re-exports types from `src/types/book.ts` as needed.
   - JSDoc on each method (1 line: what it does, what it throws).
-- **Notes:** no implementation yet. The interface is the seam for the future
+- [x] **Notes:** no implementation yet. The interface is the seam for the future
   HTTP adapter.
 
 ## T5. LocalStorageAdapter (TDD)
