@@ -29,7 +29,7 @@ T6 wires the page, T7 verifies.
 
 ## T2. BookCard (TDD)
 
-- **Files:** `src/features/shelf-list/BookCard.tsx`,
+- [x] **Files:** `src/features/shelf-list/BookCard.tsx`,
   `tests/features/shelf-list/BookCard.test.tsx`.
 - **Acceptance:**
   - Renders cover `<img>` when `book.coverUrl` is set.
