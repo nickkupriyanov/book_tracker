@@ -46,7 +46,7 @@ T6 wires the page, T7 verifies.
 
 ## T3. ShelfFilters (TDD)
 
-- **Files:** `src/features/shelf-list/ShelfFilters.tsx`,
+- [x] **Files:** `src/features/shelf-list/ShelfFilters.tsx`,
   `tests/features/shelf-list/ShelfFilters.test.tsx`.
 - **Acceptance:**
   - Renders 4 triggers with labels: "All", "Want to read", "Reading", "Read".
@@ -54,7 +54,7 @@ T6 wires the page, T7 verifies.
   - Clicking a trigger calls `onChange` with the corresponding value.
   - The active trigger matches the `value` prop.
   - Tests cover: counts display, onChange callback, active state (≥ 3 tests).
-- **Notes:** built on shadcn Tabs. Controlled component (value/onChange).
+- [x] **Notes:** built on shadcn Tabs. Controlled component (value/onChange).
 
 ## T4. EmptyFilterResult component
 
