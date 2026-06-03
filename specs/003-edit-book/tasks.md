@@ -96,7 +96,7 @@ the new edit flow on top.
 
 ## T5. EditBookDialog (TDD)
 
-- **Files:** `src/features/edit-book/EditBookDialog.tsx`,
+- [x] **Files:** `src/features/edit-book/EditBookDialog.tsx`,
   `src/features/edit-book/index.ts`,
   `tests/features/edit-book/EditBookDialog.test.tsx`.
 - **Acceptance:**
@@ -113,7 +113,7 @@ the new edit flow on top.
   - Tests cover: opens with pre-filled values, valid save closes +
     shows "Updated" toast, invalid input shows errors, storage failure
     preserves fields (≥ 3 tests).
-- **Notes:** uses `BookForm` from `src/components/`. Toast text
+- [x] **Notes:** uses `BookForm` from `src/components/`. Toast text
   distinguishes "Updated" from Add's "Added".
 
 ## T6. Wire ShelfList with `editingBook` state
