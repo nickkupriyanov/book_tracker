@@ -79,7 +79,7 @@ the new edit flow on top.
 
 ## T4. BookCard: add Edit button (TDD)
 
-- **Files:** `src/features/shelf-list/BookCard.tsx`,
+- [x] **Files:** `src/features/shelf-list/BookCard.tsx`,
   `tests/features/shelf-list/BookCard.test.tsx`.
 - **Acceptance:**
   - Add optional prop `onEdit?: () => void`.
@@ -90,7 +90,7 @@ the new edit flow on top.
   - Existing BookCard tests (14 cases) still pass.
   - New tests cover: button renders when `onEdit` is provided, no
     button when omitted, click invokes `onEdit` (≥ 2 tests).
-- **Notes:** uses `lucide-react` `Pencil` icon. The button is
+- [x] **Notes:** uses `lucide-react` `Pencil` icon. The button is
   positioned absolutely on the cover; we may need to add `relative`
   to the cover container (already there).
 
