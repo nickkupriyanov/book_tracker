@@ -141,14 +141,14 @@ foundation (no UI); T7–T12 are UI on top.
 
 ## T9. last-status module
 
-- **Files:** `src/features/add-book/last-status.ts`,
+- [x] **Files:** `src/features/add-book/last-status.ts`,
   `tests/features/add-book/last-status.test.ts`.
 - **Acceptance:**
   - Exports `getLastStatus(): ReadingStatus` (default `'want'`).
   - Exports `setLastStatus(s: ReadingStatus): void`.
   - In-memory only; resets on full reload (D2 — by design).
   - Tested directly.
-- **Notes:** satisfies spec §12 D2.
+- [x] **Notes:** satisfies spec §12 D2.
 
 ## T10. AddBookForm + AddBookDialog
 
