@@ -31,4 +31,13 @@ export interface StorageAdapter {
    * @throws on storage failure (quota, disabled, network).
    */
   addBook(input: BookInput): Promise<Book>;
+  /**
+   * Update an existing book by `id`, replacing the mutable fields
+   * (`title`, `author`, `status`, `coverUrl`, `tags`) with `input`.
+   * `id` and `createdAt` are preserved from the existing record.
+   *
+   * @throws if no book with that `id` exists.
+   * @throws on storage failure (quota, disabled, network).
+   */
+  updateBook(id: string, input: BookInput): Promise<Book>;
 }

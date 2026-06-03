@@ -54,4 +54,31 @@ export class LocalStorageAdapter implements StorageAdapter {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     return book;
   }
+
+  async updateBook(id: string, input: BookInput): Promise<Book> {
+    const books = await this.listBooks();
+    const index = books.findIndex((b) => b.id === id);
+    if (index === -1) {
+      throw new Error(`Book with id "${id}" not found`);
+    }
+    // Invariant: index !== -1, so `books[index]` is defined. The
+    // defensive check below makes the type system happy and also guards
+    // against array mutation between findIndex and access (single-threaded
+    // JS, so impossible in practice — but the throw keeps the code
+    // honest if invariants ever change).
+    const existing = books[index];
+    if (existing === undefined) {
+      throw new Error(
+        `Invariant: book at index ${index} disappeared after findIndex`
+      );
+    }
+    const updated: Book = {
+      ...input,
+      id,
+      createdAt: existing.createdAt,
+    };
+    books[index] = updated;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(books));
+    return updated;
+  }
 }

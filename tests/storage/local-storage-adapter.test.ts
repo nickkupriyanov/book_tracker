@@ -143,4 +143,115 @@ describe("LocalStorageAdapter", () => {
       setItemSpy.mockRestore();
     });
   });
+
+  describe("updateBook", () => {
+    const original: BookInput = {
+      title: "Piranesi",
+      author: "Susanna Clarke",
+      status: "want",
+      tags: ["fiction"],
+    };
+
+    it("updates an existing book and returns it with new fields", async () => {
+      const adapter = new LocalStorageAdapter();
+      const added = await adapter.addBook(original);
+      const updated = await adapter.updateBook(added.id, {
+        title: "The Long Way",
+        author: "Becky Chambers",
+        status: "reading",
+        tags: ["sci-fi"],
+      });
+      expect(updated.title).toBe("The Long Way");
+      expect(updated.author).toBe("Becky Chambers");
+      expect(updated.status).toBe("reading");
+      expect(updated.tags).toEqual(["sci-fi"]);
+    });
+
+    it("preserves the book's id and createdAt across the update", async () => {
+      const adapter = new LocalStorageAdapter();
+      const added = await adapter.addBook(original);
+      const updated = await adapter.updateBook(added.id, {
+        title: "Updated",
+        author: "Updated",
+        status: "read",
+        tags: [],
+      });
+      expect(updated.id).toBe(added.id);
+      expect(updated.createdAt).toBe(added.createdAt);
+    });
+
+    it("throws when the id is not found", async () => {
+      const adapter = new LocalStorageAdapter();
+      await expect(
+        adapter.updateBook("nonexistent-id", {
+          title: "X",
+          author: "X",
+          status: "want",
+          tags: [],
+        })
+      ).rejects.toThrow(/not found/);
+    });
+
+    it("does not affect other books in storage", async () => {
+      const adapter = new LocalStorageAdapter();
+      const a = await adapter.addBook({
+        title: "A",
+        author: "a",
+        status: "want",
+        tags: [],
+      });
+      const b = await adapter.addBook({
+        title: "B",
+        author: "b",
+        status: "reading",
+        tags: [],
+      });
+      const c = await adapter.addBook({
+        title: "C",
+        author: "c",
+        status: "read",
+        tags: [],
+      });
+      await adapter.updateBook(b.id, {
+        title: "B-new",
+        author: "b-new",
+        status: "want",
+        tags: [],
+      });
+      const all = await adapter.listBooks();
+      expect(all).toHaveLength(3);
+      expect(all.find((x) => x.id === a.id)).toEqual(a);
+      expect(all.find((x) => x.id === c.id)).toEqual(c);
+    });
+
+    it("preserves insertion order after an update", async () => {
+      const adapter = new LocalStorageAdapter();
+      await adapter.addBook({
+        title: "A",
+        author: "a",
+        status: "want",
+        tags: [],
+      });
+      const b = await adapter.addBook({
+        title: "B",
+        author: "b",
+        status: "reading",
+        tags: [],
+      });
+      await adapter.addBook({
+        title: "C",
+        author: "c",
+        status: "read",
+        tags: [],
+      });
+      await adapter.updateBook(b.id, {
+        title: "B-new",
+        author: "b",
+        status: "read",
+        tags: [],
+      });
+      const all = await adapter.listBooks();
+      expect(all.map((x) => x.title)).toEqual(["A", "B-new", "C"]);
+    });
+  });
 });

@@ -11,6 +11,13 @@ function makeFakeAdapter(overrides: Partial<StorageAdapter> = {}): StorageAdapte
       id: "fake-id",
       createdAt: new Date().toISOString(),
     })),
+    updateBook: vi.fn(
+      async (id: string, input: BookInput): Promise<Book> => ({
+        ...input,
+        id,
+        createdAt: new Date().toISOString(),
+      })
+    ),
     ...overrides,
   };
 }
