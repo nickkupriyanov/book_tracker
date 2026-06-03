@@ -1,5 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { BookCard } from "@/features/shelf-list/BookCard";
 import type { Book } from "@/types/book";
 
@@ -128,6 +129,29 @@ describe("BookCard", () => {
         />
       );
       expect(screen.getByText("+1")).toBeInTheDocument();
+    });
+  });
+
+  describe("Edit button", () => {
+    it("does not render a button when onEdit is not provided", () => {
+      render(<BookCard book={baseBook} />);
+      expect(
+        screen.queryByTestId("book-card-edit")
+      ).not.toBeInTheDocument();
+    });
+
+    it("renders a pencil button when onEdit is provided", () => {
+      render(<BookCard book={baseBook} onEdit={vi.fn()} />);
+      expect(screen.getByTestId("book-card-edit")).toBeInTheDocument();
+      expect(screen.getByLabelText("Edit book")).toBeInTheDocument();
+    });
+
+    it("clicking the button invokes onEdit", async () => {
+      const onEdit = vi.fn();
+      const user = userEvent.setup();
+      render(<BookCard book={baseBook} onEdit={onEdit} />);
+      await user.click(screen.getByTestId("book-card-edit"));
+      expect(onEdit).toHaveBeenCalledTimes(1);
     });
   });
 });

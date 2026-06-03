@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Pencil } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StatusPill } from "./StatusPill";
 import type { Book } from "@/types/book";
@@ -11,6 +12,12 @@ const MAX_VISIBLE_TAGS = 3;
 
 export interface BookCardProps {
   book: Book;
+  /**
+   * Optional click handler to edit the book. When provided, a small
+   * pencil button is rendered at the top-right of the cover (always
+   * visible — not hover-only — for mobile and screen-reader access).
+   */
+  onEdit?: () => void;
 }
 
 /**
@@ -18,7 +25,7 @@ export interface BookCardProps {
  * `coverFailed` state so a broken image URL gracefully falls back to
  * the placeholder without re-rendering the grid.
  */
-export function BookCard({ book }: BookCardProps) {
+export function BookCard({ book, onEdit }: BookCardProps) {
   const [coverFailed, setCoverFailed] = useState(false);
   const showCover = book.coverUrl !== undefined && !coverFailed;
 
@@ -45,6 +52,19 @@ export function BookCard({ book }: BookCardProps) {
           <div className="absolute inset-0 flex items-center justify-center">
             <BookOpen className="text-muted-foreground size-12" />
           </div>
+        )}
+        {onEdit !== undefined && (
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon-sm"
+            onClick={onEdit}
+            aria-label="Edit book"
+            data-testid="book-card-edit"
+            className="absolute top-2 right-2"
+          >
+            <Pencil className="size-4" />
+          </Button>
         )}
       </div>
       <CardContent className="space-y-1.5 p-4">
