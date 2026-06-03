@@ -49,7 +49,7 @@ the new edit flow on top.
 
 ## T3. Extract BookForm + refactor AddBookDialog
 
-- **Files:** `src/components/BookForm.tsx` (new),
+- [x] **Files:** `src/components/BookForm.tsx` (new),
   `src/features/add-book/AddBookDialog.tsx` (modified),
   `src/features/add-book/AddBookForm.tsx` (deleted),
   `src/features/add-book/index.ts` (no new exports),
@@ -73,7 +73,7 @@ the new edit flow on top.
   - All `AddBookDialog` "Add 'X'" toast text and `setLastStatus` side
     effects now live in the dialog's `onSubmit` closure (preserved from
     the old `AddBookForm`).
-- **Notes:** this is the **D2** refactor. One task, one commit, but
+- [x] **Notes:** this is the **D2** refactor. One task, one commit, but
   spans multiple files. Existing tests are the safety net — if they
   still pass, the refactor is behavior-preserving.
 
