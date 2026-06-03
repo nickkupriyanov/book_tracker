@@ -152,7 +152,7 @@ foundation (no UI); T7–T12 are UI on top.
 
 ## T10. AddBookForm + AddBookDialog
 
-- **Files:** `src/features/add-book/AddBookForm.tsx`,
+- [x] **Files:** `src/features/add-book/AddBookForm.tsx`,
   `src/features/add-book/AddBookDialog.tsx`,
   `tests/features/add-book/AddBookDialog.test.tsx`.
 - **Acceptance:**
