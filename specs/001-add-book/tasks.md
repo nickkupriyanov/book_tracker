@@ -131,7 +131,7 @@ foundation (no UI); T7–T12 are UI on top.
 
 ## T8. AddBookButton
 
-- **Files:** `src/features/add-book/AddBookButton.tsx`,
+- [x] **Files:** `src/features/add-book/AddBookButton.tsx`,
   re-export from `src/features/add-book/index.ts`.
 - **Acceptance:**
   - Renders shadcn `<Button>` with text "Add book".
