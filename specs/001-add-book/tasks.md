@@ -183,7 +183,7 @@ foundation (no UI); T7–T12 are UI on top.
 
 ## T12. Shelf page wiring
 
-- **Files:** `src/app/page.tsx`, `src/app/ShelfClient.tsx`.
+- [x] **Files:** `src/app/page.tsx`, `src/app/ShelfClient.tsx`.
 - **Acceptance:**
   - `page.tsx` is a server component that renders `<ShelfClient />`.
   - `ShelfClient` is `'use client'`, instantiates
