@@ -58,11 +58,11 @@ T6 wires the page, T7 verifies.
 
 ## T4. EmptyFilterResult component
 
-- **Files:** `src/features/shelf-list/EmptyFilterResult.tsx`.
+- [x] **Files:** `src/features/shelf-list/EmptyFilterResult.tsx`
 - **Acceptance:**
   - Renders the message "No books with this status." (muted).
   - No props, no state.
-- **Notes:** visual-only, no tests (constitution §4).
+- [x] **Notes:** visual-only, no tests (constitution §4).
 
 ## T5. ShelfList (TDD)
 
