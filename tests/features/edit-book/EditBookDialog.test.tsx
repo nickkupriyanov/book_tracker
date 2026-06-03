@@ -1,0 +1,153 @@
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { EditBookDialog } from "@/features/edit-book/EditBookDialog";
+import { LocalStorageAdapter } from "@/storage/local-storage-adapter";
+import { useBookLibrary, __resetBookLibrary } from "@/state/book-library";
+import {
+  getLastStatus,
+  __resetLastStatus,
+} from "@/features/add-book/last-status";
+import type { Book } from "@/types/book";
+
+const { mockSuccess, mockError } = vi.hoisted(() => ({
+  mockSuccess: vi.fn(),
+  mockError: vi.fn(),
+}));
+
+vi.mock("sonner", () => ({
+  toast: {
+    success: mockSuccess,
+    error: mockError,
+  },
+}));
+
+let sampleBook: Book;
+
+describe("EditBookDialog", () => {
+  beforeEach(async () => {
+    __resetLastStatus();
+    __resetBookLibrary();
+    localStorage.clear();
+    await useBookLibrary.getState().init(new LocalStorageAdapter());
+    // Add a book and capture the actual stored book (with the generated
+    // id and createdAt) so EditBookDialog operates on a real record.
+    sampleBook = await useBookLibrary.getState().addBook({
+      title: "Piranesi",
+      author: "Susanna Clarke",
+      status: "reading",
+      tags: ["fiction"],
+    });
+    mockSuccess.mockClear();
+  });
+
+  function renderDialog() {
+    const onOpenChange = vi.fn();
+    const utils = render(
+      <EditBookDialog
+        book={sampleBook}
+        open={true}
+        onOpenChange={onOpenChange}
+      />
+    );
+    return { ...utils, onOpenChange };
+  }
+
+  it("opens with pre-filled values from the book", async () => {
+    renderDialog();
+    await screen.findByRole("dialog");
+    expect(screen.getByLabelText("Title")).toHaveValue("Piranesi");
+    expect(screen.getByLabelText("Author")).toHaveValue("Susanna Clarke");
+    expect(screen.getByLabelText("Status")).toHaveTextContent("Reading");
+    expect(
+      screen.getByRole("button", { name: "Save changes" })
+    ).toBeInTheDocument();
+  });
+
+  it("calls updateBook, shows Updated toast, and closes on valid save", async () => {
+    const { onOpenChange } = renderDialog();
+    await screen.findByRole("dialog");
+    const user = userEvent.setup();
+
+    const titleInput = screen.getByLabelText("Title");
+    await user.clear(titleInput);
+    await user.type(titleInput, "Piranesi (corrected)");
+
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    await waitFor(() => {
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
+    expect(mockSuccess).toHaveBeenCalledWith(
+      'Updated "Piranesi (corrected)"'
+    );
+
+    const stored = JSON.parse(
+      localStorage.getItem("book-tracker:books") || "[]"
+    );
+    expect(stored[0]?.title).toBe("Piranesi (corrected)");
+    // id and createdAt preserved (use sampleBook's actual values, not hardcoded)
+    expect(stored[0]?.id).toBe(sampleBook.id);
+    expect(stored[0]?.createdAt).toBe(sampleBook.createdAt);
+  });
+
+  it("does not update last-status on edit (D2 of spec 002)", async () => {
+    renderDialog();
+    await screen.findByRole("dialog");
+    const user = userEvent.setup();
+
+    expect(getLastStatus()).toBe("want");
+
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    await waitFor(() => {
+      expect(getLastStatus()).toBe("want");
+    });
+  });
+
+  it("shows validation errors and keeps dialog open on bad input", async () => {
+    renderDialog();
+    await screen.findByRole("dialog");
+    const user = userEvent.setup();
+
+    const coverInput = screen.getByLabelText(/cover url/i);
+    await user.clear(coverInput);
+    await user.type(coverInput, "not-a-url");
+
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/http/i)).toBeInTheDocument();
+    });
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    // No toast
+    expect(mockSuccess).not.toHaveBeenCalled();
+  });
+
+  it("shows form error and preserves fields on storage failure", async () => {
+    const setItemSpy = vi
+      .spyOn(Storage.prototype, "setItem")
+      .mockImplementation(() => {
+        const err = new Error("quota");
+        err.name = "QuotaExceededError";
+        throw err;
+      });
+    const { onOpenChange } = renderDialog();
+    await screen.findByRole("dialog");
+    const user = userEvent.setup();
+
+    const titleInput = screen.getByLabelText("Title");
+    await user.clear(titleInput);
+    await user.type(titleInput, "New Title");
+
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent(/couldn't save/i);
+    });
+    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(titleInput).toHaveValue("New Title");
+
+    setItemSpy.mockRestore();
+  });
+});
