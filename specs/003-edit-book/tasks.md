@@ -35,7 +35,7 @@ the new edit flow on top.
 
 ## T2. useBookLibrary: add `updateBook` action (TDD)
 
-- **Files:** `src/state/book-library.ts`,
+- [x] **Files:** `src/state/book-library.ts`,
   `tests/state/useBookLibrary.test.ts`.
 - **Acceptance:**
   - Store exposes `updateBook(id: string, input: BookInput): Promise<Book>`.
@@ -45,7 +45,7 @@ the new edit flow on top.
   - Sets `status: 'error'` and rethrows on adapter failure.
   - Tests cover: success path, replaces in place, preserves other books,
     preserves order, error path, not-initialized path (≥ 4 tests).
-- **Notes:** mirror T6 addBook test style.
+- [x] **Notes:** mirror T6 addBook test style.
 
 ## T3. Extract BookForm + refactor AddBookDialog
 
