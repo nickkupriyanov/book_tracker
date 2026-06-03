@@ -16,7 +16,7 @@ T6 wires the page, T7 verifies.
 
 ## T1. Add shadcn Card, Tabs, Badge primitives
 
-- **Files:** `src/components/ui/card.tsx`, `src/components/ui/tabs.tsx`,
+- [x] **Files:** `src/components/ui/card.tsx`, `src/components/ui/tabs.tsx`,
   `src/components/ui/badge.tsx`, possibly new deps in `package.json`.
 - **Acceptance:**
   - `npx shadcn@latest add card tabs badge --yes --silent` succeeds.
