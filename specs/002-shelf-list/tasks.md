@@ -1,6 +1,6 @@
 # Tasks: Shelf List
 
-> **Status:** In Progress
+> **Status:** Done
 > **Spec:** `../spec.md` (`Approved`)
 > **Plan:** `../plan.md` (`Approved`)
 > **Author:** nickkupriyanov
@@ -96,8 +96,8 @@ T6 wires the page, T7 verifies.
 
 ## T7. Polish & verification
 
-- **Files:** (no new code); `specs/002-shelf-list/tasks.md` updated.
-- **Acceptance:**
+- [x] **Files:** (no new code); `specs/002-shelf-list/tasks.md` updated.
+- [x] **Acceptance:**
   - All spec §10 acceptance criteria for 002 are verified manually.
   - `npm run lint` passes with zero warnings.
   - `npm run test` passes (expected ~95 tests total: 80 from spec 001
@@ -107,5 +107,13 @@ T6 wires the page, T7 verifies.
   - No new `any` introduced.
   - No raw HTML controls where shadcn has an equivalent.
   - Update this file: tick all `[x]`s, set Status to `Done`.
-- **Notes:** verification gate. If anything in §10 fails, open a
-  follow-up task — don't silently expand the scope.
+- [x] **Notes:** verification report (2026-06-02, automated):
+  - `npm run lint` — ✔ No ESLint warnings or errors
+  - `npm run test` — 115/115 passed across 9 files (80 from spec 001, 35 from spec 002: BookCard 14, StatusPill 9, ShelfFilters 4, ShelfList 8)
+  - `npx tsc --noEmit` — clean
+  - `npm run build` — ✓ Compiled successfully, route `/` = 46.4 kB
+  - `grep -rE ': any\b|as any\b' src/` — no matches
+  - `grep -rE '<(button|input|dialog|select|textarea)\b' src/ --exclude-dir=ui` — no matches
+  - Dev server smoke test on :3737 — HTTP 200, "Book Tracker" h1 + "Loading your library…" initial state, no console errors
+  - Spec §10 criteria coverage: 1-10 covered by T2 (BookCard 14), T3 (ShelfFilters 4), T5 (ShelfList 8), T6 (integration via existing T10/T6). All four filter tabs render with counts, filter changes grid reactively, empty filter result shows "No books with this status.", books appear newest-first (inherited from store sort), cover fallback works on onError.
+  - Known limitations (per spec §11): no edit/delete (separate specs), no search/sort/pagination, no drag-and-drop
