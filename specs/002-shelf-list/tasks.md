@@ -91,7 +91,7 @@ T6 wires the page, T7 verifies.
     `<ShelfList books={books} />` instead of "You have N books" placeholder.
   - `npm run build` succeeds, no hydration warnings.
   - Manual: visit `/` with 0 books → `EmptyShelf`. Add a book → grid shows.
-- **Notes:** integration point. Existing T10 + T6 tests cover the
+- [x] **Notes:** integration point. Existing T10 + T6 tests cover the
   add-book flow; this change swaps the post-add rendering.
 
 ## T7. Polish & verification
