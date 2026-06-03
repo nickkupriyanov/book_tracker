@@ -66,7 +66,7 @@ T6 wires the page, T7 verifies.
 
 ## T5. ShelfList (TDD)
 
-- **Files:** `src/features/shelf-list/ShelfList.tsx`,
+- [x] **Files:** `src/features/shelf-list/ShelfList.tsx`,
   `src/features/shelf-list/index.ts`,
   `tests/features/shelf-list/ShelfList.test.tsx`.
 - **Acceptance:**
@@ -81,7 +81,7 @@ T6 wires the page, T7 verifies.
     component is only mounted when `books.length > 0`.
   - Tests cover: filtering by each status, default 'all', counts
     recompute on book add, empty-filter result (≥ 5 tests).
-- **Notes:** orchestrator. Pure props in, JSX out + local state.
+- [x] **Notes:** orchestrator. Pure props in, JSX out + local state.
 
 ## T6. Wire ShelfClient to use ShelfList
 
