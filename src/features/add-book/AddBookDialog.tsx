@@ -7,9 +7,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { AddBookForm } from "./AddBookForm";
-import { getLastStatus } from "./last-status";
-import type { ReadingStatus } from "@/types/book";
+import { BookForm } from "@/components/BookForm";
+import { useBookLibrary } from "@/state/book-library";
+import { getLastStatus, setLastStatus } from "./last-status";
+import { toast } from "sonner";
+import type { BookInput, ReadingStatus } from "@/types/book";
 
 export interface AddBookDialogProps {
   open: boolean;
@@ -17,12 +19,20 @@ export interface AddBookDialogProps {
 }
 
 /**
- * The Add Book dialog. Reads `lastUsedStatus` (D2) on each open via
- * `AddBookForm`'s `initialStatus` prop, so the dialog remembers the
- * last status the user picked across opens.
+ * The Add Book dialog. Owns the Add-specific side effects
+ * (toast, setLastStatus) — the form itself is shared with Edit Book
+ * (see spec 002 D2 / spec 003 D2).
  */
 export function AddBookDialog({ open, onOpenChange }: AddBookDialogProps) {
   const initialStatus: ReadingStatus = getLastStatus();
+  const addBook = useBookLibrary((s) => s.addBook);
+
+  const initialValues: BookInput = {
+    title: "",
+    author: "",
+    status: initialStatus,
+    tags: [],
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -33,8 +43,14 @@ export function AddBookDialog({ open, onOpenChange }: AddBookDialogProps) {
             Track a new book in your library.
           </DialogDescription>
         </DialogHeader>
-        <AddBookForm
-          initialStatus={initialStatus}
+        <BookForm
+          initialValues={initialValues}
+          submitLabel="Add book"
+          onSubmit={async (input) => {
+            const book = await addBook(input);
+            setLastStatus(book.status);
+            toast.success(`Added "${book.title}"`);
+          }}
           onSuccess={() => onOpenChange(false)}
         />
       </DialogContent>

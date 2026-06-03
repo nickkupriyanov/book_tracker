@@ -11,25 +11,39 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
 import { validateBookInput } from "@/lib/validation/book";
-import { useBookLibrary } from "@/state/book-library";
-import { setLastStatus } from "./last-status";
 import type { BookInput, ReadingStatus } from "@/types/book";
 
-export interface AddBookFormProps {
-  initialStatus: ReadingStatus;
-  onSuccess: () => void;
+export interface BookFormProps {
+  initialValues: BookInput;
+  submitLabel: string;
+  /**
+   * Called with the validated BookInput on submit. The form awaits
+   * the returned promise; if it rejects, the form shows an inline
+   * error and keeps its values.
+   */
+  onSubmit: (input: BookInput) => Promise<void>;
+  /** Called after onSubmit resolves successfully. Typically closes the dialog. */
+  onSuccess?: () => void;
 }
 
-export function AddBookForm({ initialStatus, onSuccess }: AddBookFormProps) {
-  const addBook = useBookLibrary((s) => s.addBook);
-
-  const [title, setTitle] = useState("");
-  const [author, setAuthor] = useState("");
-  const [status, setStatus] = useState<ReadingStatus>(initialStatus);
-  const [coverUrl, setCoverUrl] = useState("");
-  const [tags, setTags] = useState("");
+/**
+ * Shared form for both Add Book and Edit Book. Owns field state, errors,
+ * submit-disabled logic, and validation. The parent decides what to do
+ * with the validated input (addBook vs updateBook) and any side effects
+ * (toast, setLastStatus, close dialog).
+ */
+export function BookForm({
+  initialValues,
+  submitLabel,
+  onSubmit,
+  onSuccess,
+}: BookFormProps) {
+  const [title, setTitle] = useState(initialValues.title);
+  const [author, setAuthor] = useState(initialValues.author);
+  const [status, setStatus] = useState<ReadingStatus>(initialValues.status);
+  const [coverUrl, setCoverUrl] = useState(initialValues.coverUrl ?? "");
+  const [tags, setTags] = useState(initialValues.tags.join(", "));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,10 +77,8 @@ export function AddBookForm({ initialStatus, onSuccess }: AddBookFormProps) {
 
     setErrors({});
     try {
-      await addBook(result.value);
-      setLastStatus(result.value.status);
-      toast.success(`Added "${result.value.title}"`);
-      onSuccess();
+      await onSubmit(result.value);
+      onSuccess?.();
     } catch {
       setFormError("Couldn't save. Your browser storage is full or disabled.");
     } finally {
@@ -77,17 +89,17 @@ export function AddBookForm({ initialStatus, onSuccess }: AddBookFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4" noValidate>
       <div className="space-y-1.5">
-        <Label htmlFor="add-book-title">Title</Label>
+        <Label htmlFor="book-form-title">Title</Label>
         <Input
-          id="add-book-title"
+          id="book-form-title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           aria-invalid={errors.title ? true : undefined}
-          aria-describedby={errors.title ? "add-book-title-error" : undefined}
+          aria-describedby={errors.title ? "book-form-title-error" : undefined}
         />
         {errors.title && (
           <p
-            id="add-book-title-error"
+            id="book-form-title-error"
             className="text-sm text-destructive"
           >
             {errors.title}
@@ -96,19 +108,19 @@ export function AddBookForm({ initialStatus, onSuccess }: AddBookFormProps) {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="add-book-author">Author</Label>
+        <Label htmlFor="book-form-author">Author</Label>
         <Input
-          id="add-book-author"
+          id="book-form-author"
           value={author}
           onChange={(e) => setAuthor(e.target.value)}
           aria-invalid={errors.author ? true : undefined}
           aria-describedby={
-            errors.author ? "add-book-author-error" : undefined
+            errors.author ? "book-form-author-error" : undefined
           }
         />
         {errors.author && (
           <p
-            id="add-book-author-error"
+            id="book-form-author-error"
             className="text-sm text-destructive"
           >
             {errors.author}
@@ -117,15 +129,12 @@ export function AddBookForm({ initialStatus, onSuccess }: AddBookFormProps) {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="add-book-status">Status</Label>
+        <Label htmlFor="book-form-status">Status</Label>
         <Select
           value={status}
           onValueChange={(v) => setStatus(v as ReadingStatus)}
         >
-          <SelectTrigger
-            id="add-book-status"
-            data-testid="add-book-status-trigger"
-          >
+          <SelectTrigger id="book-form-status" data-testid="book-form-status-trigger">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -137,19 +146,19 @@ export function AddBookForm({ initialStatus, onSuccess }: AddBookFormProps) {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="add-book-cover">Cover URL (optional)</Label>
+        <Label htmlFor="book-form-cover">Cover URL (optional)</Label>
         <Input
-          id="add-book-cover"
+          id="book-form-cover"
           value={coverUrl}
           onChange={(e) => setCoverUrl(e.target.value)}
           aria-invalid={errors.coverUrl ? true : undefined}
           aria-describedby={
-            errors.coverUrl ? "add-book-cover-error" : undefined
+            errors.coverUrl ? "book-form-cover-error" : undefined
           }
         />
         {errors.coverUrl && (
           <p
-            id="add-book-cover-error"
+            id="book-form-cover-error"
             className="text-sm text-destructive"
           >
             {errors.coverUrl}
@@ -158,21 +167,16 @@ export function AddBookForm({ initialStatus, onSuccess }: AddBookFormProps) {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="add-book-tags">
-          Tags (optional, comma-separated)
-        </Label>
+        <Label htmlFor="book-form-tags">Tags (optional, comma-separated)</Label>
         <Input
-          id="add-book-tags"
+          id="book-form-tags"
           value={tags}
           onChange={(e) => setTags(e.target.value)}
           aria-invalid={errors.tags ? true : undefined}
-          aria-describedby={errors.tags ? "add-book-tags-error" : undefined}
+          aria-describedby={errors.tags ? "book-form-tags-error" : undefined}
         />
         {errors.tags && (
-          <p
-            id="add-book-tags-error"
-            className="text-sm text-destructive"
-          >
+          <p id="book-form-tags-error" className="text-sm text-destructive">
             {errors.tags}
           </p>
         )}
@@ -188,9 +192,9 @@ export function AddBookForm({ initialStatus, onSuccess }: AddBookFormProps) {
         <Button
           type="submit"
           disabled={!canSubmit}
-          data-testid="add-book-submit"
+          data-testid="book-form-submit"
         >
-          Add book
+          {submitLabel}
         </Button>
       </div>
     </form>

@@ -60,7 +60,7 @@ describe("AddBookDialog", () => {
     renderDialog();
     await screen.findByRole("dialog");
     // shadcn Select trigger shows the label of the selected item
-    expect(screen.getByTestId("add-book-status-trigger")).toHaveTextContent(
+    expect(screen.getByTestId("book-form-status-trigger")).toHaveTextContent(
       "Reading"
     );
   });
@@ -70,7 +70,7 @@ describe("AddBookDialog", () => {
     await screen.findByRole("dialog");
     const user = userEvent.setup();
     await user.type(screen.getByLabelText("Author"), "Susanna Clarke");
-    const submit = screen.getByTestId("add-book-submit");
+    const submit = screen.getByTestId("book-form-submit");
     expect(submit).toBeDisabled();
   });
 
@@ -79,7 +79,7 @@ describe("AddBookDialog", () => {
     await screen.findByRole("dialog");
     const user = userEvent.setup();
     await user.type(screen.getByLabelText("Title"), "Piranesi");
-    const submit = screen.getByTestId("add-book-submit");
+    const submit = screen.getByTestId("book-form-submit");
     expect(submit).toBeDisabled();
   });
 
@@ -89,7 +89,7 @@ describe("AddBookDialog", () => {
     const user = userEvent.setup();
     await user.type(screen.getByLabelText("Title"), "Piranesi");
     await user.type(screen.getByLabelText("Author"), "Susanna Clarke");
-    const submit = screen.getByTestId("add-book-submit");
+    const submit = screen.getByTestId("book-form-submit");
     expect(submit).not.toBeDisabled();
   });
 
@@ -100,7 +100,7 @@ describe("AddBookDialog", () => {
     await user.type(screen.getByLabelText("Title"), "Piranesi");
     await user.type(screen.getByLabelText("Author"), "Susanna Clarke");
     await user.type(screen.getByLabelText(/cover url/i), "not-a-url");
-    await user.click(screen.getByTestId("add-book-submit"));
+    await user.click(screen.getByTestId("book-form-submit"));
     await waitFor(() => {
       expect(screen.getByText(/http/i)).toBeInTheDocument();
     });
@@ -114,7 +114,7 @@ describe("AddBookDialog", () => {
     const user = userEvent.setup();
     await user.type(screen.getByLabelText("Title"), "Piranesi");
     await user.type(screen.getByLabelText("Author"), "Susanna Clarke");
-    await user.click(screen.getByTestId("add-book-submit"));
+    await user.click(screen.getByTestId("book-form-submit"));
 
     await waitFor(() => {
       expect(onOpenChange).toHaveBeenCalledWith(false);
@@ -137,7 +137,7 @@ describe("AddBookDialog", () => {
     // Change status to "read"
     await user.click(screen.getByLabelText("Status"));
     await user.click(screen.getByRole("option", { name: "Read" }));
-    await user.click(screen.getByTestId("add-book-submit"));
+    await user.click(screen.getByTestId("book-form-submit"));
     await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
     expect(getLastStatus()).toBe("read");
   });
@@ -149,7 +149,7 @@ describe("AddBookDialog", () => {
     const user = userEvent.setup();
     await user.type(screen.getByLabelText("Title"), "First");
     await user.type(screen.getByLabelText("Author"), "Author");
-    await user.click(screen.getByTestId("add-book-submit"));
+    await user.click(screen.getByTestId("book-form-submit"));
     await waitFor(() => expect(first.onOpenChange).toHaveBeenCalledWith(false));
 
     // Reopen
@@ -159,7 +159,7 @@ describe("AddBookDialog", () => {
     await screen.findByRole("dialog");
     expect(getLastStatus()).toBe("want");
     // Check the trigger specifically (not the option in the dropdown portal)
-    expect(screen.getByTestId("add-book-status-trigger")).toHaveTextContent(
+    expect(screen.getByTestId("book-form-status-trigger")).toHaveTextContent(
       "Want to read"
     );
   });
@@ -177,7 +177,7 @@ describe("AddBookDialog", () => {
     const user = userEvent.setup();
     await user.type(screen.getByLabelText("Title"), "Piranesi");
     await user.type(screen.getByLabelText("Author"), "Susanna Clarke");
-    await user.click(screen.getByTestId("add-book-submit"));
+    await user.click(screen.getByTestId("book-form-submit"));
     await waitFor(() => {
       expect(screen.getByRole("alert")).toHaveTextContent(/couldn't save/i);
     });
