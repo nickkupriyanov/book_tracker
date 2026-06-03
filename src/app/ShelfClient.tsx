@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AddBookButton, AddBookDialog } from "@/features/add-book";
+import { ShelfList } from "@/features/shelf-list";
 import { useBookLibrary } from "@/state/book-library";
 import { LocalStorageAdapter } from "@/storage/local-storage-adapter";
 import { EmptyShelf } from "@/components/EmptyShelf";
@@ -44,9 +45,7 @@ export function ShelfClient() {
       {status === "ready" && books.length === 0 && <EmptyShelf />}
 
       {status === "ready" && books.length > 0 && (
-        <p className="text-muted-foreground">
-          You have {books.length} {books.length === 1 ? "book" : "books"}.
-        </p>
+        <ShelfList books={books} />
       )}
 
       <AddBookDialog open={dialogOpen} onOpenChange={setDialogOpen} />
