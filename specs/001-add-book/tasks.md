@@ -173,7 +173,7 @@ foundation (no UI); T7–T12 are UI on top.
 
 ## T11. EmptyShelf
 
-- **Files:** `src/components/EmptyShelf.tsx`.
+- [x] **Files:** `src/components/EmptyShelf.tsx`.
 - **Acceptance:**
   - Shows centered placeholder block + heading "Your shelf is empty" + an
     "Add your first book" CTA.
