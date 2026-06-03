@@ -163,4 +163,136 @@ describe("useBookLibrary", () => {
       expect(useBookLibrary.getState().status).toBe("error");
     });
   });
+
+  describe("updateBook", () => {
+    // Dates are ordered so the store's sortByCreatedAtDesc produces
+    // [A, B, C] — i.e. A is the newest, C is the oldest. The test
+    // data must match the store's sort to make the order assertions
+    // meaningful.
+    const existingA: Book = {
+      id: "a",
+      title: "A",
+      author: "a",
+      status: "want",
+      tags: [],
+      createdAt: "2026-03-01T00:00:00.000Z",
+    };
+    const existingB: Book = {
+      id: "b",
+      title: "B",
+      author: "b",
+      status: "reading",
+      tags: [],
+      createdAt: "2026-02-01T00:00:00.000Z",
+    };
+    const existingC: Book = {
+      id: "c",
+      title: "C",
+      author: "c",
+      status: "read",
+      tags: [],
+      createdAt: "2026-01-01T00:00:00.000Z",
+    };
+
+    it("updates an existing book and returns the updated book", async () => {
+      const adapter = makeFakeAdapter({
+        listBooks: vi.fn().mockResolvedValue([existingA, existingB]),
+      });
+      await useBookLibrary.getState().init(adapter);
+
+      const updated = await useBookLibrary.getState().updateBook("a", {
+        title: "A-new",
+        author: "a-new",
+        status: "reading",
+        tags: [],
+      });
+
+      expect(updated.title).toBe("A-new");
+      expect(updated.id).toBe("a");
+      // Don't check createdAt here — that's the adapter's contract,
+      // covered by T1 (LocalStorageAdapter tests).
+    });
+
+    it("replaces the book in place, preserving other books", async () => {
+      const adapter = makeFakeAdapter({
+        listBooks: vi.fn().mockResolvedValue([existingA, existingB, existingC]),
+      });
+      await useBookLibrary.getState().init(adapter);
+
+      await useBookLibrary.getState().updateBook("b", {
+        title: "B-new",
+        author: "b",
+        status: "read",
+        tags: [],
+      });
+
+      const state = useBookLibrary.getState();
+      expect(state.books).toHaveLength(3);
+      expect(state.books.find((b) => b.id === "a")).toEqual(existingA);
+      expect(state.books.find((b) => b.id === "b")?.title).toBe("B-new");
+      expect(state.books.find((b) => b.id === "c")).toEqual(existingC);
+    });
+
+    it("preserves the order of books after update", async () => {
+      const adapter = makeFakeAdapter({
+        listBooks: vi.fn().mockResolvedValue([existingA, existingB, existingC]),
+      });
+      await useBookLibrary.getState().init(adapter);
+
+      await useBookLibrary.getState().updateBook("b", {
+        title: "B-new",
+        author: "b",
+        status: "read",
+        tags: [],
+      });
+
+      const state = useBookLibrary.getState();
+      expect(state.books.map((b) => b.id)).toEqual(["a", "b", "c"]);
+    });
+
+    it("sets status to 'ready' after a successful update", async () => {
+      const adapter = makeFakeAdapter({
+        listBooks: vi.fn().mockResolvedValue([existingA]),
+      });
+      await useBookLibrary.getState().init(adapter);
+
+      await useBookLibrary.getState().updateBook("a", {
+        title: "A-new",
+        author: "a",
+        status: "want",
+        tags: [],
+      });
+
+      expect(useBookLibrary.getState().status).toBe("ready");
+    });
+
+    it("propagates adapter.updateBook errors and sets status to error", async () => {
+      const adapter = makeFakeAdapter({
+        listBooks: vi.fn().mockResolvedValue([existingA]),
+        updateBook: vi.fn().mockRejectedValue(new Error("not found")),
+      });
+      await useBookLibrary.getState().init(adapter);
+
+      await expect(
+        useBookLibrary.getState().updateBook("a", {
+          title: "A-new",
+          author: "a",
+          status: "want",
+          tags: [],
+        })
+      ).rejects.toThrow("not found");
+      expect(useBookLibrary.getState().status).toBe("error");
+    });
+
+    it("throws if init has not been called", async () => {
+      await expect(
+        useBookLibrary.getState().updateBook("a", {
+          title: "A",
+          author: "a",
+          status: "want",
+          tags: [],
+        })
+      ).rejects.toThrow(/init/);
+    });
+  });
 });

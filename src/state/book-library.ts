@@ -20,6 +20,13 @@ export interface BookLibraryState {
    * @throws if {@link init} has not been called or if the adapter fails.
    */
   addBook(input: BookInput): Promise<Book>;
+  /**
+   * Update an existing book by `id` via the adapter. Replaces the book
+   * in place (other books and ordering are preserved).
+   * @throws if {@link init} has not been called, if the adapter fails,
+   * or if no book with the given `id` exists.
+   */
+  updateBook(id: string, input: BookInput): Promise<Book>;
 }
 
 /**
@@ -68,6 +75,24 @@ export const useBookLibrary = create<BookLibraryState>((set) => ({
         status: "ready",
       }));
       return book;
+    } catch (err) {
+      set({ status: "error" });
+      throw err;
+    }
+  },
+  updateBook: async (id, input) => {
+    if (adapter === null) {
+      throw new Error("useBookLibrary: updateBook called before init()");
+    }
+    try {
+      const updated = await adapter.updateBook(id, input);
+      // No re-sort needed: `updated.createdAt` is preserved by the adapter,
+      // so the book's position in the list is unchanged.
+      set((state) => ({
+        books: state.books.map((b) => (b.id === id ? updated : b)),
+        status: "ready",
+      }));
+      return updated;
     } catch (err) {
       set({ status: "error" });
       throw err;
