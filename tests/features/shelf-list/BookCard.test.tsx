@@ -154,4 +154,39 @@ describe("BookCard", () => {
       expect(onEdit).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe("Delete button", () => {
+    it("does not render a button when onDelete is not provided", () => {
+      render(<BookCard book={baseBook} onEdit={vi.fn()} />);
+      expect(
+        screen.queryByTestId("book-card-delete")
+      ).not.toBeInTheDocument();
+    });
+
+    it("renders a trash button when onDelete is provided", () => {
+      render(<BookCard book={baseBook} onDelete={vi.fn()} />);
+      expect(screen.getByTestId("book-card-delete")).toBeInTheDocument();
+      expect(screen.getByLabelText("Delete book")).toBeInTheDocument();
+    });
+
+    it("clicking the button invokes onDelete", async () => {
+      const onDelete = vi.fn();
+      const user = userEvent.setup();
+      render(<BookCard book={baseBook} onDelete={onDelete} />);
+      await user.click(screen.getByTestId("book-card-delete"));
+      expect(onDelete).toHaveBeenCalledTimes(1);
+    });
+
+    it("renders both buttons side by side when onEdit and onDelete are provided", () => {
+      render(
+        <BookCard
+          book={baseBook}
+          onEdit={vi.fn()}
+          onDelete={vi.fn()}
+        />
+      );
+      expect(screen.getByTestId("book-card-edit")).toBeInTheDocument();
+      expect(screen.getByTestId("book-card-delete")).toBeInTheDocument();
+    });
+  });
 });

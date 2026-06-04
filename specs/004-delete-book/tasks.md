@@ -122,7 +122,7 @@ on top, T5–T6 wire it into the card and shelf, T7 polishes.
 
 ## T5. BookCard: add Delete (trash) button (TDD)
 
-- [ ] **Files:** `src/features/shelf-list/BookCard.tsx`,
+- [x] **Files:** `src/features/shelf-list/BookCard.tsx`,
   `tests/features/shelf-list/BookCard.test.tsx`.
 - **Acceptance:**
   - Add optional prop `onDelete?: () => void`.
@@ -139,7 +139,7 @@ on top, T5–T6 wire it into the card and shelf, T7 polishes.
   - New tests cover: button renders when `onDelete` is
     provided, no button when omitted, click invokes
     `onDelete` (≥ 2 tests).
-- **Notes:** uses `lucide-react` `Trash2` icon (same
+- [x] **Notes:** uses `lucide-react` `Trash2` icon (same
   family as `Pencil`). The two icon buttons need a small
   layout change (a flex row absolutely positioned at
   `top-2 right-2`) so they sit side-by-side without

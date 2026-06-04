@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpen, Pencil } from "lucide-react";
+import { BookOpen, Pencil, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,14 @@ export interface BookCardProps {
    * visible — not hover-only — for mobile and screen-reader access).
    */
   onEdit?: () => void;
+  /**
+   * Optional click handler to delete the book. When provided, a small
+   * trash button is rendered next to the pencil (or alone if no
+   * `onEdit` is given). Ghost variant by default, `text-destructive`
+   * on hover only — destructive weight is a hint, not a shout
+   * (spec 004 D2).
+   */
+  onDelete?: () => void;
 }
 
 /**
@@ -25,12 +33,14 @@ export interface BookCardProps {
  * `coverFailed` state so a broken image URL gracefully falls back to
  * the placeholder without re-rendering the grid.
  */
-export function BookCard({ book, onEdit }: BookCardProps) {
+export function BookCard({ book, onEdit, onDelete }: BookCardProps) {
   const [coverFailed, setCoverFailed] = useState(false);
   const showCover = book.coverUrl !== undefined && !coverFailed;
 
   const visibleTags = book.tags.slice(0, MAX_VISIBLE_TAGS);
   const overflow = book.tags.length - MAX_VISIBLE_TAGS;
+
+  const hasActions = onEdit !== undefined || onDelete !== undefined;
 
   return (
     <Card>
@@ -53,18 +63,34 @@ export function BookCard({ book, onEdit }: BookCardProps) {
             <BookOpen className="text-muted-foreground size-12" />
           </div>
         )}
-        {onEdit !== undefined && (
-          <Button
-            type="button"
-            variant="secondary"
-            size="icon-sm"
-            onClick={onEdit}
-            aria-label="Edit book"
-            data-testid="book-card-edit"
-            className="absolute top-2 right-2"
-          >
-            <Pencil className="size-4" />
-          </Button>
+        {hasActions && (
+          <div className="absolute top-2 right-2 flex gap-1">
+            {onEdit !== undefined && (
+              <Button
+                type="button"
+                variant="secondary"
+                size="icon-sm"
+                onClick={onEdit}
+                aria-label="Edit book"
+                data-testid="book-card-edit"
+              >
+                <Pencil className="size-4" />
+              </Button>
+            )}
+            {onDelete !== undefined && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={onDelete}
+                aria-label="Delete book"
+                data-testid="book-card-delete"
+                className="hover:text-destructive"
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            )}
+          </div>
         )}
       </div>
       <CardContent className="space-y-1.5 p-4">
