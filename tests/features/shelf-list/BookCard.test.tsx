@@ -189,4 +189,28 @@ describe("BookCard", () => {
       expect(screen.getByTestId("book-card-delete")).toBeInTheDocument();
     });
   });
+
+  describe("Title link to detail page (spec 005)", () => {
+    it("wraps the title in a Link to /book/<id>", () => {
+      render(<BookCard book={baseBook} />);
+      const link = screen.getByRole("link", { name: "Piranesi" });
+      expect(link).toHaveAttribute("href", "/book/1");
+    });
+
+    it("only the title is a link (cover, tags, body are not)", () => {
+      render(
+        <BookCard
+          book={baseBook}
+          onEdit={vi.fn()}
+          onDelete={vi.fn()}
+        />
+      );
+      // Exactly one link on the card: the title.
+      expect(screen.getAllByRole("link")).toHaveLength(1);
+      expect(screen.getByRole("link")).toHaveAttribute(
+        "href",
+        "/book/1"
+      );
+    });
+  });
 });

@@ -102,7 +102,7 @@ brings it all together, T7 polishes and verifies.
 
 ## T4. BookCard: title becomes `<Link>` to `/book/<id>`
 
-- [ ] **Files:**
+- [x] **Files:**
   `src/features/shelf-list/BookCard.tsx` (modified),
   `tests/features/shelf-list/BookCard.test.tsx` (modified).
 - **Acceptance:**
@@ -120,7 +120,7 @@ brings it all together, T7 polishes and verifies.
   - New tests cover: the title is a link with the right
     `href`; the cover, tags, and other body are not links
     (≥ 1 test).
-- **Notes:** the existing card structure is:
+- [x] **Notes:** the existing card structure is:
   ```
   <Card>
     <div cover>

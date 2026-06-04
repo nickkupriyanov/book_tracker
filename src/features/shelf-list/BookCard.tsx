@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { BookOpen, Pencil, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -94,9 +95,14 @@ export function BookCard({ book, onEdit, onDelete }: BookCardProps) {
         )}
       </div>
       <CardContent className="space-y-1.5 p-4">
-        <h3 className="text-foreground truncate font-serif text-base">
-          {book.title}
-        </h3>
+        <Link
+          href={`/book/${book.id}`}
+          className="hover:underline underline-offset-2"
+        >
+          <h3 className="text-foreground truncate font-serif text-base">
+            {book.title}
+          </h3>
+        </Link>
         <p className="text-muted-foreground truncate text-sm">
           {book.author}
         </p>
