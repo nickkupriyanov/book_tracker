@@ -237,4 +237,76 @@ describe("validateBookInput", () => {
       }
     });
   });
+
+  describe("rating (spec 006)", () => {
+    it("accepts rating 1", () => {
+      const result = validateBookInput({ ...baseInput, rating: 1 });
+      expect(result).toEqual({ ok: true, value: { ...baseInput, rating: 1 } });
+    });
+
+    it("accepts rating 5", () => {
+      const result = validateBookInput({ ...baseInput, rating: 5 });
+      expect(result).toEqual({ ok: true, value: { ...baseInput, rating: 5 } });
+    });
+
+    it("accepts each integer 1..5", () => {
+      for (const r of [1, 2, 3, 4, 5] as const) {
+        expect(validateBookInput({ ...baseInput, rating: r }).ok).toBe(true);
+      }
+    });
+
+    it("accepts missing rating (undefined)", () => {
+      // baseInput has no rating key — should validate fine.
+      const result = validateBookInput(baseInput);
+      expect(result.ok).toBe(true);
+    });
+
+    it("rejects rating 6 with an inline error", () => {
+      const result = validateBookInput({ ...baseInput, rating: 6 });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors.rating).toMatch(
+          /whole number between 1 and 5/
+        );
+      }
+    });
+
+    it("rejects rating 0 with an inline error", () => {
+      const result = validateBookInput({ ...baseInput, rating: 0 });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors.rating).toMatch(
+          /whole number between 1 and 5/
+        );
+      }
+    });
+
+    it("rejects non-integer 3.5 with an inline error", () => {
+      const result = validateBookInput({ ...baseInput, rating: 3.5 });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors.rating).toMatch(
+          /whole number between 1 and 5/
+        );
+      }
+    });
+
+    it("rejects non-number rating with an inline error", () => {
+      const result = validateBookInput({ ...baseInput, rating: "4" });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors.rating).toMatch(
+          /whole number between 1 and 5/
+        );
+      }
+    });
+
+    it("omits the rating key from the value when not provided", () => {
+      const result = validateBookInput(baseInput);
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect("rating" in result.value).toBe(false);
+      }
+    });
+  });
 });

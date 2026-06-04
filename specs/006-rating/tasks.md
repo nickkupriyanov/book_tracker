@@ -17,10 +17,10 @@ section into the page; T6 polishes and verifies.
 
 ## T1. Type + validator (`Book.rating?`, `validateRating`)
 
-- [ ] **Files:**
+- [x] **Files:**
   `src/types/book.ts` (modified),
   `src/lib/validation/book.ts` (modified),
-  `tests/lib/validation/book.test.ts` (modified).
+  `tests/validation/book.test.ts` (modified).
 - **Acceptance:**
   - `Book` and `BookInput` (via `Omit`) gain
     `rating?: 1 | 2 | 3 | 4 | 5`.
@@ -39,7 +39,7 @@ section into the page; T6 polishes and verifies.
     (`undefined`), missing (`null`), out-of-range high
     (6), out-of-range low (0), non-integer (3.5), wrong
     type ("4"). ≥ 4 tests.
-- **Notes:** the existing `tests/lib/validation/book.test.ts`
+- [x] **Notes:** the existing `tests/validation/book.test.ts`
   already has a "valid input" and several "invalid input"
   tests; this task extends that file. No new helper
   files in `src/lib/validation/`.

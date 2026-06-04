@@ -144,6 +144,25 @@ function validateStatus(
   return raw;
 }
 
+function validateRating(
+  raw: unknown,
+  errors: Record<string, string>
+): 1 | 2 | 3 | 4 | 5 | undefined {
+  if (raw === undefined || raw === null) {
+    return undefined;
+  }
+  if (
+    typeof raw !== "number" ||
+    !Number.isInteger(raw) ||
+    raw < 1 ||
+    raw > 5
+  ) {
+    errors.rating = "Rating must be a whole number between 1 and 5.";
+    return undefined;
+  }
+  return raw as 1 | 2 | 3 | 4 | 5;
+}
+
 /**
  * Validates raw input for the Add Book form and returns either a normalized
  * {@link BookInput} or a map of field-level error messages.
@@ -172,6 +191,7 @@ export function validateBookInput(input: unknown): ValidationResult<BookInput> {
   const coverUrl = validateCoverUrl(input["coverUrl"], errors);
   const tags = validateTags(input["tags"], errors);
   const status = validateStatus(input["status"], errors);
+  const rating = validateRating(input["rating"], errors);
 
   if (Object.keys(errors).length > 0) {
     return { ok: false, errors };
@@ -195,6 +215,7 @@ export function validateBookInput(input: unknown): ValidationResult<BookInput> {
     status,
     tags,
     ...(coverUrl !== undefined ? { coverUrl } : {}),
+    ...(rating !== undefined ? { rating } : {}),
   };
   return { ok: true, value };
 }

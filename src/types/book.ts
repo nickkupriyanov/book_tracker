@@ -31,6 +31,13 @@ export interface Book {
   tags: string[];
   /** ISO 8601 timestamp, set by the storage layer on creation. */
   createdAt: string;
+  /**
+   * Optional 1-5 rating. Absent means "not rated"
+   * (spec 006 D2). Integers only — no half-stars, no 0
+   * (spec 006 D1). Set by the user via the detail page
+   * or the BookForm.
+   */
+  rating?: 1 | 2 | 3 | 4 | 5;
 }
 
 /** What the UI submits to add a book. `id` and `createdAt` are storage-side. */
