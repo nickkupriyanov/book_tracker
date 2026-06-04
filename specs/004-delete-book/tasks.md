@@ -85,7 +85,7 @@ on top, T5–T6 wire it into the card and shelf, T7 polishes.
 
 ## T4. DeleteBookDialog (TDD)
 
-- [ ] **Files:**
+- [x] **Files:**
   `src/features/delete-book/DeleteBookDialog.tsx`,
   `src/features/delete-book/index.ts`,
   `tests/features/delete-book/DeleteBookDialog.test.tsx`.
@@ -114,7 +114,7 @@ on top, T5–T6 wire it into the card and shelf, T7 polishes.
     `onOpenChange(false)`, book gone from store),
     storage failure (form error visible, dialog stays
     open, both buttons re-enabled) (≥ 4 tests).
-- **Notes:** uses the new `AlertDialog` from
+- [x] **Notes:** uses the new `AlertDialog` from
   `src/components/ui/`. Toast text distinguishes
   "Deleted" from Add's "Added" and Edit's "Updated". The
   `sonner` `toast` is mocked in the test (mirror the
