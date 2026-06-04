@@ -165,4 +165,32 @@ describe("BookDetail", () => {
       }
     });
   });
+
+  describe("review section (spec 007)", () => {
+    it("renders the Review section visible for a found book with no review", () => {
+      render(<BookDetail bookId={sampleBook.id} />);
+      expect(
+        screen.getByRole("heading", { level: 2, name: "Review" })
+      ).toBeInTheDocument();
+      expect(screen.getByTestId("review-empty")).toHaveTextContent(
+        "No review yet."
+      );
+    });
+
+    it("renders the review text for a book with a review", async () => {
+      await useBookLibrary
+        .getState()
+        .updateBook(sampleBook.id, {
+          ...sampleBook,
+          review: "A quiet, wonderful read.",
+        });
+      render(<BookDetail bookId={sampleBook.id} />);
+      expect(
+        screen.getByTestId("review-text")
+      ).toHaveTextContent("A quiet, wonderful read.");
+      expect(
+        screen.getByTestId("review-edit-button")
+      ).toHaveTextContent("Edit review");
+    });
+  });
 });

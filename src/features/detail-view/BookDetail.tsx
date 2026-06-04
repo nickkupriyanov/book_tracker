@@ -6,6 +6,7 @@ import { useBookLibrary } from "@/state/book-library";
 import { EditBookDialog } from "@/features/edit-book";
 import { DeleteBookDialog } from "@/features/delete-book";
 import { RatingSection } from "@/features/rating";
+import { ReviewSection } from "@/features/review";
 import { DetailHeader } from "./DetailHeader";
 import { DetailMeta } from "./DetailMeta";
 import { DetailNotFound } from "./DetailNotFound";
@@ -77,6 +78,7 @@ export function BookDetail({ bookId }: BookDetailProps) {
         />
         <DetailMeta book={book} />
         <RatingSection book={book} />
+        <ReviewSection book={book} />
       </div>
       <EditBookDialog
         book={editingBook ?? book}

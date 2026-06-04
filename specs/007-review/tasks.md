@@ -127,7 +127,7 @@ T5 polishes and verifies.
 
 ## T4. `BookDetail` renders `<ReviewSection>`
 
-- [ ] **Files:**
+- [x] **Files:**
   `src/features/detail-view/BookDetail.tsx`
   (modified),
   `tests/features/detail-view/BookDetail.test.tsx`
@@ -146,7 +146,7 @@ T5 polishes and verifies.
     on the page; the section is visible in both
     rated-with-review and unrated-without-review
     cases. ≥ 2 tests.
-- **Notes:** the existing BookDetail tests for
+- [x] **Notes:** the existing BookDetail tests for
   loading / not-found / found / edit / delete /
   rating still pass. The new tests extend the
   "found" coverage.
