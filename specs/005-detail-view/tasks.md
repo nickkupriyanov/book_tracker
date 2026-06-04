@@ -49,7 +49,7 @@ brings it all together, T7 polishes and verifies.
 
 ## T2. `DetailHeader` (back link + Edit + Delete buttons)
 
-- [ ] **Files:**
+- [x] **Files:**
   `src/features/detail-view/DetailHeader.tsx` (new),
   `tests/features/detail-view/DetailHeader.test.tsx` (new).
 - **Acceptance:**
@@ -68,7 +68,7 @@ brings it all together, T7 polishes and verifies.
   - Tests cover: back link has `href="/"`, edit click
     invokes `onEdit`, delete click invokes `onDelete`,
     Edit and Delete buttons are present (≥ 3 tests).
-- **Notes:** uses `lucide-react` icons (`ChevronLeft`,
+- [x] **Notes:** uses `lucide-react` icons (`ChevronLeft`,
   `Pencil`, `Trash2` — all already available in the
   project's pinned `lucide-react@^1.17`).
 
