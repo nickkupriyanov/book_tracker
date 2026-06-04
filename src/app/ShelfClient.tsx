@@ -1,27 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AddBookButton, AddBookDialog } from "@/features/add-book";
 import { ShelfList } from "@/features/shelf-list";
 import { useBookLibrary } from "@/state/book-library";
-import { LocalStorageAdapter } from "@/storage/local-storage-adapter";
 import { EmptyShelf } from "@/components/EmptyShelf";
 
 /**
- * The shelf page. Server-rendered as a shell; on the client, initializes
- * the Zustand store with a LocalStorageAdapter and renders the appropriate
- * state (loading / empty / list / error).
+ * The shelf page. The store is initialised by `RootClient` in
+ * the root layout, so this component just reads the store and
+ * renders the appropriate state (loading / empty / list /
+ * error). No useEffect for init here.
  */
 export function ShelfClient() {
   const status = useBookLibrary((s) => s.status);
   const books = useBookLibrary((s) => s.books);
   const [dialogOpen, setDialogOpen] = useState(false);
-
-  useEffect(() => {
-    // Init the store once on mount. Idempotent: StrictMode double-invoke
-    // and HMR re-runs are no-ops once the first one succeeds.
-    useBookLibrary.getState().init(new LocalStorageAdapter());
-  }, []);
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">

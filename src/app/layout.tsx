@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { RootClient } from "@/components/RootClient";
 
 export const metadata: Metadata = {
   title: "Book Tracker",
@@ -15,7 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen antialiased">
-        {children}
+        <RootClient>{children}</RootClient>
         <Toaster />
       </body>
     </html>
