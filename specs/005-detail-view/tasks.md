@@ -141,7 +141,7 @@ brings it all together, T7 polishes and verifies.
 
 ## T5. `BookDetail` orchestrator + `/book/[id]` route
 
-- [ ] **Files:**
+- [x] **Files:**
   `src/features/detail-view/BookDetail.tsx` (new),
   `src/features/detail-view/index.ts` (modified — export
   `BookDetail`),
@@ -174,7 +174,7 @@ brings it all together, T7 polishes and verifies.
     state, edit click opens EditBookDialog and saving
     updates the page, delete click opens DeleteBookDialog
     and confirming navigates to `/` (≥ 4 tests).
-- **Notes:** Edit and Delete dialogs are imported from
+- [x] **Notes:** Edit and Delete dialogs are imported from
   the existing `@/features/edit-book` and
   `@/features/delete-book` modules. No new state machine,
   no new dialogs. The `useBookLibrary` selectors are
