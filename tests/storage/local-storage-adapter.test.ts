@@ -254,4 +254,89 @@ describe("LocalStorageAdapter", () => {
       expect(all.map((x) => x.title)).toEqual(["A", "B-new", "C"]);
     });
   });
+
+  describe("deleteBook", () => {
+    it("removes the targeted book and leaves the rest of storage intact", async () => {
+      const adapter = new LocalStorageAdapter();
+      const a = await adapter.addBook({
+        title: "A",
+        author: "a",
+        status: "want",
+        tags: [],
+      });
+      const b = await adapter.addBook({
+        title: "B",
+        author: "b",
+        status: "reading",
+        tags: [],
+      });
+      await adapter.deleteBook(a.id);
+      const all = await adapter.listBooks();
+      expect(all).toEqual([b]);
+    });
+
+    it("preserves the insertion order of the remaining books", async () => {
+      const adapter = new LocalStorageAdapter();
+      const a = await adapter.addBook({
+        title: "A",
+        author: "a",
+        status: "want",
+        tags: [],
+      });
+      const b = await adapter.addBook({
+        title: "B",
+        author: "b",
+        status: "reading",
+        tags: [],
+      });
+      const c = await adapter.addBook({
+        title: "C",
+        author: "c",
+        status: "read",
+        tags: [],
+      });
+      await adapter.deleteBook(b.id);
+      const all = await adapter.listBooks();
+      expect(all.map((x) => x.id)).toEqual([a.id, c.id]);
+    });
+
+    it("leaves an empty array after deleting the only book", async () => {
+      const adapter = new LocalStorageAdapter();
+      const a = await adapter.addBook({
+        title: "A",
+        author: "a",
+        status: "want",
+        tags: [],
+      });
+      await adapter.deleteBook(a.id);
+      const all = await adapter.listBooks();
+      expect(all).toEqual([]);
+    });
+
+    it("throws when the id is not found", async () => {
+      const adapter = new LocalStorageAdapter();
+      await expect(adapter.deleteBook("nonexistent-id")).rejects.toThrow(
+        /not found/
+      );
+    });
+
+    it("propagates QuotaExceededError from setItem", async () => {
+      const adapter = new LocalStorageAdapter();
+      const added = await adapter.addBook({
+        title: "A",
+        author: "a",
+        status: "want",
+        tags: [],
+      });
+      const setItemSpy = vi
+        .spyOn(Storage.prototype, "setItem")
+        .mockImplementation(() => {
+          const err = new Error("quota");
+          err.name = "QuotaExceededError";
+          throw err;
+        });
+      await expect(adapter.deleteBook(added.id)).rejects.toThrow();
+      setItemSpy.mockRestore();
+    });
+  });
 });

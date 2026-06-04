@@ -16,7 +16,7 @@ on top, T5–T6 wire it into the card and shelf, T7 polishes.
 
 ## T1. StorageAdapter: add `deleteBook` (TDD)
 
-- [ ] **Files:** `src/storage/storage-adapter.ts`,
+- [x] **Files:** `src/storage/storage-adapter.ts`,
   `src/storage/local-storage-adapter.ts`,
   `tests/storage/local-storage-adapter.test.ts`.
 - **Acceptance:**
@@ -32,7 +32,7 @@ on top, T5–T6 wire it into the card and shelf, T7 polishes.
     (multi-book, only target removed), missing id throws,
     deletion of the only book leaves an empty array,
     storage failure propagates (≥ 4 tests).
-- **Notes:** mirror the existing `updateBook` test style in
+- [x] **Notes:** mirror the existing `updateBook` test style in
   `tests/storage/local-storage-adapter.test.ts`.
 
 ## T2. useBookLibrary: add `deleteBook` action (TDD)

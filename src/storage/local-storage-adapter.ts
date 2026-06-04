@@ -81,4 +81,14 @@ export class LocalStorageAdapter implements StorageAdapter {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(books));
     return updated;
   }
+
+  async deleteBook(id: string): Promise<void> {
+    const books = await this.listBooks();
+    const index = books.findIndex((b) => b.id === id);
+    if (index === -1) {
+      throw new Error(`Book with id "${id}" not found`);
+    }
+    books.splice(index, 1);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(books));
+  }
 }

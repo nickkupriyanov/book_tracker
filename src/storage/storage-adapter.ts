@@ -40,4 +40,13 @@ export interface StorageAdapter {
    * @throws on storage failure (quota, disabled, network).
    */
   updateBook(id: string, input: BookInput): Promise<Book>;
+  /**
+   * Remove a book by `id`. No-op (silent success) is intentionally
+   * avoided: throws if not found, so a stale-id delete surfaces a
+   * real error rather than appearing to succeed.
+   *
+   * @throws if no book with that `id` exists.
+   * @throws on storage failure (quota, disabled, network).
+   */
+  deleteBook(id: string): Promise<void>;
 }
