@@ -17,7 +17,7 @@ brings it all together, T7 polishes and verifies.
 
 ## T1. `DetailSection`, `DetailNotFound`, `DetailLoading` (small UI primitives)
 
-- [ ] **Files:**
+- [x] **Files:**
   `src/features/detail-view/DetailSection.tsx` (new),
   `src/features/detail-view/DetailNotFound.tsx` (new),
   `src/features/detail-view/DetailLoading.tsx` (new),
@@ -41,7 +41,7 @@ brings it all together, T7 polishes and verifies.
     (1 smoke test); `DetailNotFound` renders the back link
     to `/` (1 test); `DetailLoading` renders the loading
     message (1 test). Total: ≥ 3 tests.
-- **Notes:** these are the smallest components, no store
+- [x] **Notes:** these are the smallest components, no store
   or router coupling. `DetailSection` is the future-proofing
   wrapper per spec D7 — it exists now so future specs
   (rating, review, quotes, reading time) can import it
