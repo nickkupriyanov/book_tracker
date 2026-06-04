@@ -17,7 +17,7 @@ T5 polishes and verifies.
 
 ## T1. Type + validator (`Book.review?`, `validateReview`)
 
-- [ ] **Files:**
+- [x] **Files:**
   `src/types/book.ts` (modified),
   `src/lib/validation/book.ts` (modified),
   `tests/validation/book.test.ts` (modified).
@@ -45,7 +45,7 @@ T5 polishes and verifies.
     empty / whitespace-only (key absent), missing
     (undefined), missing (null), non-string, > 10 000
     chars. ≥ 4 tests.
-- **Notes:** mirror the existing `validateRating`
+- [x] **Notes:** mirror the existing `validateRating`
   pattern (spec 006 T1). The empty-trim-to-absent
   behaviour matches the spec 003 norm for "the
   user means to clear this field" (D3, D8).

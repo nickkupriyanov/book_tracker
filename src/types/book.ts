@@ -38,6 +38,13 @@ export interface Book {
    * or the BookForm.
    */
   rating?: 1 | 2 | 3 | 4 | 5;
+  /**
+   * Optional free-form review. Plain text, max 10 000
+   * characters after trim. Absent means "no review"
+   * (spec 007 D3). Will be upgraded to a structured
+   * rich-text state in a future spec (D9).
+   */
+  review?: string;
 }
 
 /** What the UI submits to add a book. `id` and `createdAt` are storage-side. */

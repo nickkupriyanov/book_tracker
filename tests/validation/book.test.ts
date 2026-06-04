@@ -309,4 +309,79 @@ describe("validateBookInput", () => {
       }
     });
   });
+
+  describe("review (spec 007)", () => {
+    it("accepts a mid-length review string", () => {
+      const result = validateBookInput({
+        ...baseInput,
+        review: "Loved this book. A quiet masterpiece.",
+      });
+      expect(result).toEqual({
+        ok: true,
+        value: {
+          ...baseInput,
+          review: "Loved this book. A quiet masterpiece.",
+        },
+      });
+    });
+
+    it("accepts a review at the max length (10 000 chars)", () => {
+      const review = "a".repeat(10_000);
+      const result = validateBookInput({ ...baseInput, review });
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.value.review).toBe(review);
+      }
+    });
+
+    it("rejects a review over the max length with an inline error", () => {
+      const review = "a".repeat(10_001);
+      const result = validateBookInput({ ...baseInput, review });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors.review).toMatch(
+          /10[, ]?000 characters or fewer/
+        );
+      }
+    });
+
+    it("trims the review", () => {
+      const result = validateBookInput({
+        ...baseInput,
+        review: "  Loved it.  ",
+      });
+      expect(result).toEqual({
+        ok: true,
+        value: { ...baseInput, review: "Loved it." },
+      });
+    });
+
+    it("normalises an empty / whitespace-only review to absent (D3)", () => {
+      for (const empty of ["", "   ", "\n\n", "\t"]) {
+        const result = validateBookInput({ ...baseInput, review: empty });
+        expect(result.ok).toBe(true);
+        if (result.ok) {
+          expect("review" in result.value).toBe(false);
+        }
+      }
+    });
+
+    it("accepts missing review (undefined / null)", () => {
+      expect(validateBookInput({ ...baseInput, review: undefined }).ok).toBe(true);
+      // null is not in the type but the validator should still accept it
+      // (treat as missing) so the form-state roundtrip from the textarea
+      // (which can emit undefined / null) doesn't blow up.
+      expect(
+        validateBookInput({ ...baseInput, review: null }).ok
+      ).toBe(true);
+    });
+
+    it("rejects a non-string review with an inline error", () => {
+      const result = validateBookInput({ ...baseInput, review: 42 });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors.review).toMatch(/Review must be text/);
+      }
+    });
+  });
 });

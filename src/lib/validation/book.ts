@@ -13,6 +13,7 @@ const TITLE_MAX = 200;
 const AUTHOR_MAX = 120;
 const TAG_MAX_LENGTH = 24;
 const TAGS_MAX_COUNT = 10;
+const REVIEW_MAX = 10_000;
 
 const READING_STATUSES: readonly ReadingStatus[] = ["want", "reading", "read"];
 
@@ -163,6 +164,28 @@ function validateRating(
   return raw as 1 | 2 | 3 | 4 | 5;
 }
 
+function validateReview(
+  raw: unknown,
+  errors: Record<string, string>
+): string | undefined {
+  if (raw === undefined || raw === null) {
+    return undefined;
+  }
+  if (typeof raw !== "string") {
+    errors.review = "Review must be text.";
+    return undefined;
+  }
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) {
+    return undefined;
+  }
+  if (trimmed.length > REVIEW_MAX) {
+    errors.review = `Review must be ${REVIEW_MAX} characters or fewer.`;
+    return undefined;
+  }
+  return trimmed;
+}
+
 /**
  * Validates raw input for the Add Book form and returns either a normalized
  * {@link BookInput} or a map of field-level error messages.
@@ -192,6 +215,7 @@ export function validateBookInput(input: unknown): ValidationResult<BookInput> {
   const tags = validateTags(input["tags"], errors);
   const status = validateStatus(input["status"], errors);
   const rating = validateRating(input["rating"], errors);
+  const review = validateReview(input["review"], errors);
 
   if (Object.keys(errors).length > 0) {
     return { ok: false, errors };
@@ -216,6 +240,7 @@ export function validateBookInput(input: unknown): ValidationResult<BookInput> {
     tags,
     ...(coverUrl !== undefined ? { coverUrl } : {}),
     ...(rating !== undefined ? { rating } : {}),
+    ...(review !== undefined ? { review } : {}),
   };
   return { ok: true, value };
 }
