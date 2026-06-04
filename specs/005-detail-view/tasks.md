@@ -1,8 +1,8 @@
 # Tasks: Detail View
 
-> **Status:** Draft
-> **Spec:** `../spec.md`
-> **Plan:** `../plan.md`
+> **Status:** Done
+> **Spec:** `../spec.md` (`Approved`)
+> **Plan:** `../plan.md` (`Approved`)
 
 Each task is small enough to be one commit. Mark a task `[x]`
 only when its acceptance line is satisfied and
@@ -183,15 +183,14 @@ brings it all together, T7 polishes and verifies.
 
 ## T6. Polish & verification
 
-- [ ] **Files:** (no new code);
+- [x] **Files:** (no new code);
   `specs/005-detail-view/tasks.md` updated.
 - **Acceptance:**
   - All spec §10 acceptance criteria for 005 are verified
     manually.
   - `npm run lint` passes with zero warnings.
-  - `npm run test` passes (expected ~178–183 tests
-    total: 163 from spec 004 + ~15–20 new from spec
-    005).
+  - `npm run test` passes (182 tests total: 163 from
+    spec 004 + 19 new from spec 005).
   - `tsc --noEmit` clean.
   - `npm run build` succeeds (the new route compiles
     and ships).
@@ -201,5 +200,65 @@ brings it all together, T7 polishes and verifies.
     equivalent.
   - Update this file: tick all `[x]`s, set Status to
     `Done`.
-- **Notes:** verification report goes here when the
-  task is closed out.
+- [x] **Notes:** verification report (2026-06-04):
+  - `npm run lint` — ✔ No ESLint warnings or errors
+  - `npm run test` — 182/182 passed across 18 files
+    (163 from spec 004 + 19 new from spec 005:
+    DetailSection 1, DetailNotFound 1, DetailLoading 1,
+    DetailHeader 4, DetailMeta 5, BookCard +2 title
+    link tests, BookDetail 5)
+  - `npx tsc --noEmit` — clean
+  - `npm run build` — ✓ Compiled successfully, route
+    `/book/[id]` registered as a dynamic route (1.54 kB,
+    162 kB First Load JS). Route `/` is 5.4 kB / 166 kB
+    (shared chunks absorbed the shelf code that used to
+    live in `/`-only).
+  - `grep -rE ': any\b|as any\b' src/` — no matches
+  - `grep -rE '<(button|input|dialog|select|textarea)\b' src/`
+    filtered to non-UI files — no matches (the only
+    `<input` is in `src/components/ui/input.tsx`, the
+    shadcn wrapper, expected)
+  - `package.json` — `lucide-react@^1.17.0` and
+    `next/link` (already a Next.js dependency) are the
+    only new pieces. `radix-ui@^1.4.3` unchanged. No new
+    npm dependencies.
+  - Spec §10 acceptance criteria coverage:
+    - FR-1 (card title is a Link) → T4
+    - FR-2 (route renders the detail page) → T5
+    - FR-3 (back link + Edit + Delete in header) → T2
+    - FR-4 (cover, h1 title, author, status, all tags,
+      added-on date) → T3
+    - FR-5 (Edit opens EditBookDialog, saving updates
+      the page) → T5 (test: "opens the Edit dialog on
+      edit click and updates the page on save")
+    - FR-6 (Delete opens DeleteBookDialog) → T5 (test:
+      "opens the Delete dialog on delete click and
+      navigates to / on confirm")
+    - FR-7 (no manual reload after save) → T5
+    - FR-8 (successful delete navigates to /) → T5
+    - FR-9 (Book not found state) → T5 (test: "renders
+      the not-found state when the book id is missing")
+      + T1 (DetailNotFound component)
+    - FR-10 (Loading state) → T5 (test: "renders the
+      loading state when the store is loading") + T1
+      (DetailLoading component)
+  - Manual QA pending (not run in this environment).
+    Suggested steps (per plan §8):
+    1. Shelf → click title on a book → /book/<id> renders
+       with cover, title, author, status, all tags,
+       "Added on <date>".
+    2. Header: "Back to shelf" on the left, Edit + Delete
+       on the right.
+    3. Click Edit → EditBookDialog opens with current
+       values. Change a field, save → page re-renders
+       with updated values, no manual reload.
+    4. Click Delete → DeleteBookDialog opens. Confirm →
+       navigates to `/`; if last book, EmptyShelf.
+    5. Paste a stale `/book/<id>` URL → "Book not found"
+       with "Back to shelf" button.
+    6. Click "Back to shelf" → returns to the shelf.
+    7. Resize to mobile width → cover stacks above meta.
+    8. Regression: Add / Edit / Delete from the shelf
+       still work.
+    9. Card title on the shelf now has a subtle
+       underline on hover.
