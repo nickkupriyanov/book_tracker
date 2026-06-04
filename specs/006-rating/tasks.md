@@ -76,7 +76,7 @@ section into the page; T6 polishes and verifies.
 
 ## T3. `RatingSection` (smart, wraps `DetailSection` + `RatingStars`)
 
-- [ ] **Files:**
+- [x] **Files:**
   `src/features/rating/RatingSection.tsx` (new),
   `src/features/rating/index.ts` (new — barrel),
   `tests/features/rating/RatingSection.test.tsx` (new).
@@ -100,7 +100,7 @@ section into the page; T6 polishes and verifies.
   - `index.ts` exports `RatingSection` (and
     `RatingStars` for completeness, but it's an
     internal of the section).
-- **Notes:** mirrors the smart pattern of
+- [x] **Notes:** mirrors the smart pattern of
   `EditBookDialog` / `DeleteBookDialog` (imports
   `useBookLibrary` directly). The detail page just
   drops the section in.
