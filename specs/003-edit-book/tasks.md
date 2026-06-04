@@ -118,7 +118,7 @@ the new edit flow on top.
 
 ## T6. Wire ShelfList with `editingBook` state
 
-- **Files:** `src/features/shelf-list/ShelfList.tsx`.
+- [x] **Files:** `src/features/shelf-list/ShelfList.tsx`
 - **Acceptance:**
   - New state: `editingBook: Book | null`.
   - Each `BookCard` receives `onEdit={() => setEditingBook(book)}`.
