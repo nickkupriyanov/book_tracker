@@ -1,7 +1,7 @@
 # Plan: Delete Book
 
-> **Status:** Draft
-> **Spec:** `../spec.md` (`Draft`)
+> **Status:** Approved
+> **Spec:** `../spec.md` (`Approved`)
 > **Author:** nickkupriyanov
 > **Created:** 2026-06-04
 

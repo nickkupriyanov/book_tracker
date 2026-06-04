@@ -1,8 +1,8 @@
 # Tasks: Delete Book
 
-> **Status:** Draft
-> **Spec:** `../spec.md`
-> **Plan:** `../plan.md`
+> **Status:** Done
+> **Spec:** `../spec.md` (`Approved`)
+> **Plan:** `../plan.md` (`Approved`)
 
 Each task is small enough to be one commit. Mark a task `[x]`
 only when its acceptance line is satisfied and
@@ -78,7 +78,7 @@ on top, T5–T6 wire it into the card and shelf, T7 polishes.
   - No new npm dependencies are added.
   - No new tests — the wrapper is a thin pass-through; the
     only consumer is tested end-to-end.
-- **Notes:** this is the canonical shadcn
+- [x] **Notes:** this is the canonical shadcn
   `alert-dialog.tsx` file, copied with minor adjustments
   to match the project's existing `dialog.tsx` style.
   ~80 lines.
@@ -171,15 +171,14 @@ on top, T5–T6 wire it into the card and shelf, T7 polishes.
 
 ## T7. Polish & verification
 
-- [ ] **Files:** (no new code);
+- [x] **Files:** (no new code);
   `specs/004-delete-book/tasks.md` updated.
 - **Acceptance:**
   - All spec §10 acceptance criteria for 004 are
     verified manually.
   - `npm run lint` passes with zero warnings.
-  - `npm run test` passes (expected ~155 tests
-    total: 141 from spec 003 + ~14 new from spec
-    004).
+  - `npm run test` passes (163 tests total: 141
+    from spec 003 + 22 new from spec 004).
   - `tsc --noEmit` clean.
   - `npm run build` succeeds.
   - No new `any` introduced.
@@ -190,5 +189,36 @@ on top, T5–T6 wire it into the card and shelf, T7 polishes.
     equivalent.
   - Update this file: tick all `[x]`s, set Status
     to `Done`.
-- **Notes:** verification report goes here when
-  the task is closed out.
+- [x] **Notes:** verification report (2026-06-04):
+  - `npm run lint` — ✔ No ESLint warnings or errors
+  - `npm run test` — 163/163 passed across 12 files (141 from spec 003 + 22 new from spec 004: LocalStorageAdapter 5 new, useBookLibrary 6 new, DeleteBookDialog 4 new, BookCard 4 new, ShelfList 3 new)
+  - `npx tsc --noEmit` — clean
+  - `npm run build` — ✓ Compiled successfully, route `/` = 48.8 kB (up from 47 kB; +1.8 kB for the AlertDialog wrapper + DeleteBookDialog)
+  - `grep -rE ': any\b|as any\b' src/` — no matches
+  - `grep -rE '<(button|input|dialog|select|textarea)\b' src/ --include='*.tsx' --include='*.ts' | grep -v 'src/components/ui/' | grep -v 'src/components/BookForm'` — only `<input` in `src/components/ui/input.tsx` (shadcn wrapper, expected)
+  - `package.json` — `lucide-react@^1.17.0` and `radix-ui@^1.4.3` unchanged (no new deps)
+  - Spec §10 criteria coverage:
+    - Trash button on each card → T5
+    - `aria-label="Delete book"`, `data-testid="book-card-delete"` → T5
+    - `AlertDialog` titled `Delete "<title>"?` with author + "This can't be undone" → T4
+    - Cancel (outline) + Delete (destructive) buttons → T4
+    - Cancel closes dialog, no storage change → T4 (test "Cancel click closes the dialog and does not delete the book")
+    - Delete calls `deleteBook(id)`, closes dialog, shows `Deleted "<title>"` toast, card disappears → T4 (test "Delete click calls deleteBook, toasts, and closes on success")
+    - Filter counts recompute → existing `ShelfList` derives from props (T6 wiring)
+    - Deleting the last book shows `EmptyShelf` → existing `ShelfClient` behavior (no code change)
+    - Storage failure shows form error, dialog stays open, buttons re-enabled → T4 (test "shows form error and keeps dialog open on storage failure")
+    - Precedence rule (one dialog at a time) → T6 (two `fireEvent` tests)
+    - No raw HTML controls where shadcn has an equivalent → all dialogs via shadcn
+    - Lint and tests pass, no new `any` → T7
+    - No new npm dependencies → T7 (`@radix-ui/react-alert-dialog` via existing `radix-ui` meta)
+  - Manual QA pending (not run in this environment). To verify locally:
+    1. Shelf with multiple books → click trash on one → confirm dialog opens with title + author.
+    2. Click Cancel → dialog closes, no change.
+    3. Click Delete → dialog closes, card gone, filter counts recompute, toast.
+    4. Reload → book is still gone (persisted).
+    5. Delete the only book → `EmptyShelf` appears.
+    6. Storage failure path (DevTools: `localStorage.setItem = () => { throw new DOMException('QuotaExceededError'); }`) → form error visible, both buttons re-enabled, retry works.
+    7. Open edit dialog, then click trash on a card → edit dialog closes, delete dialog opens (precedence).
+    8. Open delete dialog, then click pencil on a card → delete dialog closes, edit dialog opens (precedence).
+    9. Press Escape in delete dialog → closes, no change.
+    10. Regression: Add + Edit flows still work.

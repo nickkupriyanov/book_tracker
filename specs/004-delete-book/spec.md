@@ -1,6 +1,6 @@
 # Spec: Delete Book
 
-> **Status:** Draft
+> **Status:** Approved
 > **Author:** nickkupriyanov
 > **Created:** 2026-06-04
 > **Spec ID:** 004-delete-book
