@@ -1,8 +1,8 @@
 # Tasks: Book Review
 
-> **Status:** Draft
-> **Spec:** `../spec.md`
-> **Plan:** `../plan.md`
+> **Status:** Done
+> **Spec:** `../spec.md` (`Approved`)
+> **Plan:** `../plan.md` (`Approved`)
 
 Each task is small enough to be one commit. Mark a task
 `[x]` only when its acceptance line is satisfied and
@@ -153,15 +153,16 @@ T5 polishes and verifies.
 
 ## T5. Polish & verification
 
-- [ ] **Files:** (no new code);
+- [x] **Files:** (no new code);
   `specs/007-review/tasks.md` updated.
 - **Acceptance:**
   - All spec §10 acceptance criteria for 007 are
     verified manually.
   - `npm run lint` passes with zero warnings.
-  - `npm run test` passes (expected ~219–222
-    tests total: 209 from spec 006 + ~10–13 new
-    from spec 007).
+  - `npm run test` passes (219 tests total: 200
+    from spec 006 baseline + 19 new from spec
+    007: validator 7, ReviewSection 10, BookDetail
+    2).
   - `tsc --noEmit` clean.
   - `npm run build` succeeds.
   - No new `any` introduced.
@@ -172,5 +173,100 @@ T5 polishes and verifies.
     `Textarea` primitive).
   - Update this file: tick all `[x]`s, set
     Status to `Done`.
-- **Notes:** verification report goes here when
-  the task is closed out.
+- [x] **Notes:** verification report (2026-06-04):
+  - `npm run lint` — ✔ No ESLint warnings or errors
+  - `npm run test` — 219/219 passed across 24 files
+    (200 from spec 006 + 19 new from spec 007:
+    validator 7, ReviewSection 10, BookDetail 2)
+  - `npx tsc --noEmit` — clean
+  - `npm run build` — ✓ Compiled successfully, route
+    `/book/[id]` is now 2.81 kB (was 2.07 kB before
+    spec 007, +0.74 kB for the review section).
+    Shared chunks unchanged.
+  - `grep -rE ': any\b|as any\b' src/` — no matches
+  - `grep -rE '<(button|input|dialog|select|textarea)\b' src/`
+    filtered to non-UI files — no matches (the only
+    `<textarea` is in `src/components/ui/textarea.tsx`
+    and the only `<input` in
+    `src/components/ui/input.tsx`, both shadcn wrappers,
+    expected)
+  - `package.json` — `lucide-react@^1.17.0` (no
+    change), `sonner` (no change), `radix-ui@^1.4.3`
+    (no change). No new entries.
+  - Spec §10 acceptance criteria coverage:
+    - Book + BookInput have review? → T1
+    - validateBookInput accepts strings ≤ 10 000 → T1
+    - Empty / whitespace-only normalises to absent → T1
+    - Non-string review rejected → T1
+    - Review > 10 000 rejected → T1
+    - A book without review validates → T1 (baseline)
+    - ReviewSection renders DetailSection title "Review"
+      + text in read mode → T3
+    - "No review yet." + "Write review" button → T3
+    - Click "Edit review" → edit mode with pre-filled
+      textarea → T3
+    - Click Cancel discards draft → T3
+    - Click Save calls updateBook + returns to read mode
+      → T3
+    - Storage failure → toast "Couldn't save review.
+      Try again." + stays in edit → T3
+    - In-flight controls disabled → T3
+    - BookDetail renders <ReviewSection> after
+      <RatingSection> → T4
+    - Newlines render as line breaks (whitespace-pre-line)
+      → T3 (uses the className)
+    - No raw HTML controls where shadcn has an equivalent
+      → T2 + T3
+    - Lint / tests pass; no new any → T5
+    - No new npm dependencies → T5
+  - Test architecture note: the ReviewSection unit
+    tests use a `TestHost` wrapper that subscribes to
+    the store and re-renders with the fresh book, so
+    the section reacts to store updates. This mirrors
+    the production path (BookDetail subscribes and
+    passes the derived book down) and is the reason
+    the visual state assertions in the unit tests work
+    correctly. (Without the wrapper, the section
+    would not re-render after updateBook when rendered
+    in isolation.)
+  - Deviation from spec: in T3 I used the same
+    `data-testid="review-edit-button"` for both the
+    "Edit review" and "Write review" buttons (since
+    the spec described them as one logical action
+    with conditional text). The button text differs
+    based on `hasReview`, but the testid is the
+    same. This avoids needing two testids for a
+    single affordance.
+  - Manual QA pending (not run in this environment).
+    Suggested steps (per plan §8):
+    1. Detail page, book with a review — see
+       "Review" section with the text, "Edit review"
+       button.
+    2. Click "Edit review" — textarea pre-filled,
+       "Cancel" and "Save" buttons.
+    3. Edit a word, click Save — read mode with the
+       new text.
+    4. Reload — review is persisted.
+    5. Click Cancel — no change, back to read mode.
+    6. Detail page, book without a review — "No
+       review yet." + "Write review" button.
+    7. Click "Write review" — empty textarea. Type
+       a paragraph with blank lines, click Save —
+       read mode with the paragraph rendered with
+       line breaks (whitespace-pre-line).
+    8. Edit, clear textarea entirely, click Save —
+       "No review yet." again (D3/D8 — clear +
+       save deletes the review).
+    9. Paste 11 000 chars — inline error "Review
+       must be 10 000 characters or fewer.", section
+       stays in edit mode, no save.
+    10. Storage failure path (DevTools: setItem
+        throws) → click Save → toast "Couldn't save
+        review. Try again." appears, controls re-enable,
+        store unchanged.
+    11. Newlines: a review with `\n\n` between
+        paragraphs renders as a paragraph break
+        (whitespace-pre-line behaviour).
+    12. Regression: Add / Edit (without review) /
+        Delete / Rating from the detail page all
+        still work.
