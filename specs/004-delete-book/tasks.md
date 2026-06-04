@@ -147,7 +147,7 @@ on top, T5–T6 wire it into the card and shelf, T7 polishes.
 
 ## T6. Wire ShelfList with `deletingBook` state + precedence
 
-- [ ] **Files:** `src/features/shelf-list/ShelfList.tsx`,
+- [x] **Files:** `src/features/shelf-list/ShelfList.tsx`,
   `tests/features/shelf-list/ShelfList.test.tsx`.
 - **Acceptance:**
   - New state: `deletingBook: Book | null`.
@@ -165,7 +165,7 @@ on top, T5–T6 wire it into the card and shelf, T7 polishes.
     the delete dialog, the precedence rule (edit
     dialog closes when trash is clicked, and vice
     versa) (≥ 2 tests).
-- **Notes:** no functional change to the existing
+- [x] **Notes:** no functional change to the existing
   edit flow beyond the clear-on-other-trigger logic.
   Pattern matches spec 003 T6 (`editingBook` wiring).
 

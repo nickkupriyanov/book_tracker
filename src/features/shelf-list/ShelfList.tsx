@@ -5,6 +5,7 @@ import { BookCard } from "./BookCard";
 import { ShelfFilters, type FilterValue } from "./ShelfFilters";
 import { EmptyFilterResult } from "./EmptyFilterResult";
 import { EditBookDialog } from "@/features/edit-book";
+import { DeleteBookDialog } from "@/features/delete-book";
 import type { Book } from "@/types/book";
 
 export interface ShelfListProps {
@@ -13,14 +14,21 @@ export interface ShelfListProps {
 
 /**
  * Orchestrator for the shelf grid. Holds local filter state
- * (per spec 002 D4 — not persisted) and the editing book state
- * (per spec 003 D4 — also local, also not persisted). Renders
- * <ShelfFilters> + (grid of <BookCard> | <EmptyFilterResult>) +
- * a single shared <EditBookDialog> when a card's Edit button fires.
+ * (per spec 002 D4 — not persisted), the editing book state
+ * (per spec 003 D4 — also local), and the deleting book state
+ * (per spec 004 D4 — also local). Renders <ShelfFilters> +
+ * (grid of <BookCard> | <EmptyFilterResult>) + a single shared
+ * <EditBookDialog> when a card's Edit button fires, or a single
+ * shared <DeleteBookDialog> when a card's Delete button fires.
+ *
+ * The two dialogs are mutually exclusive: clicking a card's pencil
+ * clears the deleting slot and vice versa, so the shelf never
+ * renders both at the same time (spec 004 D4 — precedence rule).
  */
 export function ShelfList({ books }: ShelfListProps) {
   const [filter, setFilter] = useState<FilterValue>("all");
   const [editingBook, setEditingBook] = useState<Book | null>(null);
+  const [deletingBook, setDeletingBook] = useState<Book | null>(null);
 
   const counts = useMemo<Record<FilterValue, number>>(
     () => ({
@@ -52,7 +60,14 @@ export function ShelfList({ books }: ShelfListProps) {
             <BookCard
               key={book.id}
               book={book}
-              onEdit={() => setEditingBook(book)}
+              onEdit={() => {
+                setDeletingBook(null);
+                setEditingBook(book);
+              }}
+              onDelete={() => {
+                setEditingBook(null);
+                setDeletingBook(book);
+              }}
             />
           ))}
         </div>
@@ -64,6 +79,16 @@ export function ShelfList({ books }: ShelfListProps) {
           open={true}
           onOpenChange={(open) => {
             if (!open) setEditingBook(null);
+          }}
+        />
+      )}
+      {deletingBook !== null && (
+        <DeleteBookDialog
+          key={deletingBook.id}
+          book={deletingBook}
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) setDeletingBook(null);
           }}
         />
       )}
