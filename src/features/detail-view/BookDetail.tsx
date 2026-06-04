@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useBookLibrary } from "@/state/book-library";
 import { EditBookDialog } from "@/features/edit-book";
 import { DeleteBookDialog } from "@/features/delete-book";
+import { RatingSection } from "@/features/rating";
 import { DetailHeader } from "./DetailHeader";
 import { DetailMeta } from "./DetailMeta";
 import { DetailNotFound } from "./DetailNotFound";
@@ -75,6 +76,7 @@ export function BookDetail({ bookId }: BookDetailProps) {
           onDelete={() => setDeletingBook(book)}
         />
         <DetailMeta book={book} />
+        <RatingSection book={book} />
       </div>
       <EditBookDialog
         book={editingBook ?? book}

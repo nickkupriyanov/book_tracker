@@ -105,4 +105,64 @@ describe("BookDetail", () => {
     });
     expect(mockSuccess).toHaveBeenCalledWith('Deleted "Piranesi"');
   });
+
+  describe("rating section (spec 006)", () => {
+    it("renders the Rating section visible with 5 empty stars for an unrated book", () => {
+      render(<BookDetail bookId={sampleBook.id} />);
+      expect(
+        screen.getByRole("heading", { level: 2, name: "Rating" })
+      ).toBeInTheDocument();
+      // All 5 stars are present and empty (fill-none).
+      for (const n of [1, 2, 3, 4, 5]) {
+        const icon = screen
+          .getByTestId(`rating-star-${n}`)
+          .querySelector("svg");
+        expect(icon).toHaveClass("fill-none");
+      }
+    });
+
+    it("reflects the current rating in the stars for a rated book", async () => {
+      const rated = await useBookLibrary.getState().addBook({
+        title: "Already rated",
+        author: "Test",
+        status: "read",
+        tags: [],
+        rating: 4,
+      });
+      render(<BookDetail bookId={rated.id} />);
+      // Stars 1..4 filled, star 5 empty.
+      for (const n of [1, 2, 3, 4]) {
+        const icon = screen
+          .getByTestId(`rating-star-${n}`)
+          .querySelector("svg");
+        expect(icon).toHaveClass("fill-current");
+      }
+      const star5 = screen
+        .getByTestId("rating-star-5")
+        .querySelector("svg");
+      expect(star5).toHaveClass("fill-none");
+    });
+
+    it("clicking a star on the section updates the page", async () => {
+      const user = userEvent.setup();
+      render(<BookDetail bookId={sampleBook.id} />);
+
+      // Click star 3 on the page.
+      await user.click(screen.getByTestId("rating-star-3"));
+
+      // The page re-renders with 3 filled, 2 empty.
+      await waitFor(() => {
+        const star3 = screen
+          .getByTestId("rating-star-3")
+          .querySelector("svg");
+        expect(star3).toHaveClass("fill-current");
+      });
+      for (const n of [4, 5]) {
+        const icon = screen
+          .getByTestId(`rating-star-${n}`)
+          .querySelector("svg");
+        expect(icon).toHaveClass("fill-none");
+      }
+    });
+  });
 });

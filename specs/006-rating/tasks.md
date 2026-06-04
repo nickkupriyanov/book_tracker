@@ -141,7 +141,7 @@ section into the page; T6 polishes and verifies.
 
 ## T5. `BookDetail` renders `<RatingSection>`
 
-- [ ] **Files:**
+- [x] **Files:**
   `src/features/detail-view/BookDetail.tsx` (modified),
   `tests/features/detail-view/BookDetail.test.tsx`
   (modified).
@@ -159,7 +159,7 @@ section into the page; T6 polishes and verifies.
     is a BookDetail integration of the section's
     `onChange` → `updateBook` → page re-renders flow).
     ≥ 1 test.
-- **Notes:** the existing BookDetail tests for
+- [x] **Notes:** the existing BookDetail tests for
   loading / not-found / found / edit / delete still
   pass. The new test is a small extension of the
   "found" test, not a brand-new file.
