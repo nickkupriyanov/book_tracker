@@ -72,7 +72,7 @@ T5 polishes and verifies.
 
 ## T3. `ReviewSection` (smart, read/edit mode)
 
-- [ ] **Files:**
+- [x] **Files:**
   `src/features/review/ReviewSection.tsx` (new),
   `src/features/review/index.ts` (new — barrel),
   `tests/features/review/ReviewSection.test.tsx`
@@ -120,7 +120,7 @@ T5 polishes and verifies.
     stays in edit; empty draft + save → `updateBook`
     called with `review: undefined`; in-flight
     controls disabled. ≥ 7 tests.
-- **Notes:** the smart pattern matches
+- [x] **Notes:** the smart pattern matches
   `RatingSection` (spec 006 T3) and
   `EditBookDialog` / `DeleteBookDialog`. The
   detail page just drops the section in.
