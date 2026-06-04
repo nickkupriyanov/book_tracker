@@ -52,7 +52,7 @@ T5 polishes and verifies.
 
 ## T2. shadcn `Textarea` primitive
 
-- [ ] **Files:**
+- [x] **Files:**
   `src/components/ui/textarea.tsx` (new).
 - **Acceptance:**
   - Exports a `Textarea` component that renders a
@@ -65,7 +65,7 @@ T5 polishes and verifies.
   - No new tests — the wrapper is a thin pass-through
     to the native `<textarea>`, like `input.tsx`,
     `dialog.tsx`, etc.
-- **Notes:** copy the canonical shadcn boilerplate
+- [x] **Notes:** copy the canonical shadcn boilerplate
   with minor adjustments to match the project's
   existing `input.tsx` (consistent focus, invalid,
   disabled, placeholder styling). No new npm deps.
