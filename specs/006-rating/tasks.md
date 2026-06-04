@@ -1,8 +1,8 @@
 # Tasks: Book Rating
 
-> **Status:** Draft
-> **Spec:** `../spec.md`
-> **Plan:** `../plan.md`
+> **Status:** Done
+> **Spec:** `../spec.md` (`Approved`)
+> **Plan:** `../plan.md` (`Approved`)
 
 Each task is small enough to be one commit. Mark a task
 `[x]` only when its acceptance line is satisfied and
@@ -166,15 +166,14 @@ section into the page; T6 polishes and verifies.
 
 ## T6. Polish & verification
 
-- [ ] **Files:** (no new code);
+- [x] **Files:** (no new code);
   `specs/006-rating/tasks.md` updated.
 - **Acceptance:**
   - All spec §10 acceptance criteria for 006 are
     verified manually.
   - `npm run lint` passes with zero warnings.
-  - `npm run test` passes (expected ~199–201 tests
-    total: 184 from spec 005 + ~15–17 new from
-    spec 006).
+  - `npm run test` passes (209 tests total: 184 from
+    spec 005 + 25 new from spec 006).
   - `tsc --noEmit` clean.
   - `npm run build` succeeds.
   - No new `any` introduced.
@@ -185,5 +184,78 @@ section into the page; T6 polishes and verifies.
     equivalent.
   - Update this file: tick all `[x]`s, set Status
     to `Done`.
-- **Notes:** verification report goes here when
-  the task is closed out.
+- [x] **Notes:** verification report (2026-06-04):
+  - `npm run lint` — ✔ No ESLint warnings or errors
+  - `npm run test` — 209/209 passed across 21 files
+    (184 from spec 005 + 25 new from spec 006:
+    validator 9, RatingStars 5, RatingSection 4,
+    BookForm 4, BookDetail 3)
+  - `npx tsc --noEmit` — clean
+  - `npm run build` — ✓ Compiled successfully, route
+    `/book/[id]` is now 2.07 kB (was 1.54 kB before
+    spec 006, +0.53 kB for the rating section).
+    Shared chunks unchanged.
+  - `grep -rE ': any\b|as any\b' src/` — no matches
+  - `grep -rE '<(button|input|dialog|select|textarea)\b' src/`
+    filtered to non-UI files — no matches (the only
+    `<input` is in `src/components/ui/input.tsx`, the
+    shadcn wrapper, expected)
+  - `package.json` — `lucide-react@^1.17.0` (Star
+    icon already present) and `sonner` (already a
+    dependency from specs 003/004) — no new entries.
+  - Spec §10 acceptance criteria coverage:
+    - Book + BookInput have rating? → T1
+    - validateBookInput accepts 1..5 / rejects / etc.
+      → T1 (9 tests)
+    - A book without rating validates → T1
+    - BookForm renders Rating Select with 6 options
+      → T4
+    - Submitting the form with a value passes
+      rating through → T4
+    - Submitting with "Not rated" omits rating → T4
+    - RatingStars fills 1..value, leaves rest empty
+      → T2
+    - Click invokes onChange(N) → T2
+    - Disabled state makes all buttons
+      non-interactive → T2
+    - RatingSection renders DetailSection title
+      "Rating" + smart updateBook → T3
+    - BookDetail renders <RatingSection> → T5
+    - Unrated book shows 5 empty stars (not hidden)
+      → T5
+    - Storage failure shows toast "Couldn't save
+      rating. Try again." and re-enables stars → T3
+    - No raw HTML controls where shadcn has an
+      equivalent → confirmed (only shadcn primitives
+      used)
+    - Lint / tests pass; no new any → T6
+    - No new npm dependencies → T6 (no new entries)
+  - Deviation from spec §5.3 noted in T4: Radix
+    `Select` reserves `value=""` for "no selection /
+    show placeholder"; we use `"none"` as a sentinel
+    for the "Not rated" SelectItem and translate
+    to/from `""` in the form state. Form-state
+    semantics (and the spec's user-visible UX) are
+    unchanged.
+  - Manual QA pending (not run in this environment).
+    Suggested steps (per plan §8):
+    1. Detail page, unrated book — see "Rating"
+       section with 5 empty stars.
+    2. Click star 4 — page re-renders with 4 filled
+       stars (no toast on success).
+    3. Reload — rating is persisted.
+    4. Edit dialog, Rating Select shows the current
+       rating (or "Not rated").
+    5. Edit dialog, change rating, save — toast
+       "Updated", detail page reflects the new rating.
+    6. Edit dialog, pick "Not rated", save — detail
+       page shows 5 empty stars.
+    7. Add a new book with rating "3 stars" — appears
+       on the shelf (no card change), detail page shows
+       3 filled stars.
+    8. Storage failure path (DevTools: setItem
+       throws) → click a star → toast "Couldn't save
+       rating. Try again." appears, stars re-enable,
+       store unchanged.
+    9. Regression: Add / Edit (without rating) /
+       Delete still work.
