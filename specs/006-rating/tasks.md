@@ -46,7 +46,7 @@ section into the page; T6 polishes and verifies.
 
 ## T2. `RatingStars` (presentational star row)
 
-- [ ] **Files:**
+- [x] **Files:**
   `src/features/rating/RatingStars.tsx` (new),
   `tests/features/rating/RatingStars.test.tsx` (new).
 - **Acceptance:**
@@ -69,7 +69,7 @@ section into the page; T6 polishes and verifies.
     click invokes `onChange` with the right number,
     disabled state makes the buttons non-interactive.
     ≥ 3 tests.
-- **Notes:** mirror the visual language of the existing
+- [x] **Notes:** mirror the visual language of the existing
   icon buttons in the project (`size-4` for the
   Pencil/Trash2 in `BookCard`). Two-tone via Tailwind
   classes, no SVG swap.
