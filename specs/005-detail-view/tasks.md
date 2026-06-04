@@ -74,7 +74,7 @@ brings it all together, T7 polishes and verifies.
 
 ## T3. `DetailMeta` (cover, title, author, status, tags, date)
 
-- [ ] **Files:**
+- [x] **Files:**
   `src/features/detail-view/DetailMeta.tsx` (new),
   `tests/features/detail-view/DetailMeta.test.tsx` (new).
 - **Acceptance:**
@@ -94,7 +94,7 @@ brings it all together, T7 polishes and verifies.
     data, fallback when `coverUrl` is missing, all tags
     shown (no truncation), date is formatted en-GB
     long (e.g. "1 June 2026") (≥ 4 tests).
-- **Notes:** imports `StatusPill` from
+- [x] **Notes:** imports `StatusPill` from
   `@/features/shelf-list/StatusPill`. The date format is
   asserted via a known ISO input → known formatted output
   pair (e.g. `"2026-06-01T00:00:00.000Z"` →
