@@ -59,7 +59,7 @@ on top, T5–T6 wire it into the card and shelf, T7 polishes.
 
 ## T3. Add `AlertDialog` UI primitive
 
-- [ ] **Files:** `src/components/ui/alert-dialog.tsx` (new).
+- [x] **Files:** `src/components/ui/alert-dialog.tsx` (new).
 - **Acceptance:**
   - Exports: `AlertDialog`, `AlertDialogPortal`,
     `AlertDialogOverlay`, `AlertDialogTrigger`,
