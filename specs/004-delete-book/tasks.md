@@ -37,7 +37,7 @@ on top, T5–T6 wire it into the card and shelf, T7 polishes.
 
 ## T2. useBookLibrary: add `deleteBook` action (TDD)
 
-- [ ] **Files:** `src/state/book-library.ts`,
+- [x] **Files:** `src/state/book-library.ts`,
   `tests/state/useBookLibrary.test.ts`.
 - **Acceptance:**
   - Store exposes
@@ -54,7 +54,7 @@ on top, T5–T6 wire it into the card and shelf, T7 polishes.
   - The `makeFakeAdapter` helper in the test file is
     extended with a default `deleteBook` mock so existing
     tests stay green.
-- **Notes:** mirror the existing `updateBook` test style
+- [x] **Notes:** mirror the existing `updateBook` test style
   in `tests/state/useBookLibrary.test.ts`.
 
 ## T3. Add `AlertDialog` UI primitive

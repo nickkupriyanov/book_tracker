@@ -27,6 +27,13 @@ export interface BookLibraryState {
    * or if no book with the given `id` exists.
    */
   updateBook(id: string, input: BookInput): Promise<Book>;
+  /**
+   * Remove a book by `id` via the adapter. Other books and ordering
+   * are preserved.
+   * @throws if {@link init} has not been called, if the adapter fails,
+   * or if no book with the given `id` exists.
+   */
+  deleteBook(id: string): Promise<void>;
 }
 
 /**
@@ -93,6 +100,25 @@ export const useBookLibrary = create<BookLibraryState>((set) => ({
         status: "ready",
       }));
       return updated;
+    } catch (err) {
+      set({ status: "error" });
+      throw err;
+    }
+  },
+  deleteBook: async (id) => {
+    if (adapter === null) {
+      throw new Error("useBookLibrary: deleteBook called before init()");
+    }
+    try {
+      await adapter.deleteBook(id);
+      // No re-sort needed: removing an entry doesn't change the relative
+      // order of the rest, and the store's sort by `createdAt` desc is
+      // already satisfied by `state.books` (additions are prepended,
+      // updates preserve order).
+      set((state) => ({
+        books: state.books.filter((b) => b.id !== id),
+        status: "ready",
+      }));
     } catch (err) {
       set({ status: "error" });
       throw err;
