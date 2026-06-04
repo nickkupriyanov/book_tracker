@@ -107,7 +107,7 @@ section into the page; T6 polishes and verifies.
 
 ## T4. `BookForm` rating field
 
-- [ ] **Files:**
+- [x] **Files:**
   `src/components/BookForm.tsx` (modified),
   `tests/components/BookForm.test.tsx` (modified).
 - **Acceptance:**
@@ -130,10 +130,14 @@ section into the page; T6 polishes and verifies.
     selection; selecting "Not rated" and submitting
     produces an `onSubmit(input)` without a `rating`
     key. ≥ 2 tests.
-- **Notes:** mirror the existing `coverUrl` pattern
+- [x] **Notes:** mirror the existing `coverUrl` pattern
   (string state in form, optional in `BookInput`).
   The validator catches any value the Select doesn't
   emit (e.g., `"3.5"` if a hostile form injected it).
+  Radix `Select` reserves `value=""` for "no selection /
+  show placeholder"; we use `"none"` as a sentinel for
+  the "Not rated" SelectItem and translate to/from `""`
+  in the form state.
 
 ## T5. `BookDetail` renders `<RatingSection>`
 

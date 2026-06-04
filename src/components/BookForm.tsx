@@ -42,6 +42,9 @@ export function BookForm({
   const [title, setTitle] = useState(initialValues.title);
   const [author, setAuthor] = useState(initialValues.author);
   const [status, setStatus] = useState<ReadingStatus>(initialValues.status);
+  const [rating, setRating] = useState<string>(
+    initialValues.rating?.toString() ?? ""
+  );
   const [coverUrl, setCoverUrl] = useState(initialValues.coverUrl ?? "");
   const [tags, setTags] = useState(initialValues.tags.join(", "));
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -65,6 +68,7 @@ export function BookForm({
       author,
       status,
       ...(coverUrl ? { coverUrl } : {}),
+      ...(rating ? { rating: Number(rating) as 1 | 2 | 3 | 4 | 5 } : {}),
       tags: [tags],
     };
 
@@ -141,6 +145,32 @@ export function BookForm({
             <SelectItem value="want">Want to read</SelectItem>
             <SelectItem value="reading">Reading</SelectItem>
             <SelectItem value="read">Read</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="book-form-rating">Rating</Label>
+        <Select
+          value={rating === "" ? "none" : rating}
+          onValueChange={(v) => setRating(v === "none" ? "" : v)}
+        >
+          <SelectTrigger
+            id="book-form-rating"
+            data-testid="book-form-rating-trigger"
+          >
+            <SelectValue placeholder="Not rated" />
+          </SelectTrigger>
+          <SelectContent>
+            {/* Radix reserves value="" for "no selection / show
+                placeholder", so we use "none" as a sentinel and
+                translate to/from "" in the form state above. */}
+            <SelectItem value="none">Not rated</SelectItem>
+            <SelectItem value="1">1 star</SelectItem>
+            <SelectItem value="2">2 stars</SelectItem>
+            <SelectItem value="3">3 stars</SelectItem>
+            <SelectItem value="4">4 stars</SelectItem>
+            <SelectItem value="5">5 stars</SelectItem>
           </SelectContent>
         </Select>
       </div>
