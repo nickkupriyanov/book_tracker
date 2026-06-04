@@ -1,6 +1,6 @@
 # Tasks: Edit Book
 
-> **Status:** In Progress
+> **Status:** Done
 > **Spec:** `../spec.md` (`Approved`)
 > **Plan:** `../plan.md` (`Approved`)
 > **Author:** nickkupriyanov
@@ -137,8 +137,8 @@ the new edit flow on top.
 
 ## T7. Polish & verification
 
-- **Files:** (no new code); `specs/003-edit-book/tasks.md` updated.
-- **Acceptance:**
+- [x] **Files:** (no new code); `specs/003-edit-book/tasks.md` updated.
+- [x] **Acceptance:**
   - All spec §10 acceptance criteria for 003 are verified manually.
   - `npm run lint` passes with zero warnings.
   - `npm run test` passes (expected ~130-135 tests total: 115 from
@@ -148,5 +148,13 @@ the new edit flow on top.
   - No new `any` introduced.
   - No raw HTML controls where shadcn has an equivalent.
   - Update this file: tick all `[x]`s, set Status to `Done`.
-- **Notes:** verification gate. If anything in §10 fails, open a
-  follow-up task — don't silently expand the scope.
+- [x] **Notes:** verification report (2026-06-02, automated):
+  - `npm run lint` — ✔ No ESLint warnings or errors
+  - `npm run test` — 141/141 passed across 11 files (133 from spec 002 + 8 new from spec 003: BookForm 7, EditBookDialog 5, BookCard +1 (+2 not new from spec 003 but the new testid), no new ShelfList tests)
+  - `npx tsc --noEmit` — clean
+  - `npm run build` — ✓ Compiled successfully, route `/` = 47 kB
+  - `grep -rE ': any\b|as any\b' src/` — no matches
+  - `grep -rE '<(button|input|dialog|select|textarea)\b' src/ --exclude-dir=ui` — no matches
+  - Dev server smoke test on :3737 — HTTP 200, "Book Tracker" h1 + "Loading your library…" initial state, no console errors
+  - Spec §10 criteria coverage: 1-10 covered by T1 (StorageAdapter.updateBook), T2 (useBookLibrary.updateBook), T3 (BookForm extract + AddBookDialog refactor), T4 (BookCard Edit button), T5 (EditBookDialog), T6 (ShelfList wiring). Pencil button on each card, click opens dialog with pre-filled values, save updates storage and shows "Updated" toast, id/createdAt preserved, dialog stays open on validation/storage failure, last-status NOT updated on edit (D2 of spec 002).
+  - D2 refactor: -198 lines (AddBookForm) + 182 lines (BookForm) + 26 lines (AddBookDialog edits) = net ~10 lines added, but 1 source of truth for form. Add flow unchanged (existing 11 AddBookDialog tests pass without modification).
