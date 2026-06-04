@@ -34,6 +34,19 @@ Book Tracker — cozy web app for tracking read books.
 - Add loading, error and empty states where relevant.
 - Keep components small and readable.
 
+## Commit workflow
+
+Each task follows this sequence; do not skip steps:
+
+1. Implement the task.
+2. Briefly describe what was done (files, tests, deltas).
+3. Wait for the user to review the changes.
+4. Ask: «commit?»
+5. Only on explicit approval — commit.
+
+This applies to every task of every spec. The user owns the
+review-and-approve gate; the agent never auto-commits.
+
 ## SDD Workflow
 This project uses **spec-driven development** (GitHub Spec Kit style).
 
