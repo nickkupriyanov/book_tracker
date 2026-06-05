@@ -1,8 +1,9 @@
 # Spec: Book Quotes
 
-> **Status:** Draft
+> **Status:** Implemented
 > **Author:** —
 > **Created:** 2026-06-04
+> **Implemented:** 2026-06-05
 > **Spec ID:** 009-quotes
 > **Constitution version:** see `.specify/memory/constitution.md`
 > **Predecessors:** spec 005 (detail-view), spec 007 (review)
@@ -306,3 +307,15 @@ sessions 2026-06-04:
   `onDelete(quote)` callbacks.
 - **D10.** Hard cap of 200 quotes per book (soft for MVP; revisitable
   when the backend arrives).
+- **D11. (Post-implementation amendment, 2026-06-05.)** Add vs Edit
+  dialog state is held as two slots in `BookDetail`:
+  `editingQuote: QuoteInput | null` (Edit payload) and
+  `isAddingQuote: boolean` (Add flag). The plan's original single
+  `editingQuote: QuoteInput | null` was insufficient because the
+  empty-object Add payload (`{ text: "", page: undefined, note:
+  undefined }`) is indistinguishable from a no-op Edit from the
+  dialog's perspective (`QuoteDialog` decides Add vs Edit from
+  `initialValue !== undefined`). The two slots clear together on
+  `onOpenChange(false)`. Net effect at the section boundary is
+  identical to the original plan; only the internal state shape
+  changed.
