@@ -1,7 +1,7 @@
 # Plan: Rich-text Review
 
-> **Status:** Draft
-> **Spec:** `../spec.md` (Draft)
+> **Status:** Approved
+> **Spec:** `../spec.md` (`Implemented`)
 > **Author:** —
 > **Created:** 2026-06-05
 

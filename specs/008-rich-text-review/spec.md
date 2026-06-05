@@ -1,9 +1,10 @@
 # Spec: Rich-text Review
 
-> **Status:** Draft
+> **Status:** Implemented
 > **Author:** —
 > **Created:** 2026-06-04 (placeholder)
 > **Updated:** 2026-06-05 (D1–D7 resolved, status: Draft)
+> **Implemented:** 2026-06-05
 > **Spec ID:** 008-rich-text-review
 > **Constitution version:** see `.specify/memory/constitution.md`
 > **Predecessors:** spec 007 (review), spec 009 (quotes — D-P10 deferred here)
@@ -297,31 +298,31 @@ Write path: `updateBook` serialises the new discriminated shape.
 
 A reviewer can tick each box without asking a clarifying question.
 
-- [ ] `npm run lint && npm run test` are green.
-- [ ] `@tiptap/*` packages installed and MIT (verified in `package.json`
+- [x] `npm run lint && npm run test` are green.
+- [x] `@tiptap/*` packages installed and MIT (verified in `package.json`
       `license` field — no field, just MIT in the package itself is
       sufficient; pinned via `package.json` versions).
-- [ ] `Book.review` accepts both `string` (legacy) and `Review`
+- [x] `Book.review` accepts both `string` (legacy) and `Review`
       (discriminated). Validator normalises.
-- [ ] `validateReview` is TDD-covered: legacy string → discriminated
+- [x] `validateReview` is TDD-covered: legacy string → discriminated
       plain, plain, rich-valid, rich-malformed, rich-empty → undefined.
-- [ ] `<ReviewEditor />` opens a TipTap editor with the toolbar (B / I
+- [x] `<ReviewEditor />` opens a TipTap editor with the toolbar (B / I
       / U / S / Hl / • List / 1. List / ❝ Quote / 🔗 Link).
-- [ ] Toolbar buttons are shadcn `Toggle` / `Button` (D4), not
+- [x] Toolbar buttons are shadcn `Toggle` / `Button` (D4), not
       `BubbleMenu` / `FloatingMenu`.
-- [ ] All in-scope formatting (FR-2..FR-5) works.
-- [ ] Save persists `{ format: "rich", body: <JSON> }`.
-- [ ] Legacy reviews render as paragraphs and migrate on first save.
-- [ ] Read mode uses the custom walker; no TipTap editor mounts in
+- [x] All in-scope formatting (FR-2..FR-5) works.
+- [x] Save persists `{ format: "rich", body: <JSON> }`.
+- [x] Legacy reviews render as paragraphs and migrate on first save.
+- [x] Read mode uses the custom walker; no TipTap editor mounts in
       read-only.
-- [ ] Walker unit tests cover all known nodes/marks.
-- [ ] Link scheme allow-list is unit-tested (`sanitize.test.ts`).
-- [ ] Save failure → toast, editor stays open, content preserved.
-- [ ] No new `any` introduced.
-- [ ] `tsc --noEmit` clean.
-- [ ] `npm run build` succeeds. Bundle delta from `@tiptap/*` is
-      recorded in the T7 commit message.
-- [ ] Constitution §4: no dependencies beyond the `@tiptap/*` MIT stack
+- [x] Walker unit tests cover all known nodes/marks.
+- [x] Link scheme allow-list is unit-tested (`sanitize.test.ts`).
+- [x] Save failure → toast, editor stays open, content preserved.
+- [x] No new `any` introduced.
+- [x] `tsc --noEmit` clean.
+- [x] `npm run build` succeeds. Bundle delta from `@tiptap/*` is
+      recorded in the T8 commit message.
+- [x] Constitution §4: no dependencies beyond the `@tiptap/*` MIT stack
       + DOMPurify NOT added (we don't render HTML).
 
 ## 12. Open questions
