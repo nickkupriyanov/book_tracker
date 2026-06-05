@@ -193,4 +193,78 @@ describe("BookDetail", () => {
       ).toHaveTextContent("Edit review");
     });
   });
+
+  describe("quotes section (spec 009)", () => {
+    it("renders the Quotes section below the Review section", () => {
+      render(<BookDetail bookId={sampleBook.id} />);
+      const review = screen.getByRole("heading", { level: 2, name: "Review" });
+      const quotes = screen.getByRole("heading", {
+        level: 2,
+        name: "Quotes",
+      });
+      // Section headings must both be present and appear in the
+      // expected order in the DOM.
+      expect(review).toBeInTheDocument();
+      expect(quotes).toBeInTheDocument();
+      expect(
+        review.compareDocumentPosition(quotes) &
+          Node.DOCUMENT_POSITION_FOLLOWING
+      ).toBeTruthy();
+    });
+
+    it("shows the empty state copy for a book with no quotes", () => {
+      render(<BookDetail bookId={sampleBook.id} />);
+      expect(screen.getByTestId("quotes-empty")).toHaveTextContent(
+        /no quotes yet/i
+      );
+    });
+
+    it("clicking the section's + Add quote button opens the QuoteDialog", async () => {
+      const user = userEvent.setup();
+      render(<BookDetail bookId={sampleBook.id} />);
+
+      await user.click(screen.getByTestId("add-quote-button"));
+
+      await screen.findByRole("heading", { name: "Add quote" });
+      // Form is empty in add mode. Reading .value directly (instead
+      // of toHaveValue) avoids the jsdom quirk with controlled
+      // inputs whose value is set to the empty string by React.
+      const textArea = screen.getByLabelText("Quote") as HTMLTextAreaElement;
+      expect(textArea.value).toBe("");
+      const pageInput = screen.getByLabelText(
+        "Page (optional)"
+      ) as HTMLInputElement;
+      expect(pageInput.value).toBe("");
+      const noteArea = screen.getByLabelText(
+        "Note (optional)"
+      ) as HTMLTextAreaElement;
+      expect(noteArea.value).toBe("");
+    });
+
+    it("renders existing quotes (sorted newest first) for a book with quotes", async () => {
+      // Add two quotes with non-sorted createdAt timestamps.
+      const oldQuote = {
+        id: "q-old",
+        text: "Older passage.",
+        page: 10,
+        createdAt: "2026-06-01T00:00:00.000Z",
+      };
+      const newQuote = {
+        id: "q-new",
+        text: "Newer passage.",
+        page: 20,
+        createdAt: "2026-06-05T00:00:00.000Z",
+      };
+      await useBookLibrary.getState().updateBook(sampleBook.id, {
+        ...sampleBook,
+        quotes: [oldQuote, newQuote],
+      });
+      render(<BookDetail bookId={sampleBook.id} />);
+
+      const cards = screen.getAllByTestId("quote-card");
+      expect(cards).toHaveLength(2);
+      expect(cards[0]!.textContent).toContain("Newer passage.");
+      expect(cards[1]!.textContent).toContain("Older passage.");
+    });
+  });
 });
