@@ -1,5 +1,5 @@
 import type { BookInput, ReadingStatus } from "@/types/book";
-import type { Quote } from "@/types/quote";
+import type { Quote, QuoteInput } from "@/types/quote";
 
 /**
  * Discriminated result type for validators.
@@ -253,10 +253,22 @@ function validateQuoteNote(
   return trimmed;
 }
 
-function validateQuote(
+/**
+ * Validates a single id-less quote payload (the form shape returned by
+ * the Add / Edit Quote dialog). Returns the normalised {@link QuoteInput}
+ * on success, or `undefined` on failure (errors pushed to `errors`).
+ *
+ * Unlike {@link validateBookQuote}, this helper does not require `id`
+ * and `createdAt` — those are added by the storage layer (or by
+ * `BookDetail.handleSaveQuote`) once the form payload is committed.
+ *
+ * Public so the dialog can validate the user's draft before handing it
+ * off to `onSave`. Pure, `unknown`-in-narrowed-out: no React, no DOM.
+ */
+export function validateQuote(
   raw: unknown,
   errors: Record<string, string>
-): Quote | undefined {
+): QuoteInput | undefined {
   if (!isObject(raw)) {
     errors._quote = "Invalid quote shape.";
     return undefined;
@@ -264,15 +276,35 @@ function validateQuote(
   const text = validateQuoteText(raw["text"], errors);
   const page = validateQuotePage(raw["page"], errors);
   const note = validateQuoteNote(raw["note"], errors);
-  // `id` and `createdAt` are storage-side; we trust whatever's there
-  // and pass it through unchanged. The `Quote` type requires both —
-  // we copy them out of the raw input and re-attach on success.
-  const id = raw["id"];
-  const createdAt = raw["createdAt"];
   if (Object.keys(errors).length > 0) {
     // Any of text / page / note pushed an error — the whole quote is
     // rejected. The error messages are already on the map; we just
     // need to skip building the value object.
+    return undefined;
+  }
+  return {
+    text: text as string,
+    ...(page !== undefined ? { page } : {}),
+    ...(note !== undefined ? { note } : {}),
+  };
+}
+
+function validateBookQuote(
+  raw: unknown,
+  errors: Record<string, string>
+): Quote | undefined {
+  if (!isObject(raw)) {
+    errors._quote = "Invalid quote shape.";
+    return undefined;
+  }
+  // `id` and `createdAt` are storage-side; we trust whatever's there
+  // and pass it through unchanged. The `Quote` type requires both.
+  const id = raw["id"];
+  const createdAt = raw["createdAt"];
+  const text = validateQuoteText(raw["text"], errors);
+  const page = validateQuotePage(raw["page"], errors);
+  const note = validateQuoteNote(raw["note"], errors);
+  if (Object.keys(errors).length > 0) {
     return undefined;
   }
   if (typeof id !== "string" || typeof createdAt !== "string") {
@@ -306,7 +338,7 @@ function validateQuotes(
   const out: Quote[] = [];
   for (let i = 0; i < raw.length; i++) {
     const itemErrors: Record<string, string> = {};
-    const value = validateQuote(raw[i], itemErrors);
+    const value = validateBookQuote(raw[i], itemErrors);
     if (value === undefined) {
       // Forward the per-item errors under a prefixed key so the UI
       // can show them next to the right card.
