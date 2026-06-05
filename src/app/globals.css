@@ -34,3 +34,71 @@ body {
   background-color: var(--color-background);
   color: var(--color-foreground);
 }
+
+/* TipTap editor (.tiptap / .ProseMirror) caret + focus + empty placeholder.
+   Tailwind v4 preflight doesn't set caret-color on contenteditables. */
+.tiptap {
+  caret-color: currentColor;
+  color: var(--color-foreground);
+}
+.tiptap:focus,
+.tiptap:focus-visible {
+  outline: none;
+}
+.tiptap p.is-editor-empty:first-child::before {
+  color: var(--color-muted-foreground);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Rich text rendering — used by walker (read side, .review-prose) and by
+   the editor (.tiptap). Tailwind v4 preflight resets list-style / blockquote
+   style / link underline, so we add back the readable defaults here. */
+.review-prose ul,
+.tiptap ul {
+  list-style: disc;
+  padding-inline-start: 1.5rem;
+  margin-block: 0.5rem;
+}
+.review-prose ol,
+.tiptap ol {
+  list-style: decimal;
+  padding-inline-start: 1.5rem;
+  margin-block: 0.5rem;
+}
+.review-prose li,
+.tiptap li {
+  margin-block: 0.25rem;
+}
+.review-prose blockquote,
+.tiptap blockquote {
+  border-left: 3px solid var(--color-border);
+  padding-left: 0.75rem;
+  font-style: italic;
+  color: var(--color-muted-foreground);
+  margin-block: 0.5rem;
+}
+.review-prose a,
+.tiptap a {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.review-prose a:hover,
+.tiptap a:hover {
+  text-decoration-thickness: 2px;
+}
+.review-prose p,
+.tiptap p {
+  margin-block: 0.5rem;
+}
+.review-prose p:first-child,
+.tiptap p:first-child {
+  margin-top: 0;
+}
+.review-prose p:last-child,
+.tiptap p:last-child {
+  margin-bottom: 0;
+}

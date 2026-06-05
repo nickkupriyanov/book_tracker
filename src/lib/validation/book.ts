@@ -1,5 +1,7 @@
 import type { BookInput, ReadingStatus } from "@/types/book";
 import type { Quote, QuoteInput } from "@/types/quote";
+import type { Review } from "@/types/review";
+import type { JSONContent } from "@tiptap/core";
 
 /**
  * Discriminated result type for validators.
@@ -170,26 +172,53 @@ function validateRating(
   return raw as 1 | 2 | 3 | 4 | 5;
 }
 
-function validateReview(
+function isProseMirrorDoc(value: unknown): value is JSONContent {
+  if (!isObject(value)) return false;
+  if (value["type"] !== "doc") return false;
+  if (!Array.isArray(value["content"])) return false;
+  return true;
+}
+
+export function validateReview(
   raw: unknown,
   errors: Record<string, string>
-): string | undefined {
-  if (raw === undefined || raw === null) {
+): Review | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  if (typeof raw === "string") {
+    const trimmed = raw.trim();
+    if (trimmed.length === 0) return undefined;
+    if (trimmed.length > REVIEW_MAX) {
+      errors.review = `Review must be ${REVIEW_MAX} characters or fewer.`;
+      return undefined;
+    }
+    return { format: "plain", body: trimmed };
+  }
+  if (!isObject(raw)) {
+    errors.review = "Review shape is invalid.";
     return undefined;
   }
-  if (typeof raw !== "string") {
-    errors.review = "Review must be text.";
-    return undefined;
+  if (raw["format"] === "plain") {
+    if (typeof raw["body"] !== "string") {
+      errors.review = "Plain review body must be a string.";
+      return undefined;
+    }
+    const trimmed = raw["body"].trim();
+    if (trimmed.length === 0) return undefined;
+    if (trimmed.length > REVIEW_MAX) {
+      errors.review = `Review must be ${REVIEW_MAX} characters or fewer.`;
+      return undefined;
+    }
+    return { format: "plain", body: trimmed };
   }
-  const trimmed = raw.trim();
-  if (trimmed.length === 0) {
-    return undefined;
+  if (raw["format"] === "rich") {
+    if (!isProseMirrorDoc(raw["body"])) {
+      errors.review = "Rich review body is not a valid ProseMirror document.";
+      return undefined;
+    }
+    return { format: "rich", body: raw["body"] as JSONContent };
   }
-  if (trimmed.length > REVIEW_MAX) {
-    errors.review = `Review must be ${REVIEW_MAX} characters or fewer.`;
-    return undefined;
-  }
-  return trimmed;
+  errors.review = "Review format must be 'plain' or 'rich'.";
+  return undefined;
 }
 
 function validateQuoteText(

@@ -320,8 +320,8 @@ describe("validateBookInput", () => {
     });
   });
 
-  describe("review (spec 007)", () => {
-    it("accepts a mid-length review string", () => {
+  describe("review (spec 007 / 008)", () => {
+    it("accepts a mid-length review string and normalises to plain", () => {
       const result = validateBookInput({
         ...baseInput,
         review: "Loved this book. A quiet masterpiece.",
@@ -330,7 +330,7 @@ describe("validateBookInput", () => {
         ok: true,
         value: {
           ...baseInput,
-          review: "Loved this book. A quiet masterpiece.",
+          review: { format: "plain", body: "Loved this book. A quiet masterpiece." },
         },
       });
     });
@@ -340,7 +340,7 @@ describe("validateBookInput", () => {
       const result = validateBookInput({ ...baseInput, review });
       expect(result.ok).toBe(true);
       if (result.ok) {
-        expect(result.value.review).toBe(review);
+        expect(result.value.review).toEqual({ format: "plain", body: review });
       }
     });
 
@@ -355,14 +355,14 @@ describe("validateBookInput", () => {
       }
     });
 
-    it("trims the review", () => {
+    it("trims the review and normalises to plain", () => {
       const result = validateBookInput({
         ...baseInput,
         review: "  Loved it.  ",
       });
       expect(result).toEqual({
         ok: true,
-        value: { ...baseInput, review: "Loved it." },
+        value: { ...baseInput, review: { format: "plain", body: "Loved it." } },
       });
     });
 
@@ -390,7 +390,7 @@ describe("validateBookInput", () => {
       const result = validateBookInput({ ...baseInput, review: 42 });
       expect(result.ok).toBe(false);
       if (!result.ok) {
-        expect(result.errors.review).toMatch(/Review must be text/);
+        expect(result.errors.review).toMatch(/Review shape is invalid/);
       }
     });
   });

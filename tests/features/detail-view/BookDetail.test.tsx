@@ -186,7 +186,7 @@ describe("BookDetail", () => {
         });
       render(<BookDetail bookId={sampleBook.id} />);
       expect(
-        screen.getByTestId("review-text")
+        screen.getByTestId("review-paragraph")
       ).toHaveTextContent("A quiet, wonderful read.");
       expect(
         screen.getByTestId("review-edit-button")

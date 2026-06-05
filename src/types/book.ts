@@ -7,6 +7,7 @@
  */
 
 import type { Quote } from "./quote";
+import type { Review } from "./review";
 
 export type ReadingStatus = "want" | "reading" | "read";
 
@@ -41,12 +42,12 @@ export interface Book {
    */
   rating?: 1 | 2 | 3 | 4 | 5;
   /**
-   * Optional free-form review. Plain text, max 10 000
-   * characters after trim. Absent means "no review"
-   * (spec 007 D3). Will be upgraded to a structured
-   * rich-text state in a future spec (D9).
+   * Optional review of the book. Discriminated union: plain text
+   * or rich-text (ProseMirror JSON). Legacy plain strings are
+   * normalised to { format: "plain", body } at the validator
+   * boundary (spec 008 D2, D6).
    */
-  review?: string;
+  review?: Review | string;
   /**
    * Optional quotes from the book. Each quote is a passage
    * with optional page number and optional personal note
