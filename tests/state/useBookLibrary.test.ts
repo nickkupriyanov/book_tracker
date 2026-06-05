@@ -10,12 +10,26 @@ function makeFakeAdapter(overrides: Partial<StorageAdapter> = {}): StorageAdapte
       ...input,
       id: "fake-id",
       createdAt: new Date().toISOString(),
+      // The Book contract requires each Quote to carry id + createdAt;
+      // the real adapter is expected to assign them (mirroring how the
+      // UI generates them in BookDetail.handleSaveQuote). The fake
+      // does the same so the spread above produces a valid Book.
+      quotes: (input.quotes ?? []).map((q, i) => ({
+        ...q,
+        id: `fake-quote-${i}`,
+        createdAt: new Date().toISOString(),
+      })),
     })),
     updateBook: vi.fn(
       async (id: string, input: BookInput): Promise<Book> => ({
         ...input,
         id,
         createdAt: new Date().toISOString(),
+        quotes: (input.quotes ?? []).map((q, i) => ({
+          ...q,
+          id: `fake-quote-${i}`,
+          createdAt: new Date().toISOString(),
+        })),
       })
     ),
     deleteBook: vi.fn(async (): Promise<void> => undefined),

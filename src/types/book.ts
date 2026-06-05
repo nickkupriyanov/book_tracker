@@ -6,6 +6,8 @@
  * consumer will follow.
  */
 
+import type { Quote } from "./quote";
+
 export type ReadingStatus = "want" | "reading" | "read";
 
 /**
@@ -45,7 +47,24 @@ export interface Book {
    * rich-text state in a future spec (D9).
    */
   review?: string;
+  /**
+   * Optional quotes from the book. Each quote is a passage
+   * with optional page number and optional personal note
+   * (spec 009 §7.1). Embedded in the Book record — no
+   * separate aggregate, no extra storage methods. Capped
+   * at 200 entries per book by `validateBookInput`.
+   */
+  quotes?: Quote[];
 }
 
-/** What the UI submits to add a book. `id` and `createdAt` are storage-side. */
+/**
+ * What the UI submits to add or update a book. `id` and `createdAt` on the
+ * book itself are storage-side; nested `Quote` items are full Quotes
+ * (the UI generates `id` and `createdAt` for new quotes in
+ * `BookDetail.handleSaveQuote`, spec 009 T6).
+ *
+ * The {@link QuoteInput} type is used only at the dialog boundary — the
+ * form payload the user types in is id-less; the upgrade to a full
+ * {@link Quote} happens before `updateBook` is called.
+ */
 export type BookInput = Omit<Book, "id" | "createdAt">;

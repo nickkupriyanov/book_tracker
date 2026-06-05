@@ -1,4 +1,5 @@
 import type { BookInput, ReadingStatus } from "@/types/book";
+import type { Quote } from "@/types/quote";
 
 /**
  * Discriminated result type for validators.
@@ -14,6 +15,11 @@ const AUTHOR_MAX = 120;
 const TAG_MAX_LENGTH = 24;
 const TAGS_MAX_COUNT = 10;
 const REVIEW_MAX = 10_000;
+const QUOTE_TEXT_MAX = 2000;
+const QUOTE_NOTE_MAX = 1000;
+const QUOTES_MAX_COUNT = 200;
+const PAGE_MIN = 1;
+const PAGE_MAX = 99_999;
 
 const READING_STATUSES: readonly ReadingStatus[] = ["want", "reading", "read"];
 
@@ -186,6 +192,134 @@ function validateReview(
   return trimmed;
 }
 
+function validateQuoteText(
+  raw: unknown,
+  errors: Record<string, string>
+): string | undefined {
+  if (typeof raw !== "string") {
+    errors.text = "Quote text is required.";
+    return undefined;
+  }
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) {
+    errors.text = "Quote text is required.";
+    return undefined;
+  }
+  if (trimmed.length > QUOTE_TEXT_MAX) {
+    errors.text = `Quote text must be ${QUOTE_TEXT_MAX} characters or fewer.`;
+    return undefined;
+  }
+  return trimmed;
+}
+
+function validateQuotePage(
+  raw: unknown,
+  errors: Record<string, string>
+): number | undefined {
+  if (raw === undefined || raw === null) {
+    return undefined;
+  }
+  if (
+    typeof raw !== "number" ||
+    !Number.isInteger(raw) ||
+    raw < PAGE_MIN ||
+    raw > PAGE_MAX
+  ) {
+    errors.page = `Page must be a whole number between ${PAGE_MIN} and ${PAGE_MAX}.`;
+    return undefined;
+  }
+  return raw;
+}
+
+function validateQuoteNote(
+  raw: unknown,
+  errors: Record<string, string>
+): string | undefined {
+  if (raw === undefined || raw === null) {
+    return undefined;
+  }
+  if (typeof raw !== "string") {
+    errors.note = "Note must be text.";
+    return undefined;
+  }
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) {
+    return undefined;
+  }
+  if (trimmed.length > QUOTE_NOTE_MAX) {
+    errors.note = `Note must be ${QUOTE_NOTE_MAX} characters or fewer.`;
+    return undefined;
+  }
+  return trimmed;
+}
+
+function validateQuote(
+  raw: unknown,
+  errors: Record<string, string>
+): Quote | undefined {
+  if (!isObject(raw)) {
+    errors._quote = "Invalid quote shape.";
+    return undefined;
+  }
+  const text = validateQuoteText(raw["text"], errors);
+  const page = validateQuotePage(raw["page"], errors);
+  const note = validateQuoteNote(raw["note"], errors);
+  // `id` and `createdAt` are storage-side; we trust whatever's there
+  // and pass it through unchanged. The `Quote` type requires both —
+  // we copy them out of the raw input and re-attach on success.
+  const id = raw["id"];
+  const createdAt = raw["createdAt"];
+  if (Object.keys(errors).length > 0) {
+    // Any of text / page / note pushed an error — the whole quote is
+    // rejected. The error messages are already on the map; we just
+    // need to skip building the value object.
+    return undefined;
+  }
+  if (typeof id !== "string" || typeof createdAt !== "string") {
+    errors._quote = "Quote is missing id or createdAt.";
+    return undefined;
+  }
+  return {
+    id,
+    createdAt,
+    text: text as string,
+    ...(page !== undefined ? { page } : {}),
+    ...(note !== undefined ? { note } : {}),
+  };
+}
+
+function validateQuotes(
+  raw: unknown,
+  errors: Record<string, string>
+): Quote[] | undefined {
+  if (raw === undefined) {
+    return undefined;
+  }
+  if (!Array.isArray(raw)) {
+    errors.quotes = "Quotes must be an array.";
+    return undefined;
+  }
+  if (raw.length > QUOTES_MAX_COUNT) {
+    errors.quotes = `At most ${QUOTES_MAX_COUNT} quotes allowed.`;
+    return undefined;
+  }
+  const out: Quote[] = [];
+  for (let i = 0; i < raw.length; i++) {
+    const itemErrors: Record<string, string> = {};
+    const value = validateQuote(raw[i], itemErrors);
+    if (value === undefined) {
+      // Forward the per-item errors under a prefixed key so the UI
+      // can show them next to the right card.
+      for (const [k, v] of Object.entries(itemErrors)) {
+        errors[`quotes.${i}.${k}`] = v;
+      }
+      return undefined;
+    }
+    out.push(value);
+  }
+  return out;
+}
+
 /**
  * Validates raw input for the Add Book form and returns either a normalized
  * {@link BookInput} or a map of field-level error messages.
@@ -216,6 +350,7 @@ export function validateBookInput(input: unknown): ValidationResult<BookInput> {
   const status = validateStatus(input["status"], errors);
   const rating = validateRating(input["rating"], errors);
   const review = validateReview(input["review"], errors);
+  const quotes = validateQuotes(input["quotes"], errors);
 
   if (Object.keys(errors).length > 0) {
     return { ok: false, errors };
@@ -241,6 +376,7 @@ export function validateBookInput(input: unknown): ValidationResult<BookInput> {
     ...(coverUrl !== undefined ? { coverUrl } : {}),
     ...(rating !== undefined ? { rating } : {}),
     ...(review !== undefined ? { review } : {}),
+    ...(quotes !== undefined ? { quotes } : {}),
   };
   return { ok: true, value };
 }
