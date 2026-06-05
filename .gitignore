@@ -15,3 +15,5 @@ dist/
 coverage/
 next-env.d.ts
 tsconfig.tsbuildinfo
+
+.superpowers/
