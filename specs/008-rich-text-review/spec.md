@@ -337,6 +337,14 @@ Future spec candidates (not part of 008):
   `src/lib/rich-text/` (walker, sanitize, toolbar). May revisit
   scope: is rich-text appropriate for 200-char quotes? Brainstorm
   separately.
+  **Resolution (2026-06-05):** decided not to pursue. Quotes are
+  short (200 chars per spec 009); bold/italic/lists don't earn
+  the TipTap bundle cost (135 kB First Load JS) on a feature
+  where users mostly type plain text and a single `note` field.
+  The `src/lib/rich-text/` infra stays in place for any future
+  spec that genuinely needs it (e.g. a long-form journal, book
+  annotations, or an export template), but it will not be wired
+  into the quote flow.
 - **Markdown round-trip:** could be added later if the feature earns
   its keep (constitution §4). Out of scope here.
 
