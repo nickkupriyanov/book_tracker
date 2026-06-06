@@ -346,4 +346,130 @@ describe("ShelfList", () => {
       ).toBeInTheDocument();
     });
   });
+
+  describe("filter-aware tab counts (spec 011)", () => {
+    const taggedBooks: Book[] = [
+      {
+        id: "c1",
+        title: "The Lord of the Rings",
+        author: "Tolkien",
+        status: "read",
+        tags: ["fantasy"],
+        createdAt: "2026-06-01T00:00:00.000Z",
+      },
+      {
+        id: "c2",
+        title: "Programming Pearls",
+        author: "Bentley",
+        status: "want",
+        tags: ["programming"],
+        createdAt: "2026-06-02T00:00:00.000Z",
+      },
+      {
+        id: "c3",
+        title: "Clean Code",
+        author: "Martin",
+        status: "reading",
+        tags: ["programming"],
+        createdAt: "2026-06-03T00:00:00.000Z",
+      },
+    ];
+
+    it("with a search active, tab counts reflect search applied to each tab", async () => {
+      const user = userEvent.setup();
+      render(<ShelfList books={taggedBooks} />);
+      await user.type(screen.getByTestId("shelf-search"), "programming");
+      // "programming" matches: Programming Pearls (want) + Clean Code (reading).
+      expect(screen.getByRole("tab", { name: /All \(2\)/ })).toBeInTheDocument();
+      expect(
+        screen.getByRole("tab", { name: /Want to read \(1\)/ })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("tab", { name: /Reading \(1\)/ })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("tab", { name: /Read \(0\)/ })
+      ).toBeInTheDocument();
+    });
+
+    it("with tags selected, tab counts reflect tag filter applied to each tab", async () => {
+      const user = userEvent.setup();
+      render(<ShelfList books={taggedBooks} />);
+      // "programming" tag → 2 books (want, reading).
+      await user.click(screen.getByTestId("shelf-tag-programming"));
+      expect(screen.getByRole("tab", { name: /All \(2\)/ })).toBeInTheDocument();
+      expect(
+        screen.getByRole("tab", { name: /Want to read \(1\)/ })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("tab", { name: /Reading \(1\)/ })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("tab", { name: /Read \(0\)/ })
+      ).toBeInTheDocument();
+    });
+
+    it("with search AND tags active, tab counts are the AND of all three", async () => {
+      const user = userEvent.setup();
+      render(<ShelfList books={taggedBooks} />);
+      await user.click(screen.getByTestId("shelf-tag-fantasy"));
+      // fantasy tag → 1 book (read: The Lord of the Rings).
+      await user.type(screen.getByTestId("shelf-search"), "lord");
+      expect(screen.getByRole("tab", { name: /All \(1\)/ })).toBeInTheDocument();
+      expect(
+        screen.getByRole("tab", { name: /Read \(1\)/ })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("tab", { name: /Want to read \(0\)/ })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("tab", { name: /Reading \(0\)/ })
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe("Clear filters (spec 011)", () => {
+    it("the Clear filters button is not in the DOM when no filter is active", () => {
+      render(<ShelfList books={sampleBooks} />);
+      expect(
+        screen.queryByTestId("shelf-clear-filters")
+      ).not.toBeInTheDocument();
+    });
+
+    it("the Clear filters button appears when search is non-empty and clears all dimensions on click", async () => {
+      const user = userEvent.setup();
+      render(<ShelfList books={sampleBooks} />);
+
+      await user.type(screen.getByTestId("shelf-search"), "Book A");
+      expect(
+        screen.getByTestId("shelf-clear-filters")
+      ).toBeInTheDocument();
+
+      await user.click(screen.getByTestId("shelf-clear-filters"));
+
+      // Search input is now empty.
+      expect(screen.getByTestId("shelf-search")).toHaveValue("");
+      // All books visible again.
+      expect(screen.getByText("Book A")).toBeInTheDocument();
+      expect(screen.getByText("Book B")).toBeInTheDocument();
+      expect(screen.getByText("Book C")).toBeInTheDocument();
+      // Button is gone (no filter is active).
+      expect(
+        screen.queryByTestId("shelf-clear-filters")
+      ).not.toBeInTheDocument();
+    });
+
+    it("after clicking Clear filters, focus is on the search input", async () => {
+      const user = userEvent.setup();
+      render(<ShelfList books={sampleBooks} />);
+
+      await user.type(screen.getByTestId("shelf-search"), "Book");
+      const searchInput = screen.getByTestId("shelf-search");
+      searchInput.blur();
+      expect(searchInput).not.toHaveFocus();
+
+      await user.click(screen.getByTestId("shelf-clear-filters"));
+      expect(searchInput).toHaveFocus();
+    });
+  });
 });

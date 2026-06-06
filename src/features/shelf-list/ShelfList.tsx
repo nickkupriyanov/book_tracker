@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { BookCard } from "./BookCard";
 import { ShelfFilters, type FilterValue } from "./ShelfFilters";
 import { ShelfSearch } from "./ShelfSearch";
 import { ShelfTagFilter } from "./ShelfTagFilter";
+import { ClearFilters } from "./ClearFilters";
 import { EmptyFilterResult } from "./EmptyFilterResult";
 import { filterBooks } from "@/lib/shelf-filter";
 import { EditBookDialog } from "@/features/edit-book";
@@ -30,7 +31,11 @@ export interface ShelfListProps {
  * renders both at the same time (spec 004 D4 — precedence rule).
  *
  * Search and tag filter state are also local (per spec 010 D5);
- * they reset on reload.
+ * they reset on reload. The status tab counts depend on the
+ * active search and tag filters (per spec 011 D3) — they answer
+ * "how many books would I see if I switched to this tab right
+ * now?" A "Clear filters" button appears when any of the three
+ * filter dimensions is non-default (spec 011 D2).
  */
 export function ShelfList({ books }: ShelfListProps) {
   const [filter, setFilter] = useState<FilterValue>("all");
@@ -38,15 +43,16 @@ export function ShelfList({ books }: ShelfListProps) {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [deletingBook, setDeletingBook] = useState<Book | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   const counts = useMemo<Record<FilterValue, number>>(
     () => ({
-      all: books.length,
-      want: books.filter((b) => b.status === "want").length,
-      reading: books.filter((b) => b.status === "reading").length,
-      read: books.filter((b) => b.status === "read").length,
+      all: filterBooks(books, { search, tags: selectedTags, status: "all" }).length,
+      want: filterBooks(books, { search, tags: selectedTags, status: "want" }).length,
+      reading: filterBooks(books, { search, tags: selectedTags, status: "reading" }).length,
+      read: filterBooks(books, { search, tags: selectedTags, status: "read" }).length,
     }),
-    [books]
+    [books, search, selectedTags]
   );
 
   const allTags = useMemo(
@@ -70,15 +76,30 @@ export function ShelfList({ books }: ShelfListProps) {
     );
   }, []);
 
+  const handleClearFilters = useCallback(() => {
+    setSearch("");
+    setSelectedTags([]);
+    setFilter("all");
+    searchInputRef.current?.focus();
+  }, []);
+
+  const hasActiveFilters =
+    search !== "" || selectedTags.length > 0 || filter !== "all";
+
   return (
     <div className="space-y-6">
-      <ShelfSearch value={search} onChange={setSearch} />
+      <ShelfSearch
+        value={search}
+        onChange={setSearch}
+        inputRef={searchInputRef}
+      />
       <ShelfFilters value={filter} onChange={setFilter} counts={counts} />
       <ShelfTagFilter
         tags={allTags}
         selected={selectedTags}
         onToggle={handleTagToggle}
       />
+      {hasActiveFilters && <ClearFilters onClick={handleClearFilters} />}
       {filteredBooks.length === 0 ? (
         <EmptyFilterResult />
       ) : (
