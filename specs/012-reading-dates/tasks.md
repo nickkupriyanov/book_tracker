@@ -1,7 +1,7 @@
 # Tasks: Reading Dates
 
-> **Status:** Pending
-> **Spec:** `../spec.md` (Draft)
+> **Status:** Done
+> **Spec:** `../spec.md` (Implemented)
 > **Plan:** `../plan.md` (Approved)
 
 Each task is small enough to be one commit. Mark a
@@ -16,7 +16,7 @@ on the detail page; T8 verifies.
 
 ---
 
-## T1. `formatReadingDuration` helper (TDD) — [ ]
+## T1. `formatReadingDuration` helper (TDD) — [x]
 
 - **Files:**
   `src/lib/format/reading-duration.ts` (new),
@@ -49,7 +49,7 @@ on the detail page; T8 verifies.
   `const` at the top of the file with a one-line
   comment.
 
-## T2. `sortBooks` + `SortValue` (TDD) — [ ]
+## T2. `sortBooks` + `SortValue` (TDD) — [x]
 
 - **Files:**
   `src/lib/shelf-sort.ts` (new),
@@ -108,7 +108,7 @@ on the detail page; T8 verifies.
   The `days` sentinel for the longest-read mode is
   `-1`, well below any possible positive day count.
 
-## T3. `Book` type + `validateStartedAt` / `validateFinishedAt` + cross-field (TDD) — [ ]
+## T3. `Book` type + `validateStartedAt` / `validateFinishedAt` + cross-field (TDD) — [x]
 
 - **Files:**
   `src/types/book.ts` (modified),
@@ -186,7 +186,7 @@ on the detail page; T8 verifies.
   catches every case where `Date` silently rolls
   the day forward.
 
-## T4. `BookForm` — two date inputs (TDD) — [ ]
+## T4. `BookForm` — two date inputs (TDD) — [x]
 
 - **Files:**
   `src/components/BookForm.tsx` (modified),
@@ -261,7 +261,7 @@ on the detail page; T8 verifies.
   when the user picks or clears a date. The
   validator does the rest.
 
-## T5. `ShelfSort` component (TDD) — [ ]
+## T5. `ShelfSort` component (TDD) — [x]
 
 - **Files:**
   `src/features/shelf-list/ShelfSort.tsx` (new),
@@ -299,7 +299,7 @@ on the detail page; T8 verifies.
   trigger has no placeholder — the current label
   is always shown.
 
-## T6. `ShelfList` wiring (sort state, `sortBooks`, `<ShelfSort>`) — [ ]
+## T6. `ShelfList` wiring (sort state, `sortBooks`, `<ShelfSort>`) — [x]
 
 - **Files:**
   `src/features/shelf-list/ShelfList.tsx`
@@ -341,7 +341,7 @@ on the detail page; T8 verifies.
   invariant is preserved. The shelf sort is
   purely a view-level override.
 
-## T7. `DetailMeta` — conditional date lines — [ ]
+## T7. `DetailMeta` — conditional date lines — [x]
 
 - **Files:**
   `src/features/detail-view/DetailMeta.tsx`
@@ -381,7 +381,7 @@ on the detail page; T8 verifies.
   order. `formatReadingDuration` is imported
   from `@/lib/format/reading-duration`.
 
-## T8. Polish & verification — [ ]
+## T8. Polish & verification — [x]
 
 - **Files:**
   `specs/012-reading-dates/spec.md` (status →
@@ -393,25 +393,26 @@ on the detail page; T8 verifies.
 - **Acceptance:**
   - All spec §11 acceptance criteria verified.
   - `npm run lint` clean.
-  - `npm run test` passes: **~433** (386 from
-    spec 011 baseline + ~47 new from spec 012:
-    10 `formatReadingDuration` + 14 `sortBooks` +
-    10 validator + 6 `BookForm` + 3 `ShelfSort` +
-    4 `ShelfList` integration + 1
-    `EditBookDialog` prefill + 4 `DetailMeta`).
-    Adjust the count in this file if the actual
-    number differs by more than ±2.
+  - `npm run test` passes: **431** (386 from
+    spec 011 baseline + **45** new from spec 012:
+    5 `formatReadingDuration` + 11 `sortBooks` +
+    10 validator + 6 `BookForm` + 2
+    `EditBookDialog` prefill + 3 `ShelfSort` +
+    4 `ShelfList` integration + 4 `DetailMeta`).
+    Within ±2 of the planned ~433.
   - `npx tsc --noEmit` clean.
   - `npm run build` succeeds.
   - Bundle deltas (route `First Load JS`):
-    - `/` (shelf): expected ~+0.5 kB (the
+    - `/` (shelf): **+0.53 kB** route (5.63 → 6.16),
+      **+1 kB** First Load JS (167 → 168) — the
       `<ShelfSort>` shadcn Select, two new date
-      inputs, the `sortBooks` import). No new
+      inputs, the `sortBooks` import. No new
       dependencies.
-    - `/book/[id]` (detail): unchanged (no new
-      heavy components on the detail route; the
-      three conditional lines and the
-      `formatReadingDuration` import are byte-cheap).
+    - `/book/[id]` (detail): **0 kB** route
+      (unchanged at 140 kB), **+1 kB** First Load
+      JS (301 → 302) — the three conditional
+      lines and the `formatReadingDuration` import
+      are byte-cheap.
   - No new `any` introduced.
   - No new npm dependencies added.
   - Manual QA (per spec §13, 12 steps) covered

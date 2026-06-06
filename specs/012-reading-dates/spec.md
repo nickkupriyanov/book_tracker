@@ -1,6 +1,6 @@
 # Spec: Reading Dates
 
-> **Status:** Draft
+> **Status:** Implemented
 > **Author:** —
 > **Created:** 2026-06-06
 > **Spec ID:** 012-reading-dates
