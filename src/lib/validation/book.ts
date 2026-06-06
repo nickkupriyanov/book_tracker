@@ -22,6 +22,11 @@ const QUOTE_NOTE_MAX = 1000;
 const QUOTES_MAX_COUNT = 200;
 const PAGE_MIN = 1;
 const PAGE_MAX = 99_999;
+// YYYY-MM-DD — the only format we accept for startedAt and
+// finishedAt. Spec 012 D2. Lexicographic sort of two such
+// strings is chronological, which the cross-field check
+// relies on.
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 const READING_STATUSES: readonly ReadingStatus[] = ["want", "reading", "read"];
 
@@ -170,6 +175,52 @@ function validateRating(
     return undefined;
   }
   return raw as 1 | 2 | 3 | 4 | 5;
+}
+
+/**
+ * Validates an optional `YYYY-MM-DD` date. Empty / null /
+ * undefined → "no date" (returns undefined, no error).
+ * Format: must match `^\d{4}-\d{2}-\d{2}$`. Calendar
+ * validity: round-trip through `Date` (forced UTC midnight
+ * to avoid the local-midnight rollover) and confirm the
+ * result is the same string. Spec 012 D2 / FR-2.
+ */
+function validateOptionalDate(
+  raw: unknown,
+  errors: Record<string, string>,
+  field: "startedAt" | "finishedAt"
+): string | undefined {
+  if (raw === undefined || raw === null) {
+    return undefined;
+  }
+  if (typeof raw !== "string") {
+    errors[field] = `${field === "startedAt" ? "Start" : "Finish"} date must be a string.`;
+    return undefined;
+  }
+  if (raw === "") {
+    return undefined;
+  }
+  if (!DATE_PATTERN.test(raw)) {
+    errors[field] = `${field === "startedAt" ? "Start" : "Finish"} date must be a YYYY-MM-DD date.`;
+    return undefined;
+  }
+  // Forced-UTC parsing. `new Date("YYYY-MM-DD")` is parsed
+  // as UTC per ECMA-262, but constructing with an explicit
+  // `T00:00:00Z` makes the intent obvious and protects
+  // against environments that treat the bare form as local.
+  const d = new Date(`${raw}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) {
+    errors[field] = `${field === "startedAt" ? "Start" : "Finish"} date must be a real calendar date.`;
+    return undefined;
+  }
+  // Calendar-validity check: if the user typed "2026-02-30"
+  // JS happily rolls it to "2026-03-02". Round-trip back and
+  // compare to catch the rollover.
+  if (d.toISOString().slice(0, 10) !== raw) {
+    errors[field] = `${field === "startedAt" ? "Start" : "Finish"} date must be a real calendar date.`;
+    return undefined;
+  }
+  return raw;
 }
 
 function isProseMirrorDoc(value: unknown): value is JSONContent {
@@ -412,8 +463,28 @@ export function validateBookInput(input: unknown): ValidationResult<BookInput> {
   const rating = validateRating(input["rating"], errors);
   const review = validateReview(input["review"], errors);
   const quotes = validateQuotes(input["quotes"], errors);
+  const startedAt = validateOptionalDate(input["startedAt"], errors, "startedAt");
+  const finishedAt = validateOptionalDate(
+    input["finishedAt"],
+    errors,
+    "finishedAt"
+  );
 
   if (Object.keys(errors).length > 0) {
+    return { ok: false, errors };
+  }
+
+  // Cross-field rule (spec 012 D4): if both dates are set,
+  // startedAt must be <= finishedAt. Lexicographic
+  // comparison of YYYY-MM-DD strings is chronological,
+  // so a simple `>` works. The error rides on `finishedAt`
+  // — the field the user is most likely to want to fix.
+  if (
+    startedAt !== undefined &&
+    finishedAt !== undefined &&
+    startedAt > finishedAt
+  ) {
+    errors.finishedAt = "Finish date must be on or after the start date.";
     return { ok: false, errors };
   }
 
@@ -438,6 +509,8 @@ export function validateBookInput(input: unknown): ValidationResult<BookInput> {
     ...(rating !== undefined ? { rating } : {}),
     ...(review !== undefined ? { review } : {}),
     ...(quotes !== undefined ? { quotes } : {}),
+    ...(startedAt !== undefined ? { startedAt } : {}),
+    ...(finishedAt !== undefined ? { finishedAt } : {}),
   };
   return { ok: true, value };
 }

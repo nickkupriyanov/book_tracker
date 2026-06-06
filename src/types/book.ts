@@ -56,6 +56,21 @@ export interface Book {
    * at 200 entries per book by `validateBookInput`.
    */
   quotes?: Quote[];
+  /**
+   * Optional date the user started reading this book. ISO
+   * 8601 calendar date in `YYYY-MM-DD` form (NOT a datetime
+   * — spec 012 D2). Independent of `status`: a book with
+   * status 'want' may have a `startedAt`, and a book with
+   * status 'read' may have neither. Validated by
+   * `validateBookInput` (spec 012 D1, D3, D4).
+   */
+  startedAt?: string;
+  /**
+   * Optional date the user finished reading. Same shape
+   * and rules as `startedAt`. Cross-field rule: if both
+   * are set, `startedAt <= finishedAt` (spec 012 D4).
+   */
+  finishedAt?: string;
 }
 
 /**
