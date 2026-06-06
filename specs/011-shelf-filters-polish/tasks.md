@@ -1,8 +1,8 @@
 # Tasks: Shelf Filters — Polish
 
-> **Status:** Draft
-> **Spec:** `../spec.md` (Draft)
-> **Plan:** `../plan.md`
+> **Status:** Done
+> **Spec:** `../spec.md` (Implemented)
+> **Plan:** `../plan.md` (Approved)
 
 Each task is small enough to be one commit. Mark a
 task `[x]` only when its acceptance line is satisfied
@@ -15,7 +15,7 @@ T3 verifies.
 
 ---
 
-## T1. `ClearFilters` component (TDD) — [ ]
+## T1. `ClearFilters` component (TDD) — [x]
 
 - **Files:**
   `src/features/shelf-list/ClearFilters.tsx` (new),
@@ -40,7 +40,7 @@ T3 verifies.
   parent decides visibility. Don't put the
   `isActive` predicate inside.
 
-## T2. `ShelfList` wiring (counts, button, focus) — [ ]
+## T2. `ShelfList` wiring (counts, button, focus) — [x]
 
 - **Files:**
   `src/features/shelf-list/ShelfList.tsx` (modified),
@@ -90,7 +90,7 @@ T3 verifies.
   test queries by `shelf-clear-filters`, not by the
   row — so it stays correct.
 
-## T3. Polish & verification — [ ]
+## T3. Polish & verification — [x]
 
 - **Files:**
   `specs/011-shelf-filters-polish/spec.md` (status →
@@ -102,15 +102,74 @@ T3 verifies.
 - **Acceptance:**
   - All spec §11 acceptance criteria verified.
   - `npm run lint` clean.
-  - `npm run test` passes: **~386/~386** (377 from
+  - `npm run test` passes: **386/386** (377 from
     spec 010 baseline + 9 new from spec 011: 3
     `ClearFilters` + 6 `ShelfList` integration).
   - `npx tsc --noEmit` clean.
-  - `npm run build` succeeds. No new dependencies,
-    no bundle delta to record.
+  - `npm run build` succeeds.
+  - Bundle deltas (route `First Load JS`):
+    - `/` (shelf): 167 kB → 167 kB (route 5.48 kB →
+      5.63 kB; +150 B for `ClearFilters`, the
+      `useRef` in `ShelfList`, the rebuilt `counts`
+      useMemo, and the `handleClearFilters`
+      callback). No new dependencies.
+    - `/book/[id]` (detail): 140 kB / 301 kB —
+      unchanged. TipTap is **not** loaded on the
+      shelf path.
   - No new `any` introduced.
   - No new npm dependencies added.
   - Manual QA (per spec §13, 12 steps) covered by
     tests and code review.
 - **Notes:** verification report recorded in the T3
   commit message.
+
+### Verification report (T3)
+
+**Tests:** 386/386 in 33 files, runtime ~4.7 s.
+**Lint:** clean.
+**Typecheck:** clean.
+**Build:** clean.
+
+**Commits in spec 011 (newest first):**
+
+| Hash      | Message                                                                          |
+| --------- | -------------------------------------------------------------------------------- |
+| (T3)      | T3: status updates + verification report                                        |
+| `d134583` | T2: ShelfList wiring — counts depend on search+tags, ClearFilters, focus reset  |
+| `246f1ea` | T1: ClearFilters component (TDD) — 3 tests                                       |
+| `73ea72e` | Spec 011: Shelf Filters — Polish — add plan + tasks                              |
+| `9b0ad7a` | Spec 011: Shelf Filters — Polish — add spec, status Draft                        |
+
+**Issues / important points encountered:**
+
+- **Counts shift is a no-op for the default state.**
+  The new `counts` useMemo calls
+  `filterBooks(books, { search: "", tags: [], status: tab })`
+  four times, but with empty search and tags this
+  reduces to the same `books.length` /
+  `b.status === tab` counts as before. All 15
+  pre-existing `ShelfList` tests still pass without
+  modification — the new behaviour is a strict
+  superset.
+- **`ShelfSearch` change is purely additive.** A new
+  optional `inputRef?: React.Ref<HTMLInputElement>`
+  prop is forwarded to the underlying `<input>`. No
+  change in markup, no change in behaviour, no
+  existing test touched. Refactor-friendly: a future
+  caller can opt in to focus management.
+- **Bundle stayed at 167 kB First Load JS** for the
+  shelf route. The `ClearFilters` component is small
+  (`<Button>` + icon + text), the `useRef` and the
+  new useMemo are byte-cheap, and the rebuild didn't
+  drag in a new dependency. TipTap remains scoped
+  to the detail route.
+- **Test count: 377 → 386 (+9).** Matched the plan's
+  ~9 estimate (3 component + 6 integration). No
+  edge cases needed to be added beyond the spec.
+- **Spec reuse is paying off.** Spec 011 inherited
+  010's `filterBooks` and `FilterCriteria` without
+  modification, the `ShelfFilters` component without
+  modification, and the tag filter row layout
+  without modification. The T2 commit touched only
+  `ShelfList.tsx`, `ShelfSearch.tsx` (1 line), and
+  the `ShelfList.test.tsx` file.

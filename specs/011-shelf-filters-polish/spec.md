@@ -1,8 +1,9 @@
 # Spec: Shelf Filters — Polish
 
-> **Status:** Draft
+> **Status:** Implemented
 > **Author:** —
 > **Created:** 2026-06-06
+> **Implemented:** 2026-06-06 (T1–T3)
 > **Spec ID:** 011-shelf-filters-polish
 > **Constitution version:** see `.specify/memory/constitution.md`
 > **Predecessors:** spec 010 (shelf search & filter)

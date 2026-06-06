@@ -1,7 +1,7 @@
 # Plan: Shelf Filters — Polish
 
-> **Status:** Draft
-> **Spec:** `../spec.md` (Draft)
+> **Status:** Approved
+> **Spec:** `../spec.md` (Implemented)
 > **Author:** —
 > **Created:** 2026-06-06
 
