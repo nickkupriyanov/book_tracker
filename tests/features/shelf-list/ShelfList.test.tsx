@@ -86,14 +86,14 @@ describe("ShelfList", () => {
   });
 
   describe("empty filter result", () => {
-    it("shows 'No books with this status.' when filter matches no books", async () => {
+    it("shows 'No books match your filters.' when filter matches no books", async () => {
       const user = userEvent.setup();
       const onlyWant: Book[] = [bookWant];
       render(<ShelfList books={onlyWant} />);
       await user.click(screen.getByRole("tab", { name: /^Reading/ }));
       expect(screen.queryByText("Book A")).not.toBeInTheDocument();
       expect(
-        screen.getByText("No books with this status.")
+        screen.getByText("No books match your filters.")
       ).toBeInTheDocument();
     });
   });
@@ -202,6 +202,147 @@ describe("ShelfList", () => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
       expect(
         screen.getByRole("heading", { name: /Delete "Book B"\?/ })
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe("search (spec 010)", () => {
+    const taggedBooks: Book[] = [
+      {
+        id: "t1",
+        title: "The Lord of the Rings",
+        author: "Tolkien",
+        status: "read",
+        tags: ["fantasy"],
+        createdAt: "2026-06-01T00:00:00.000Z",
+      },
+      {
+        id: "t2",
+        title: "Programming Pearls",
+        author: "Bentley",
+        status: "want",
+        tags: ["programming"],
+        createdAt: "2026-06-02T00:00:00.000Z",
+      },
+      {
+        id: "t3",
+        title: "Clean Code",
+        author: "Martin",
+        status: "reading",
+        tags: ["programming"],
+        createdAt: "2026-06-03T00:00:00.000Z",
+      },
+    ];
+
+    it("renders the search input", () => {
+      render(<ShelfList books={sampleBooks} />);
+      expect(screen.getByTestId("shelf-search")).toBeInTheDocument();
+    });
+
+    it("typing in the search input narrows the grid (case-insensitive, matches title/author/tag)", async () => {
+      const user = userEvent.setup();
+      render(<ShelfList books={taggedBooks} />);
+      expect(screen.getByText("The Lord of the Rings")).toBeInTheDocument();
+      expect(screen.getByText("Programming Pearls")).toBeInTheDocument();
+      expect(screen.getByText("Clean Code")).toBeInTheDocument();
+
+      await user.type(screen.getByTestId("shelf-search"), "tolkien");
+
+      expect(screen.getByText("The Lord of the Rings")).toBeInTheDocument();
+      expect(screen.queryByText("Programming Pearls")).not.toBeInTheDocument();
+      expect(screen.queryByText("Clean Code")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("tag filter (spec 010)", () => {
+    const taggedBooks: Book[] = [
+      {
+        id: "t1",
+        title: "The Lord of the Rings",
+        author: "Tolkien",
+        status: "read",
+        tags: ["fantasy"],
+        createdAt: "2026-06-01T00:00:00.000Z",
+      },
+      {
+        id: "t2",
+        title: "Programming Pearls",
+        author: "Bentley",
+        status: "want",
+        tags: ["programming"],
+        createdAt: "2026-06-02T00:00:00.000Z",
+      },
+      {
+        id: "t3",
+        title: "Clean Code",
+        author: "Martin",
+        status: "reading",
+        tags: ["programming"],
+        createdAt: "2026-06-03T00:00:00.000Z",
+      },
+    ];
+
+    it("clicking a tag chip narrows the grid", async () => {
+      const user = userEvent.setup();
+      render(<ShelfList books={taggedBooks} />);
+      expect(screen.getByText("The Lord of the Rings")).toBeInTheDocument();
+      expect(screen.getByText("Programming Pearls")).toBeInTheDocument();
+
+      await user.click(screen.getByTestId("shelf-tag-fantasy"));
+
+      expect(screen.getByText("The Lord of the Rings")).toBeInTheDocument();
+      expect(screen.queryByText("Programming Pearls")).not.toBeInTheDocument();
+      expect(screen.queryByText("Clean Code")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("combined filters (spec 010)", () => {
+    const taggedBooks: Book[] = [
+      {
+        id: "c1",
+        title: "The Lord of the Rings",
+        author: "Tolkien",
+        status: "read",
+        tags: ["fantasy"],
+        createdAt: "2026-06-01T00:00:00.000Z",
+      },
+      {
+        id: "c2",
+        title: "Programming Pearls",
+        author: "Bentley",
+        status: "want",
+        tags: ["programming"],
+        createdAt: "2026-06-02T00:00:00.000Z",
+      },
+      {
+        id: "c3",
+        title: "Clean Code",
+        author: "Martin",
+        status: "reading",
+        tags: ["programming"],
+        createdAt: "2026-06-03T00:00:00.000Z",
+      },
+    ];
+
+    it("AND-combines search, tags, and status", async () => {
+      const user = userEvent.setup();
+      render(<ShelfList books={taggedBooks} />);
+
+      // Click "Reading" status tab — only Clean Code (programming) survives.
+      await user.click(screen.getByRole("tab", { name: /^Reading/ }));
+      expect(screen.getByText("Clean Code")).toBeInTheDocument();
+      expect(screen.queryByText("The Lord of the Rings")).not.toBeInTheDocument();
+      expect(screen.queryByText("Programming Pearls")).not.toBeInTheDocument();
+
+      // Now click the "programming" tag chip — Clean Code still matches.
+      await user.click(screen.getByTestId("shelf-tag-programming"));
+      expect(screen.getByText("Clean Code")).toBeInTheDocument();
+
+      // Now type "knuth" — no books match → empty result.
+      await user.type(screen.getByTestId("shelf-search"), "knuth");
+      expect(screen.queryByText("Clean Code")).not.toBeInTheDocument();
+      expect(
+        screen.getByText("No books match your filters.")
       ).toBeInTheDocument();
     });
   });

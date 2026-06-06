@@ -5,7 +5,7 @@
 export function EmptyFilterResult() {
   return (
     <div className="text-muted-foreground py-12 text-center text-sm">
-      No books with this status.
+      No books match your filters.
     </div>
   );
 }
