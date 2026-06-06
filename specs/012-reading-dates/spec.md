@@ -465,6 +465,13 @@ by the stable sort (their relative order in the store's
   `useMemo([filteredBooks, sort])`.
 - No new `any` (constitution §3.1). `Date` arithmetic uses
   raw numbers (ms / 86_400_000), no library.
+- Reading-duration pluralisation (added during T1
+  when tests revealed the ambiguity in D9): the unit
+  is singular when the count is `1` (`"1 week"`,
+  `"1 month"`), plural otherwise (`"2 weeks"`,
+  `"12 months"`). The "0 / 1 day" case is
+  `"a day"` — the only English-idiomatic phrasing
+  for a sub-two-day read. Locked in by tests in T1.
 - No new npm dependency.
 - No regression in the 002 / 010 / 011 acceptance criteria.
 - Reading-duration math: months use the
