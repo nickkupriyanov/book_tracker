@@ -64,6 +64,43 @@ describe("EditBookDialog", () => {
     ).toBeInTheDocument();
   });
 
+  it("pre-fills the Started and Finished date fields from the book", async () => {
+    // Add a book with both dates, then open Edit on it.
+    __resetBookLibrary();
+    localStorage.clear();
+    await useBookLibrary.getState().init(new LocalStorageAdapter());
+    const bookWithDates = await useBookLibrary.getState().addBook({
+      title: "Dune",
+      author: "Frank Herbert",
+      status: "read",
+      tags: [],
+      startedAt: "2026-01-01",
+      finishedAt: "2026-02-01",
+    });
+    render(
+      <EditBookDialog
+        book={bookWithDates}
+        open={true}
+        onOpenChange={vi.fn()}
+      />
+    );
+    await screen.findByRole("dialog");
+    expect(screen.getByLabelText("Started (optional)")).toHaveValue(
+      "2026-01-01"
+    );
+    expect(screen.getByLabelText("Finished (optional)")).toHaveValue(
+      "2026-02-01"
+    );
+  });
+
+  it("leaves Started and Finished empty when the book has no dates", async () => {
+    // sampleBook (set in beforeEach) has no startedAt / finishedAt.
+    renderDialog();
+    await screen.findByRole("dialog");
+    expect(screen.getByLabelText("Started (optional)")).toHaveValue("");
+    expect(screen.getByLabelText("Finished (optional)")).toHaveValue("");
+  });
+
   it("calls updateBook, shows Updated toast, and closes on valid save", async () => {
     const { onOpenChange } = renderDialog();
     await screen.findByRole("dialog");
