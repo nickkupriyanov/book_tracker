@@ -1,8 +1,9 @@
 # Spec: Shelf Search & Filter
 
-> **Status:** Draft
+> **Status:** Implemented
 > **Author:** —
 > **Created:** 2026-06-06
+> **Implemented:** 2026-06-06 (T1–T6)
 > **Spec ID:** 010-shelf-search
 > **Constitution version:** see `.specify/memory/constitution.md`
 > **Predecessors:** spec 002 (shelf list), spec 005 (detail view)
