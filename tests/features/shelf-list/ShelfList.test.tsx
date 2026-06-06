@@ -146,18 +146,20 @@ describe("ShelfList", () => {
     it("opens the delete dialog when a card's trash button is clicked", async () => {
       const user = userEvent.setup();
       render(<ShelfList books={sampleBooks} />);
-      // sampleBooks[0] is bookWant ("Book A") — its trash button is
-      // the first one in the grid.
+      // The default sort is "recently-added" (createdAt desc), so
+      // the first card in the grid is bookRead ("Book C"), not the
+      // first element of `sampleBooks`. We click the first trash
+      // button and assert on whichever book that turns out to be.
       const trashButtons = screen.getAllByTestId("book-card-delete");
       await user.click(trashButtons[0]!);
       await screen.findByRole("alertdialog");
       expect(
-        screen.getByRole("heading", { name: /Delete "Book A"\?/ })
+        screen.getByRole("heading", { name: /Delete "Book C"\?/ })
       ).toBeInTheDocument();
-      // Scope to the dialog: "Author A" also appears on the card
+      // Scope to the dialog: "Author C" also appears on the card
       // behind the overlay, so a global text query matches both.
       const dialog = screen.getByRole("alertdialog");
-      expect(within(dialog).getByText(/Author A/)).toBeInTheDocument();
+      expect(within(dialog).getByText(/Author C/)).toBeInTheDocument();
     });
 
     it("uses precedence: clicking edit on a card while delete is open closes delete and opens edit", () => {
@@ -170,13 +172,14 @@ describe("ShelfList", () => {
       // same render.
       render(<ShelfList books={sampleBooks} />);
 
-      // Open delete on book[0] (Book A).
+      // Open delete on grid[0] (Book C, the first card under
+      // default "recently-added" sort).
       fireEvent.click(screen.getAllByTestId("book-card-delete")[0]!);
       expect(
-        screen.getByRole("heading", { name: /Delete "Book A"\?/ })
+        screen.getByRole("heading", { name: /Delete "Book C"\?/ })
       ).toBeInTheDocument();
 
-      // Click edit on book[1] (Book B). Precedence should close
+      // Click edit on grid[1] (Book B). Precedence should close
       // the delete dialog and open the edit dialog.
       fireEvent.click(screen.getAllByTestId("book-card-edit")[1]!);
 
@@ -189,13 +192,13 @@ describe("ShelfList", () => {
     it("uses precedence: clicking trash on a card while edit is open closes edit and opens delete", () => {
       render(<ShelfList books={sampleBooks} />);
 
-      // Open edit on book[0] (Book A).
+      // Open edit on grid[0] (Book C).
       fireEvent.click(screen.getAllByTestId("book-card-edit")[0]!);
       expect(
         screen.getByRole("heading", { name: "Edit book" })
       ).toBeInTheDocument();
 
-      // Click trash on book[1] (Book B). Precedence should close
+      // Click trash on grid[1] (Book B). Precedence should close
       // the edit dialog and open the delete dialog.
       fireEvent.click(screen.getAllByTestId("book-card-delete")[1]!);
 
@@ -425,6 +428,138 @@ describe("ShelfList", () => {
       expect(
         screen.getByRole("tab", { name: /Reading \(0\)/ })
       ).toBeInTheDocument();
+    });
+  });
+
+  describe("sorting (spec 012)", () => {
+    const unsortedBooks: Book[] = [
+      {
+        id: "s1",
+        title: "Charlie",
+        author: "Wright",
+        status: "want",
+        tags: [],
+        createdAt: "2026-06-01T00:00:00.000Z",
+      },
+      {
+        id: "s2",
+        title: "Alpha",
+        author: "Adams",
+        status: "read",
+        tags: [],
+        createdAt: "2026-06-03T00:00:00.000Z",
+        startedAt: "2026-05-15",
+        finishedAt: "2026-05-20",
+        rating: 5,
+      },
+      {
+        id: "s3",
+        title: "Bravo",
+        author: "Brown",
+        status: "reading",
+        tags: [],
+        createdAt: "2026-06-02T00:00:00.000Z",
+        startedAt: "2026-05-28",
+      },
+    ];
+
+    const gridTitles = (): string[] =>
+      screen
+        .getAllByRole("heading", { level: 3 })
+        .map((h) => h.textContent ?? "");
+
+    it("default sort is 'recently-added' — books appear in createdAt desc order", () => {
+      render(<ShelfList books={unsortedBooks} />);
+      expect(gridTitles()).toEqual(["Alpha", "Bravo", "Charlie"]);
+    });
+
+    it("selecting 'title-az' reorders the grid alphabetically by title", async () => {
+      const user = userEvent.setup();
+      render(<ShelfList books={unsortedBooks} />);
+      await user.click(screen.getByTestId("shelf-sort"));
+      await user.click(screen.getByRole("option", { name: "Title (A→Z)" }));
+      expect(gridTitles()).toEqual(["Alpha", "Bravo", "Charlie"]);
+    });
+
+    it("selecting 'recently-started' puts books with startedAt first (newest first) and nulls last", async () => {
+      const user = userEvent.setup();
+      render(<ShelfList books={unsortedBooks} />);
+      await user.click(screen.getByTestId("shelf-sort"));
+      await user.click(
+        screen.getByRole("option", { name: "Recently started" })
+      );
+      // Bravo has startedAt 2026-05-28, Alpha has 2026-05-15,
+      // Charlie has no startedAt → last.
+      expect(gridTitles()).toEqual(["Bravo", "Alpha", "Charlie"]);
+    });
+
+    it("changing the sort does not reset search, tag, or status state (and vice versa)", async () => {
+      const user = userEvent.setup();
+      // Setup: two "read fiction" books (Alpha, Bravo) + a
+      // "want fiction" distractor (Charlie) + a "read non-fiction"
+      // distractor (Delta). Search "a" + tag "fiction" + status
+      // "read" leaves Alpha and Bravo. Default sort puts Bravo
+      // first (later createdAt); title-az flips it to Alpha first.
+      const taggedBooks: Book[] = [
+        {
+          id: "x1",
+          title: "Charlie",
+          author: "Wright",
+          status: "want",
+          tags: ["fiction"],
+          createdAt: "2026-06-01T00:00:00.000Z",
+        },
+        {
+          id: "x2",
+          title: "Alpha",
+          author: "Adams",
+          status: "read",
+          tags: ["fiction"],
+          createdAt: "2026-06-02T00:00:00.000Z",
+        },
+        {
+          id: "x3",
+          title: "Bravo",
+          author: "Brown",
+          status: "read",
+          tags: ["fiction"],
+          createdAt: "2026-06-03T00:00:00.000Z",
+        },
+        {
+          id: "x4",
+          title: "Delta",
+          author: "Davis",
+          status: "read",
+          tags: ["non-fiction"],
+          createdAt: "2026-06-04T00:00:00.000Z",
+        },
+      ];
+      render(<ShelfList books={taggedBooks} />);
+
+      // Set search, tag, and status.
+      await user.type(screen.getByTestId("shelf-search"), "a");
+      await user.click(screen.getByTestId("shelf-tag-fiction"));
+      await user.click(screen.getByRole("tab", { name: /^Read \(/ }));
+
+      // Sanity: only Alpha and Bravo survive (and they're in
+      // createdAt desc: Bravo, Alpha).
+      expect(gridTitles()).toEqual(["Bravo", "Alpha"]);
+
+      // Now change sort to "title-az" — order flips to A, B.
+      await user.click(screen.getByTestId("shelf-sort"));
+      await user.click(screen.getByRole("option", { name: "Title (A→Z)" }));
+
+      // Sort changed.
+      expect(gridTitles()).toEqual(["Alpha", "Bravo"]);
+
+      // Search preserved.
+      expect(screen.getByTestId("shelf-search")).toHaveValue("a");
+      // Tag chip still in the DOM.
+      expect(screen.getByTestId("shelf-tag-fiction")).toBeInTheDocument();
+      // Status tab still active.
+      expect(
+        screen.getByRole("tab", { name: /^Read \(/ })
+      ).toHaveAttribute("data-state", "active");
     });
   });
 
