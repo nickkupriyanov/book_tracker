@@ -4,16 +4,28 @@ import { useState } from "react";
 import { BookOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { StatusPill } from "@/features/shelf-list/StatusPill";
+import { formatReadingDuration } from "@/lib/format/reading-duration";
 import type { Book } from "@/types/book";
 
 export interface DetailMetaProps {
   book: Book;
 }
 
+const DATE_FORMATTER = new Intl.DateTimeFormat("en-GB", {
+  dateStyle: "long",
+});
+
+function formatDate(date: string): string {
+  return DATE_FORMATTER.format(new Date(date));
+}
+
 /**
  * The main meta block of the detail page. Renders the book's
  * cover (with fallback placeholder), title, author, status,
- * all tags, and the added-on date.
+ * all tags, the added-on date, and (spec 012) up to three
+ * conditional reading-date lines — `Started …`, `Finished …`,
+ * and `Read over …` — each rendered only when its underlying
+ * field is present.
  *
  * Cover sizing: `w-full max-w-xs` on mobile (stacked), `w-64`
  * on desktop (side-by-side with the meta column). Date is
@@ -25,9 +37,7 @@ export function DetailMeta({ book }: DetailMetaProps) {
   const [coverFailed, setCoverFailed] = useState(false);
   const showCover = book.coverUrl !== undefined && !coverFailed;
 
-  const addedOn = new Intl.DateTimeFormat("en-GB", {
-    dateStyle: "long",
-  }).format(new Date(book.createdAt));
+  const addedOn = formatDate(book.createdAt);
 
   return (
     <div className="flex flex-col gap-6 md:flex-row">
@@ -70,6 +80,21 @@ export function DetailMeta({ book }: DetailMetaProps) {
         <p className="text-muted-foreground text-sm">
           Added on {addedOn}
         </p>
+        {book.startedAt !== undefined && (
+          <p className="text-muted-foreground text-sm">
+            Started {formatDate(book.startedAt)}
+          </p>
+        )}
+        {book.finishedAt !== undefined && (
+          <p className="text-muted-foreground text-sm">
+            Finished {formatDate(book.finishedAt)}
+          </p>
+        )}
+        {book.startedAt !== undefined && book.finishedAt !== undefined && (
+          <p className="text-muted-foreground text-sm">
+            Read over {formatReadingDuration(book.startedAt, book.finishedAt)}
+          </p>
+        )}
       </div>
     </div>
   );

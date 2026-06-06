@@ -82,4 +82,65 @@ describe("DetailMeta", () => {
     expect(screen.getByText(`Added on ${expected}`)).toBeInTheDocument();
     expect(expected).toMatch(/\d+ \w+ \d{4}/);
   });
+
+  describe("reading dates (spec 012)", () => {
+    const formatDate = (raw: string): string =>
+      new Intl.DateTimeFormat("en-GB", { dateStyle: "long" }).format(
+        new Date(raw)
+      );
+
+    it("a book with no dates — only 'Added on …' is rendered, no new lines", () => {
+      render(<DetailMeta book={baseBook} />);
+      // baseBook has no startedAt / finishedAt.
+      expect(screen.queryByText(/^Started /)).not.toBeInTheDocument();
+      expect(screen.queryByText(/^Finished /)).not.toBeInTheDocument();
+      expect(screen.queryByText(/^Read over /)).not.toBeInTheDocument();
+    });
+
+    it("a book with only startedAt — 'Started …' is rendered, no 'Finished' or 'Read over'", () => {
+      render(
+        <DetailMeta
+          book={{ ...baseBook, startedAt: "2026-04-01" }}
+        />
+      );
+      expect(
+        screen.getByText(`Started ${formatDate("2026-04-01")}`)
+      ).toBeInTheDocument();
+      expect(screen.queryByText(/^Finished /)).not.toBeInTheDocument();
+      expect(screen.queryByText(/^Read over /)).not.toBeInTheDocument();
+    });
+
+    it("a book with both dates (multi-day) — all three new lines render", () => {
+      render(
+        <DetailMeta
+          book={{
+            ...baseBook,
+            startedAt: "2026-04-01",
+            finishedAt: "2026-04-15",
+          }}
+        />
+      );
+      expect(
+        screen.getByText(`Started ${formatDate("2026-04-01")}`)
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(`Finished ${formatDate("2026-04-15")}`)
+      ).toBeInTheDocument();
+      // 14 days → "2 weeks".
+      expect(screen.getByText("Read over 2 weeks")).toBeInTheDocument();
+    });
+
+    it("a book with both dates (same day) — 'Read over a day' is rendered", () => {
+      render(
+        <DetailMeta
+          book={{
+            ...baseBook,
+            startedAt: "2026-04-01",
+            finishedAt: "2026-04-01",
+          }}
+        />
+      );
+      expect(screen.getByText("Read over a day")).toBeInTheDocument();
+    });
+  });
 });
