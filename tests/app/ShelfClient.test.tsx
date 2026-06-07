@@ -24,9 +24,7 @@ describe("ShelfClient — Reading Calendar integration (spec 013)", () => {
     // Both the calendar and the shelf list are present.
     expect(screen.getByTestId("reading-calendar")).toBeInTheDocument();
     // The calendar appears before the shelf list in the DOM.
-    const shelf = document.querySelector(
-      "[data-testid='shelf-list'], main ul, main > div"
-    );
+    const shelf = document.querySelector("[data-testid='home-shelf-area']");
     expect(calendar.compareDocumentPosition(shelf ?? document.body) &
       Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
@@ -46,5 +44,75 @@ describe("ShelfClient — Reading Calendar integration (spec 013)", () => {
     expect(
       screen.queryByTestId("reading-calendar")
     ).not.toBeInTheDocument();
+  });
+});
+
+describe("ShelfClient — responsive page layout (spec 014)", () => {
+  beforeEach(async () => {
+    __resetBookLibrary();
+    localStorage.clear();
+  });
+
+  it("renders every state inside the shared page container", async () => {
+    // Loading state — no init, status stays at the initial "loading".
+    __resetBookLibrary();
+    const { unmount } = render(<ShelfClient />);
+    expect(screen.getByTestId("page-container")).toBeInTheDocument();
+    unmount();
+
+    // Error state — set directly to avoid wiring a failing adapter.
+    __resetBookLibrary();
+    useBookLibrary.setState({ status: "error" });
+    const { unmount: unmount2 } = render(<ShelfClient />);
+    expect(screen.getByTestId("page-container")).toBeInTheDocument();
+    unmount2();
+
+    // Empty state.
+    __resetBookLibrary();
+    await useBookLibrary.getState().init(new LocalStorageAdapter());
+    const { unmount: unmount3 } = render(<ShelfClient />);
+    expect(screen.getByTestId("page-container")).toBeInTheDocument();
+    unmount3();
+
+    // Ready non-empty state.
+    await useBookLibrary.getState().addBook({
+      title: "Piranesi",
+      author: "Susanna Clarke",
+      status: "reading",
+      tags: [],
+    });
+    render(<ShelfClient />);
+    expect(screen.getByTestId("page-container")).toBeInTheDocument();
+  });
+
+  it("places the calendar rail and the shelf area inside the home layout in the ready non-empty state", async () => {
+    await useBookLibrary.getState().init(new LocalStorageAdapter());
+    await useBookLibrary.getState().addBook({
+      title: "Piranesi",
+      author: "Susanna Clarke",
+      status: "reading",
+      tags: [],
+    });
+    render(<ShelfClient />);
+
+    expect(screen.getByTestId("home-calendar-rail")).toBeInTheDocument();
+    expect(screen.getByTestId("home-shelf-area")).toBeInTheDocument();
+  });
+
+  it("keeps the Reading Calendar before the shelf in DOM order in the ready non-empty state", async () => {
+    await useBookLibrary.getState().init(new LocalStorageAdapter());
+    await useBookLibrary.getState().addBook({
+      title: "Piranesi",
+      author: "Susanna Clarke",
+      status: "reading",
+      tags: [],
+    });
+    render(<ShelfClient />);
+
+    const rail = screen.getByTestId("home-calendar-rail");
+    const shelf = screen.getByTestId("home-shelf-area");
+    expect(
+      rail.compareDocumentPosition(shelf) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
   });
 });

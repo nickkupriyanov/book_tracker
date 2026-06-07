@@ -24,7 +24,10 @@ export function ShelfClient() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
+    <main
+      className="mx-auto max-w-3xl px-4 py-8"
+      data-testid="page-container"
+    >
       <header className="mb-8 flex items-center justify-between">
         <h1 className="font-serif text-3xl text-foreground">Book Tracker</h1>
         {status === "ready" && books.length > 0 && (
@@ -46,8 +49,12 @@ export function ShelfClient() {
 
       {status === "ready" && books.length > 0 && (
         <>
-          <ReadingCalendar books={books} />
-          <ShelfList books={books} />
+          <div data-testid="home-calendar-rail">
+            <ReadingCalendar books={books} />
+          </div>
+          <div data-testid="home-shelf-area">
+            <ShelfList books={books} />
+          </div>
         </>
       )}
 
