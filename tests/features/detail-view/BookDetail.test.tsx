@@ -67,6 +67,33 @@ describe("BookDetail", () => {
     expect(screen.getByText("Susanna Clarke")).toBeInTheDocument();
   });
 
+  describe("shared page spacing (spec 014)", () => {
+    it("renders the loading state inside the shared page container", () => {
+      __resetBookLibrary();
+      render(<BookDetail bookId={sampleBook.id} />);
+      expect(screen.getByTestId("page-container")).toBeInTheDocument();
+      expect(screen.getByText(/Loading/)).toBeInTheDocument();
+    });
+
+    it("renders the not-found state inside the shared page container", () => {
+      render(<BookDetail bookId="nonexistent-id" />);
+      const container = screen.getByTestId("page-container");
+      expect(container).toBeInTheDocument();
+      expect(
+        container.querySelector("h2, [role='heading']")
+      ).toHaveTextContent(/Book not found/);
+    });
+
+    it("renders the found state inside the shared page container", () => {
+      render(<BookDetail bookId={sampleBook.id} />);
+      const container = screen.getByTestId("page-container");
+      expect(container).toBeInTheDocument();
+      expect(
+        screen.getByRole("heading", { level: 1, name: "Piranesi" })
+      ).toBeInTheDocument();
+    });
+  });
+
   it("opens the Edit dialog on edit click and updates the page on save", async () => {
     const user = userEvent.setup();
     render(<BookDetail bookId={sampleBook.id} />);

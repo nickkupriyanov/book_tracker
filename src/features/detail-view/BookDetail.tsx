@@ -149,16 +149,27 @@ export function BookDetail({ bookId }: BookDetailProps) {
   }
 
   if (status === "loading") {
-    return <DetailLoading />;
+    return (
+      <main data-testid="page-container" className="px-4 py-8">
+        <DetailLoading />
+      </main>
+    );
   }
 
   if (book === null) {
-    return <DetailNotFound />;
+    return (
+      <main data-testid="page-container" className="px-4 py-8">
+        <DetailNotFound />
+      </main>
+    );
   }
 
   return (
     <>
-      <div className="space-y-6">
+      <main
+        data-testid="page-container"
+        className="mx-auto max-w-3xl space-y-6 px-4 py-8"
+      >
         <DetailHeader
           onEdit={() => setEditingBook(book)}
           onDelete={() => setDeletingBook(book)}
@@ -173,7 +184,7 @@ export function BookDetail({ bookId }: BookDetailProps) {
           onDelete={handleDeleteQuote}
         />
         <ReadingDaysSection book={book} />
-      </div>
+      </main>
       <EditBookDialog
         book={editingBook ?? book}
         open={editingBook !== null}
