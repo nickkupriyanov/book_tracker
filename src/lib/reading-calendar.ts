@@ -19,6 +19,8 @@ export interface ReadingCalendarBookRef {
   id: string;
   title: string;
   color: string;
+  /** Pages read on this day (from readingLogs). Undefined for legacy readingDays. */
+  pagesRead?: number;
 }
 
 /**
@@ -138,32 +140,54 @@ function formatLabel(year: number, month: number): string {
 
 /**
  * Builds the display model for the visible month. Pure: no DOM,
- * no React. Defensive against missing/invalid `readingDays` on
- * individual books (spec 013 §10).
+ * no React. Reads both `readingLogs` (spec 016) and legacy
+ * `readingDays` (spec 013). Logs take priority for ordering;
+ * legacy days fall back to title/id sort.
  */
 export function buildReadingCalendarMonth(
   books: Book[],
   month: CalendarMonth
 ): ReadingCalendarMonthModel {
-  // First pass: collect every (date → book) pair, ignore dates
-  // outside the visible month, and ignore books without valid
-  // reading days. We work with string dates so the
-  // lexicographic-chronological equivalence is preserved.
+  const monthPrefix = `${month.year}-${String(month.month + 1).padStart(2, "0")}`;
   const byDate = new Map<string, ReadingCalendarBookRef[]>();
+  // Track which (date, bookId) pairs already have a log entry,
+  // so legacy readingDays don't override them.
+  const loggedPairs = new Set<string>();
+
+  // First pass: readingLogs (spec 016 FR-14–FR-18).
+  for (const book of books) {
+    if (!Array.isArray(book.readingLogs)) continue;
+    for (const log of book.readingLogs) {
+      if (typeof log.date !== "string") continue;
+      if (!log.date.startsWith(monthPrefix)) continue;
+      const key = `${log.date}::${book.id}`;
+      loggedPairs.add(key);
+      const list = byDate.get(log.date) ?? [];
+      list.push({
+        id: book.id,
+        title: book.title,
+        color: colorForBook(book),
+        pagesRead: log.pagesRead,
+      });
+      byDate.set(log.date, list);
+    }
+  }
+
+  // Second pass: legacy readingDays (only where no log exists).
   for (const book of books) {
     if (!Array.isArray(book.readingDays)) continue;
     for (const raw of book.readingDays) {
       if (typeof raw !== "string") continue;
-      if (!raw.startsWith(`${month.year}-${String(month.month + 1).padStart(2, "0")}`)) {
-        continue;
-      }
+      if (!raw.startsWith(monthPrefix)) continue;
+      const key = `${raw}::${book.id}`;
+      if (loggedPairs.has(key)) continue;
       const list = byDate.get(raw) ?? [];
       list.push({ id: book.id, title: book.title, color: colorForBook(book) });
       byDate.set(raw, list);
     }
   }
 
-  // Second pass: build the real days of the month in order.
+  // Build the real days of the month in order.
   const total = daysInMonth(month.year, month.month);
   const days: ReadingCalendarDayModel[] = [];
   let hasLoggedDays = false;
@@ -171,9 +195,12 @@ export function buildReadingCalendarMonth(
   for (let day = 1; day <= total; day++) {
     const date = formatDate(month.year, month.month, day);
     const booksForDay = (byDate.get(date) ?? []).slice();
-    // Stable sort by (title, id) for predictable stripes and
-    // accessible labels across renders.
+
+    // Sort by pagesRead descending (logs first), then title, then id.
     booksForDay.sort((a, b) => {
+      const pa = a.pagesRead ?? 0;
+      const pb = b.pagesRead ?? 0;
+      if (pa !== pb) return pb - pa;
       if (a.title !== b.title) return a.title.localeCompare(b.title);
       return a.id.localeCompare(b.id);
     });
@@ -238,7 +265,8 @@ export function buildReadingCalendarMonth(
 /**
  * Composes the accessible label for a single day cell. Always
  * includes the full book title list — even when {@link ReadingCalendarDayModel.visibleColors}
- * is truncated to three.
+ * is truncated to three. When a book has `pagesRead`, includes
+ * the count in the label (spec 016 FR-19).
  */
 function buildDayLabel(
   date: string,
@@ -247,6 +275,12 @@ function buildDayLabel(
   if (books.length === 0) {
     return `${date} — No reading logged`;
   }
-  const titles = books.map((b) => b.title).join(", ");
+  const titles = books
+    .map((b) =>
+      b.pagesRead !== undefined
+        ? `${b.title} (${b.pagesRead} pages)`
+        : b.title
+    )
+    .join(", ");
   return `${date} — ${titles}`;
 }

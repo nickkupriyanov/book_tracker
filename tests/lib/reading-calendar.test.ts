@@ -461,6 +461,217 @@ describe("buildReadingCalendarMonth", () => {
     });
   });
 
+  describe("readingLogs (spec 016)", () => {
+    it("attaches a book to the day matching its readingLog date", () => {
+      const book = makeBook({
+        readingLogs: [
+          {
+            id: "log-1",
+            date: "2026-06-10",
+            pagesRead: 30,
+            currentPageAfter: 120,
+            createdAt: "2026-06-07T10:00:00.000Z",
+            updatedAt: "2026-06-07T10:00:00.000Z",
+          },
+        ],
+        coverColor: "#b85b45",
+      });
+      const result = buildReadingCalendarMonth([book], {
+        year: 2026,
+        month: 5,
+      });
+      const day = result.days.find((d) => d.date === "2026-06-10");
+      expect(day?.books).toHaveLength(1);
+      expect(day?.books[0]?.id).toBe("book-1");
+      expect(day?.books[0]?.pagesRead).toBe(30);
+    });
+
+    it("sorts books by pagesRead descending within a day", () => {
+      const few = makeBook({
+        id: "few",
+        title: "Few Pages",
+        readingLogs: [
+          {
+            id: "log-1",
+            date: "2026-06-10",
+            pagesRead: 10,
+            currentPageAfter: 10,
+            createdAt: "2026-06-07T10:00:00.000Z",
+            updatedAt: "2026-06-07T10:00:00.000Z",
+          },
+        ],
+        coverColor: "#aa0000",
+      });
+      const many = makeBook({
+        id: "many",
+        title: "Many Pages",
+        readingLogs: [
+          {
+            id: "log-2",
+            date: "2026-06-10",
+            pagesRead: 50,
+            currentPageAfter: 50,
+            createdAt: "2026-06-07T10:00:00.000Z",
+            updatedAt: "2026-06-07T10:00:00.000Z",
+          },
+        ],
+        coverColor: "#00aa00",
+      });
+      const result = buildReadingCalendarMonth([few, many], {
+        year: 2026,
+        month: 5,
+      });
+      const day = result.days.find((d) => d.date === "2026-06-10");
+      expect(day?.books[0]?.id).toBe("many");
+      expect(day?.books[1]?.id).toBe("few");
+    });
+
+    it("visibleColors reflects top-three books by pagesRead", () => {
+      const a = makeBook({
+        id: "a",
+        title: "A",
+        readingLogs: [
+          {
+            id: "log-1",
+            date: "2026-06-10",
+            pagesRead: 5,
+            currentPageAfter: 5,
+            createdAt: "2026-06-07T10:00:00.000Z",
+            updatedAt: "2026-06-07T10:00:00.000Z",
+          },
+        ],
+        coverColor: "#aa0000",
+      });
+      const b = makeBook({
+        id: "b",
+        title: "B",
+        readingLogs: [
+          {
+            id: "log-2",
+            date: "2026-06-10",
+            pagesRead: 30,
+            currentPageAfter: 30,
+            createdAt: "2026-06-07T10:00:00.000Z",
+            updatedAt: "2026-06-07T10:00:00.000Z",
+          },
+        ],
+        coverColor: "#00aa00",
+      });
+      const c = makeBook({
+        id: "c",
+        title: "C",
+        readingLogs: [
+          {
+            id: "log-3",
+            date: "2026-06-10",
+            pagesRead: 10,
+            currentPageAfter: 10,
+            createdAt: "2026-06-07T10:00:00.000Z",
+            updatedAt: "2026-06-07T10:00:00.000Z",
+          },
+        ],
+        coverColor: "#0000aa",
+      });
+      const d = makeBook({
+        id: "d",
+        title: "D",
+        readingLogs: [
+          {
+            id: "log-4",
+            date: "2026-06-10",
+            pagesRead: 20,
+            currentPageAfter: 20,
+            createdAt: "2026-06-07T10:00:00.000Z",
+            updatedAt: "2026-06-07T10:00:00.000Z",
+          },
+        ],
+        coverColor: "#aaaa00",
+      });
+      const result = buildReadingCalendarMonth([a, b, c, d], {
+        year: 2026,
+        month: 5,
+      });
+      const day = result.days.find((d) => d.date === "2026-06-10");
+      expect(day?.visibleColors).toEqual(["#00aa00", "#aaaa00", "#0000aa"]);
+      expect(day?.books).toHaveLength(4);
+    });
+
+    it("labels include page counts when pagesRead is present", () => {
+      const book = makeBook({
+        id: "a",
+        title: "Piranesi",
+        readingLogs: [
+          {
+            id: "log-1",
+            date: "2026-06-10",
+            pagesRead: 30,
+            currentPageAfter: 120,
+            createdAt: "2026-06-07T10:00:00.000Z",
+            updatedAt: "2026-06-07T10:00:00.000Z",
+          },
+        ],
+        coverColor: "#b85b45",
+      });
+      const result = buildReadingCalendarMonth([book], {
+        year: 2026,
+        month: 5,
+      });
+      const day = result.days.find((d) => d.date === "2026-06-10");
+      expect(day?.ariaLabel).toContain("Piranesi (30 pages)");
+    });
+
+    it("logs take priority over legacy readingDays for the same book and date", () => {
+      const book = makeBook({
+        id: "a",
+        title: "Both",
+        readingLogs: [
+          {
+            id: "log-1",
+            date: "2026-06-10",
+            pagesRead: 30,
+            currentPageAfter: 120,
+            createdAt: "2026-06-07T10:00:00.000Z",
+            updatedAt: "2026-06-07T10:00:00.000Z",
+          },
+        ],
+        readingDays: ["2026-06-10", "2026-06-11"],
+        coverColor: "#b85b45",
+      });
+      const result = buildReadingCalendarMonth([book], {
+        year: 2026,
+        month: 5,
+      });
+      // June 10: only one ref (from log), with pagesRead.
+      const day10 = result.days.find((d) => d.date === "2026-06-10");
+      expect(day10?.books).toHaveLength(1);
+      expect(day10?.books[0]?.pagesRead).toBe(30);
+      // June 11: only readingDays, no log → legacy fallback.
+      const day11 = result.days.find((d) => d.date === "2026-06-11");
+      expect(day11?.books).toHaveLength(1);
+      expect(day11?.books[0]?.pagesRead).toBeUndefined();
+    });
+
+    it("hasLoggedDays is true when readingLogs exist in the visible month", () => {
+      const book = makeBook({
+        readingLogs: [
+          {
+            id: "log-1",
+            date: "2026-06-10",
+            pagesRead: 30,
+            currentPageAfter: 120,
+            createdAt: "2026-06-07T10:00:00.000Z",
+            updatedAt: "2026-06-07T10:00:00.000Z",
+          },
+        ],
+      });
+      const result = buildReadingCalendarMonth([book], {
+        year: 2026,
+        month: 5,
+      });
+      expect(result.hasLoggedDays).toBe(true);
+    });
+  });
+
   describe("year wrap", () => {
     it("December renders as 31 days", () => {
       const result = buildReadingCalendarMonth([], { year: 2026, month: 11 });
