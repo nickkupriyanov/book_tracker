@@ -62,11 +62,11 @@ export function ReadingCalendar({ books }: ReadingCalendarProps) {
         color: "oklch(0.95 0.01 60)",
       }}
     >
-      <header className="mb-4 flex items-center justify-between gap-3">
+      <header className="mb-4 flex flex-col gap-3">
         <h2 className="font-serif text-lg" style={{ color: "oklch(0.95 0.01 60)" }}>
           Reading Calendar
         </h2>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full items-center gap-2">
           <Button
             type="button"
             variant="ghost"
@@ -79,7 +79,7 @@ export function ReadingCalendar({ books }: ReadingCalendarProps) {
           </Button>
           <span
             aria-live="polite"
-            className="min-w-[8rem] text-center font-serif"
+            className="min-w-0 flex-1 text-center font-serif whitespace-nowrap"
             data-testid="reading-calendar-month-label"
             style={{ color: "oklch(0.85 0.01 60)" }}
           >
