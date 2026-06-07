@@ -71,14 +71,14 @@ describe("BookDetail", () => {
     it("renders the loading state inside the shared page container", () => {
       __resetBookLibrary();
       render(<BookDetail bookId={sampleBook.id} />);
-      expect(screen.getByTestId("page-container")).toBeInTheDocument();
+      expect(screen.getByTestId("page-container")).toHaveClass("max-w-6xl");
       expect(screen.getByText(/Loading/)).toBeInTheDocument();
     });
 
     it("renders the not-found state inside the shared page container", () => {
       render(<BookDetail bookId="nonexistent-id" />);
       const container = screen.getByTestId("page-container");
-      expect(container).toBeInTheDocument();
+      expect(container).toHaveClass("max-w-6xl");
       expect(
         container.querySelector("h2, [role='heading']")
       ).toHaveTextContent(/Book not found/);
@@ -87,7 +87,7 @@ describe("BookDetail", () => {
     it("renders the found state inside the shared page container", () => {
       render(<BookDetail bookId={sampleBook.id} />);
       const container = screen.getByTestId("page-container");
-      expect(container).toBeInTheDocument();
+      expect(container).toHaveClass("max-w-6xl");
       expect(
         screen.getByRole("heading", { level: 1, name: "Piranesi" })
       ).toBeInTheDocument();

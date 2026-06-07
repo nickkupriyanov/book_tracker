@@ -167,7 +167,7 @@ export function BookDetail({ bookId }: BookDetailProps) {
 
   return (
     <>
-      <PageContainer width="narrow">
+      <PageContainer>
         <div className="space-y-6">
           <DetailHeader
             onEdit={() => setEditingBook(book)}

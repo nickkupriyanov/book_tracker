@@ -31,7 +31,7 @@ export function ShelfClient() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
-    <PageContainer width="wide">
+    <PageContainer>
       <header className="mb-8 flex items-center justify-between">
         <h1 className="font-serif text-3xl text-foreground">Book Tracker</h1>
         {status === "ready" && books.length > 0 && (

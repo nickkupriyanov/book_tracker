@@ -57,21 +57,21 @@ describe("ShelfClient — responsive page layout (spec 014)", () => {
     // Loading state — no init, status stays at the initial "loading".
     __resetBookLibrary();
     const { unmount } = render(<ShelfClient />);
-    expect(screen.getByTestId("page-container")).toBeInTheDocument();
+    expect(screen.getByTestId("page-container")).toHaveClass("max-w-6xl");
     unmount();
 
     // Error state — set directly to avoid wiring a failing adapter.
     __resetBookLibrary();
     useBookLibrary.setState({ status: "error" });
     const { unmount: unmount2 } = render(<ShelfClient />);
-    expect(screen.getByTestId("page-container")).toBeInTheDocument();
+    expect(screen.getByTestId("page-container")).toHaveClass("max-w-6xl");
     unmount2();
 
     // Empty state.
     __resetBookLibrary();
     await useBookLibrary.getState().init(new LocalStorageAdapter());
     const { unmount: unmount3 } = render(<ShelfClient />);
-    expect(screen.getByTestId("page-container")).toBeInTheDocument();
+    expect(screen.getByTestId("page-container")).toHaveClass("max-w-6xl");
     unmount3();
 
     // Ready non-empty state.
@@ -82,7 +82,7 @@ describe("ShelfClient — responsive page layout (spec 014)", () => {
       tags: [],
     });
     render(<ShelfClient />);
-    expect(screen.getByTestId("page-container")).toBeInTheDocument();
+    expect(screen.getByTestId("page-container")).toHaveClass("max-w-6xl");
   });
 
   it("places the calendar rail and the shelf area inside the home layout in the ready non-empty state", async () => {
