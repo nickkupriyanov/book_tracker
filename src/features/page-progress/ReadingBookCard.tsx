@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { BookOpen } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { Book } from "@/types/book";
 
 export interface ReadingBookCardProps {
@@ -10,10 +12,9 @@ export interface ReadingBookCardProps {
 }
 
 /**
- * Small home-only card for the currently-reading lane (spec 015 T9).
- * It intentionally avoids the full shelf card's edit/delete affordances
- * and heavy framed feel: this surface is for switching the active book
- * in the progress panel, not managing the library.
+ * Vertical cover-led card for the home reading lane (spec 016 §5.4).
+ * ~160px wide, cover flush to top/left/right, title links to detail,
+ * body click selects the active book for Where Are You.
  */
 export function ReadingBookCard({
   book,
@@ -28,23 +29,28 @@ export function ReadingBookCard({
         : "No page yet";
 
   return (
-    <button
-      type="button"
-      onClick={onSelect}
+    <div
       data-testid="reading-book-card"
+      role="button"
+      tabIndex={0}
       aria-pressed={active}
       aria-label={`Focus ${book.title}`}
-      className={[
-        "group flex min-h-24 w-full gap-3 rounded-lg p-3 text-left transition",
-        "bg-card/70 hover:bg-card shadow-[0_1px_8px_rgba(54,38,24,0.06)]",
+      onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      className={cn(
+        "w-[160px] rounded-lg bg-card shadow-sm transition",
         active
-          ? "ring-primary/35 bg-card ring-2"
+          ? "ring-primary/35 ring-2"
           : "ring-border/40 ring-1 hover:ring-border",
-      ].join(" ")}
+      )}
     >
-      <div className="bg-muted/80 flex aspect-[2/3] h-20 shrink-0 items-center justify-center overflow-hidden rounded-md">
+      <div className="bg-muted/80 flex aspect-[2/3] w-full items-center justify-center overflow-hidden rounded-t-lg">
         {book.coverUrl !== undefined ? (
-          // Plain <img> matches the shelf card's MVP posture.
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={book.coverUrl}
@@ -52,20 +58,41 @@ export function ReadingBookCard({
             className="size-full object-cover"
           />
         ) : (
-          <BookOpen className="text-muted-foreground size-7" />
+          <BookOpen className="text-muted-foreground size-8" />
         )}
       </div>
-      <div className="min-w-0 flex-1 self-center">
-        <p className="truncate font-serif text-sm text-foreground">
+      <div className="space-y-1 p-3">
+        <Link
+          href={`/book/${book.id}`}
+          onClick={(e) => e.stopPropagation()}
+          className="font-serif text-sm text-foreground truncate block hover:underline"
+        >
           {book.title}
-        </p>
+        </Link>
         <p className="text-muted-foreground truncate text-xs">
           {book.author}
         </p>
-        <p className="text-muted-foreground mt-2 text-xs">
+        <p className="text-muted-foreground text-xs">
           {progressText}
         </p>
+        {book.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 pt-1">
+            {book.tags.slice(0, 2).map((tag) => (
+              <span
+                key={tag}
+                className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-[10px]"
+              >
+                {tag}
+              </span>
+            ))}
+            {book.tags.length > 2 && (
+              <span className="text-muted-foreground text-[10px]">
+                +{book.tags.length - 2}
+              </span>
+            )}
+          </div>
+        )}
       </div>
-    </button>
+    </div>
   );
 }

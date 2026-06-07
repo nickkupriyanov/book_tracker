@@ -227,9 +227,23 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
         <h2 className="font-serif text-lg text-foreground">Where are you?</h2>
       </header>
 
-      <div className="mb-4">
-        <p className="font-serif text-2xl text-foreground">{book.title}</p>
-        <p className="text-muted-foreground text-sm">{book.author}</p>
+      <div className="mb-4 flex gap-4">
+        <div className="bg-muted/80 flex aspect-[2/3] w-20 shrink-0 items-center justify-center overflow-hidden rounded-md">
+          {book.coverUrl !== undefined ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={book.coverUrl}
+              alt=""
+              className="size-full object-cover"
+            />
+          ) : (
+            <BookOpen className="text-muted-foreground size-6" />
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="font-serif text-2xl text-foreground">{book.title}</p>
+          <p className="text-muted-foreground text-sm">{book.author}</p>
+        </div>
       </div>
 
       <form
@@ -265,44 +279,46 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
               {isSaving ? "Saving…" : "Save"}
             </Button>
           </div>
-          {progressText !== null && (
-            <p
-              data-testid="page-progress-text"
-              className="text-muted-foreground text-sm"
-            >
-              {progressText}
-            </p>
-          )}
-          {percent !== null && (
-            <div
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={percent}
-              data-testid="page-progress-bar"
-              className="bg-muted h-1.5 w-full overflow-hidden rounded-full"
-            >
-              <div
-                className="bg-primary h-full rounded-full transition-[width]"
-                style={{ width: `${percent}%` }}
-              />
-            </div>
-          )}
-          {!hasTotal && (
-            <p
-              data-testid="page-progress-add-total"
-              className="text-muted-foreground text-sm"
-            >
-              Add the total page count through{" "}
-              <Link
-                href={`/book/${book.id}`}
-                className="text-foreground underline underline-offset-2 hover:no-underline"
+          <div className="min-h-[3rem] space-y-1">
+            {progressText !== null && (
+              <p
+                data-testid="page-progress-text"
+                className="text-muted-foreground text-sm"
               >
-                the book&apos;s edit page
-              </Link>{" "}
-              to see progress here.
-            </p>
-          )}
+                {progressText}
+              </p>
+            )}
+            {percent !== null && (
+              <div
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={percent}
+                data-testid="page-progress-bar"
+                className="bg-muted h-1.5 w-full overflow-hidden rounded-full"
+              >
+                <div
+                  className="bg-primary h-full rounded-full transition-[width]"
+                  style={{ width: `${percent}%` }}
+                />
+              </div>
+            )}
+            {!hasTotal && (
+              <p
+                data-testid="page-progress-add-total"
+                className="text-muted-foreground text-sm"
+              >
+                Add the total page count through{" "}
+                <Link
+                  href={`/book/${book.id}`}
+                  className="text-foreground underline underline-offset-2 hover:no-underline"
+                >
+                  the book&apos;s edit page
+                </Link>{" "}
+                to see progress here.
+              </p>
+            )}
+          </div>
           {reachedEnd && (
             <Button
               type="button"

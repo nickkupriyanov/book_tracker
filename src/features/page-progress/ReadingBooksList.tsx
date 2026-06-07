@@ -10,10 +10,8 @@ export interface ReadingBooksListProps {
 }
 
 /**
- * Compact, focused book list for the home page (spec 015). Renders
- * a small lane of cozy cards for the supplied reading books. Clicking
- * a card changes the active book in the progress panel; editing belongs
- * to the full library.
+ * Compact responsive grid of vertical cover-led reading cards
+ * (spec 016 §5.4). Each card is ~160px wide.
  */
 export function ReadingBooksList({
   books,
@@ -23,7 +21,7 @@ export function ReadingBooksList({
   return (
     <div
       data-testid="reading-books-list"
-      className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"
+      className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4"
     >
       {books.map((book) => (
         <ReadingBookCard
