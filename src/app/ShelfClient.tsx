@@ -6,6 +6,7 @@ import { ShelfList } from "@/features/shelf-list";
 import { ReadingCalendar } from "@/features/reading-calendar";
 import { useBookLibrary } from "@/state/book-library";
 import { EmptyShelf } from "@/components/EmptyShelf";
+import { PageContainer } from "@/components/PageContainer";
 
 /**
  * The shelf page. The store is initialised by `RootClient` in
@@ -17,6 +18,12 @@ import { EmptyShelf } from "@/components/EmptyShelf";
  * Reading Calendar is rendered above the shelf (spec 013
  * §6.1 / FR-10). The calendar is display-only — editing
  * happens on the book detail page.
+ *
+ * Uses the shared `PageContainer` (spec 014) for the outer
+ * page rhythm. The ready non-empty state reorders calendar
+ * rail and shelf area visually on desktop via CSS grid +
+ * `order` while keeping the calendar before the shelf in
+ * DOM order (FR-2, FR-3, FR-4).
  */
 export function ShelfClient() {
   const status = useBookLibrary((s) => s.status);
@@ -24,10 +31,7 @@ export function ShelfClient() {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
-    <main
-      className="mx-auto max-w-3xl px-4 py-8"
-      data-testid="page-container"
-    >
+    <PageContainer width="wide">
       <header className="mb-8 flex items-center justify-between">
         <h1 className="font-serif text-3xl text-foreground">Book Tracker</h1>
         {status === "ready" && books.length > 0 && (
@@ -59,6 +63,6 @@ export function ShelfClient() {
       )}
 
       <AddBookDialog open={dialogOpen} onOpenChange={setDialogOpen} />
-    </main>
+    </PageContainer>
   );
 }

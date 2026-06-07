@@ -14,6 +14,7 @@ import {
   DeleteQuoteDialog,
 } from "@/features/quotes";
 import { validateBookInput } from "@/lib/validation/book";
+import { PageContainer } from "@/components/PageContainer";
 import { DetailHeader } from "./DetailHeader";
 import { DetailMeta } from "./DetailMeta";
 import { DetailNotFound } from "./DetailNotFound";
@@ -150,41 +151,40 @@ export function BookDetail({ bookId }: BookDetailProps) {
 
   if (status === "loading") {
     return (
-      <main data-testid="page-container" className="px-4 py-8">
+      <PageContainer>
         <DetailLoading />
-      </main>
+      </PageContainer>
     );
   }
 
   if (book === null) {
     return (
-      <main data-testid="page-container" className="px-4 py-8">
+      <PageContainer>
         <DetailNotFound />
-      </main>
+      </PageContainer>
     );
   }
 
   return (
     <>
-      <main
-        data-testid="page-container"
-        className="mx-auto max-w-3xl space-y-6 px-4 py-8"
-      >
-        <DetailHeader
-          onEdit={() => setEditingBook(book)}
-          onDelete={() => setDeletingBook(book)}
-        />
-        <DetailMeta book={book} />
-        <RatingSection book={book} />
-        <ReviewSection book={book} />
-        <QuotesSection
-          book={book}
-          onAdd={handleAddQuote}
-          onEdit={handleEditQuote}
-          onDelete={handleDeleteQuote}
-        />
-        <ReadingDaysSection book={book} />
-      </main>
+      <PageContainer width="narrow">
+        <div className="space-y-6">
+          <DetailHeader
+            onEdit={() => setEditingBook(book)}
+            onDelete={() => setDeletingBook(book)}
+          />
+          <DetailMeta book={book} />
+          <RatingSection book={book} />
+          <ReviewSection book={book} />
+          <QuotesSection
+            book={book}
+            onAdd={handleAddQuote}
+            onEdit={handleEditQuote}
+            onDelete={handleDeleteQuote}
+          />
+          <ReadingDaysSection book={book} />
+        </div>
+      </PageContainer>
       <EditBookDialog
         book={editingBook ?? book}
         open={editingBook !== null}
