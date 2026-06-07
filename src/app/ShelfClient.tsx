@@ -60,23 +60,6 @@ export function ShelfClient() {
 
   return (
     <PageContainer>
-      <header className="mb-8 flex items-center justify-between">
-        <h1 className="font-serif text-3xl text-foreground">Book Tracker</h1>
-        {status === "ready" && (
-          <Button
-            asChild
-            variant="outline"
-            size="sm"
-            data-testid="open-library-link"
-          >
-            <Link href="/library" className="inline-flex items-center gap-1">
-              Open library
-              <ArrowRight className="size-4" />
-            </Link>
-          </Button>
-        )}
-      </header>
-
       {status === "loading" && (
         <p className="text-muted-foreground">Loading your library…</p>
       )}
@@ -90,7 +73,26 @@ export function ShelfClient() {
       {status === "ready" && books.length === 0 && <EmptyShelf />}
 
       {status === "ready" && books.length > 0 && (
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <>
+          {readingBooks.length > 0 && (
+            <div className="mb-8 flex justify-end">
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                data-testid="open-library-link"
+              >
+                <Link
+                  href="/library"
+                  className="inline-flex items-center gap-1"
+                >
+                  Open library
+                  <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+            </div>
+          )}
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
           <div className="space-y-8 lg:order-1">
             {readingBooks.length === 0 || activeBook === undefined ? (
               <div
@@ -132,6 +134,7 @@ export function ShelfClient() {
             <ReadingCalendar books={books} />
           </div>
         </div>
+        </>
       )}
     </PageContainer>
   );
