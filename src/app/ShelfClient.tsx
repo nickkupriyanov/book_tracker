@@ -52,14 +52,17 @@ export function ShelfClient() {
       {status === "ready" && books.length === 0 && <EmptyShelf />}
 
       {status === "ready" && books.length > 0 && (
-        <>
-          <div data-testid="home-calendar-rail">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+          <div
+            data-testid="home-calendar-rail"
+            className="lg:order-2 lg:self-start lg:sticky lg:top-6"
+          >
             <ReadingCalendar books={books} />
           </div>
-          <div data-testid="home-shelf-area">
+          <div data-testid="home-shelf-area" className="lg:order-1">
             <ShelfList books={books} />
           </div>
-        </>
+        </div>
       )}
 
       <AddBookDialog open={dialogOpen} onOpenChange={setDialogOpen} />
