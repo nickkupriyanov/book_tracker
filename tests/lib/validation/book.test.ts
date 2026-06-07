@@ -114,3 +114,149 @@ describe("validateBookInput — startedAt / finishedAt (spec 012)", () => {
     }
   });
 });
+
+describe("validateBookInput — currentPage / totalPages (spec 015)", () => {
+  it("omits both page fields when neither is set", () => {
+    const result = validateBookInput(VALID_BOOK);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.currentPage).toBeUndefined();
+      expect(result.value.totalPages).toBeUndefined();
+    }
+  });
+
+  it("accepts a valid currentPage alone", () => {
+    const result = validateBookInput({
+      ...VALID_BOOK,
+      currentPage: 123,
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.value.currentPage).toBe(123);
+  });
+
+  it("accepts a valid totalPages alone", () => {
+    const result = validateBookInput({
+      ...VALID_BOOK,
+      totalPages: 420,
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.value.totalPages).toBe(420);
+  });
+
+  it("accepts both fields when currentPage <= totalPages (equal allowed)", () => {
+    const result = validateBookInput({
+      ...VALID_BOOK,
+      currentPage: 420,
+      totalPages: 420,
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects currentPage > totalPages with an error on currentPage", () => {
+    const result = validateBookInput({
+      ...VALID_BOOK,
+      currentPage: 421,
+      totalPages: 420,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors.currentPage).toBeDefined();
+    }
+  });
+
+  it("rejects a zero currentPage", () => {
+    const result = validateBookInput({
+      ...VALID_BOOK,
+      currentPage: 0,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors.currentPage).toBeDefined();
+    }
+  });
+
+  it("rejects a negative currentPage", () => {
+    const result = validateBookInput({
+      ...VALID_BOOK,
+      currentPage: -5,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors.currentPage).toBeDefined();
+    }
+  });
+
+  it("rejects a decimal currentPage", () => {
+    const result = validateBookInput({
+      ...VALID_BOOK,
+      currentPage: 12.5,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors.currentPage).toBeDefined();
+    }
+  });
+
+  it("rejects a non-numeric currentPage", () => {
+    const result = validateBookInput({
+      ...VALID_BOOK,
+      currentPage: "123",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors.currentPage).toBeDefined();
+    }
+  });
+
+  it("rejects a zero totalPages", () => {
+    const result = validateBookInput({
+      ...VALID_BOOK,
+      totalPages: 0,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors.totalPages).toBeDefined();
+    }
+  });
+
+  it("rejects a decimal totalPages", () => {
+    const result = validateBookInput({
+      ...VALID_BOOK,
+      totalPages: 420.5,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors.totalPages).toBeDefined();
+    }
+  });
+
+  it("rejects a non-numeric totalPages", () => {
+    const result = validateBookInput({
+      ...VALID_BOOK,
+      totalPages: "420",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors.totalPages).toBeDefined();
+    }
+  });
+
+  it("accepts a very large totalPages within the page cap", () => {
+    const result = validateBookInput({
+      ...VALID_BOOK,
+      totalPages: 99_999,
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects a totalPages above the cap", () => {
+    const result = validateBookInput({
+      ...VALID_BOOK,
+      totalPages: 100_000,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors.totalPages).toBeDefined();
+    }
+  });
+});
