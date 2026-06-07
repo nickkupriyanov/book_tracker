@@ -1,4 +1,4 @@
-import type { BookInput, ReadingStatus } from "@/types/book";
+import type { BookInput, ReadingLog, ReadingStatus } from "@/types/book";
 import type { Quote, QuoteInput } from "@/types/quote";
 import type { Review } from "@/types/review";
 import type { JSONContent } from "@tiptap/core";
@@ -309,6 +309,140 @@ function validateReadingDays(
     }
   }
   return deduped;
+}
+
+const LOG_PAGE_MIN = 1;
+
+/**
+ * Validates a single reading-log entry. Returns the normalised
+ * {@link ReadingLog} on success, or pushes field-level errors
+ * to `errors` prefixed with `prefix` (e.g. `"readingLogs.0.id"`).
+ *
+ * Spec 016 §7, FR-13.
+ */
+function validateReadingLog(
+  raw: unknown,
+  errors: Record<string, string>,
+  prefix: string
+): ReadingLog | undefined {
+  if (!isObject(raw)) {
+    errors[prefix] = "Reading log must be an object.";
+    return undefined;
+  }
+
+  const id = raw["id"];
+  if (typeof id !== "string" || id.length === 0) {
+    errors[`${prefix}.id`] = "Reading log id is required.";
+    return undefined;
+  }
+
+  const date = validateReadingDayString(raw["date"], errors, `${prefix}.date`);
+  if (date === undefined) return undefined;
+
+  const pagesRead = raw["pagesRead"];
+  if (
+    typeof pagesRead !== "number" ||
+    !Number.isInteger(pagesRead) ||
+    pagesRead < LOG_PAGE_MIN
+  ) {
+    errors[`${prefix}.pagesRead`] =
+      "pagesRead must be a positive whole number.";
+    return undefined;
+  }
+
+  const currentPageAfter = raw["currentPageAfter"];
+  if (
+    typeof currentPageAfter !== "number" ||
+    !Number.isInteger(currentPageAfter) ||
+    currentPageAfter < LOG_PAGE_MIN
+  ) {
+    errors[`${prefix}.currentPageAfter`] =
+      "currentPageAfter must be a positive whole number.";
+    return undefined;
+  }
+
+  const createdAt = raw["createdAt"];
+  if (typeof createdAt !== "string" || createdAt.length === 0) {
+    errors[`${prefix}.createdAt`] = "createdAt is required.";
+    return undefined;
+  }
+
+  const updatedAt = raw["updatedAt"];
+  if (typeof updatedAt !== "string" || updatedAt.length === 0) {
+    errors[`${prefix}.updatedAt`] = "updatedAt is required.";
+    return undefined;
+  }
+
+  return { id, date, pagesRead, currentPageAfter, createdAt, updatedAt };
+}
+
+/**
+ * Validates `readingLogs`. Returns the normalised array on
+ * success, `undefined` on failure (or when absent/empty).
+ *
+ * Normalisation rules:
+ * - Duplicate dates are collapsed to one entry, summing
+ *   `pagesRead` and keeping the highest `currentPageAfter`
+ *   and the latest `updatedAt`.
+ * - Sorted chronologically by date.
+ *
+ * Spec 016 §7, §9 edge cases.
+ */
+function validateReadingLogs(
+  raw: unknown,
+  errors: Record<string, string>
+): ReadingLog[] | undefined {
+  if (raw === undefined || raw === null) {
+    return undefined;
+  }
+  if (!Array.isArray(raw)) {
+    errors.readingLogs = "Reading logs must be an array.";
+    return undefined;
+  }
+  if (raw.length === 0) {
+    return undefined;
+  }
+
+  const validated: ReadingLog[] = [];
+  for (let i = 0; i < raw.length; i++) {
+    const log = validateReadingLog(raw[i], errors, `readingLogs.${i}`);
+    if (log === undefined) return undefined;
+    validated.push(log);
+  }
+
+  // Group by date and aggregate.
+  const byDate = new Map<string, ReadingLog[]>();
+  for (const log of validated) {
+    const group = byDate.get(log.date) ?? [];
+    group.push(log);
+    byDate.set(log.date, group);
+  }
+
+  const merged: ReadingLog[] = [];
+  for (const [date, group] of byDate) {
+    const first = group[0] as ReadingLog;
+    const totalPages = group.reduce((sum, l) => sum + l.pagesRead, 0);
+    const maxPagesAfter = Math.max(
+      ...group.map((l) => l.currentPageAfter)
+    );
+    const latestUpdated = group
+      .map((l) => l.updatedAt)
+      .sort()
+      .reverse()[0] as string;
+    merged.push({
+      id: first.id,
+      date,
+      pagesRead: totalPages,
+      currentPageAfter: maxPagesAfter,
+      createdAt: first.createdAt,
+      updatedAt: latestUpdated,
+    });
+  }
+
+  // Sort chronologically by date.
+  merged.sort((a, b) => a.date.localeCompare(b.date));
+
+  return merged;
 }
 
 // `#RGB` or `#RRGGBB`. Lowercase the hex digits in the
@@ -624,6 +758,7 @@ export function validateBookInput(input: unknown): ValidationResult<BookInput> {
     "finishedAt"
   );
   const readingDays = validateReadingDays(input["readingDays"], errors);
+  const readingLogs = validateReadingLogs(input["readingLogs"], errors);
   const coverColor = validateCoverColor(input["coverColor"], errors);
   const currentPage = validateOptionalPage(
     input["currentPage"],
@@ -691,6 +826,7 @@ export function validateBookInput(input: unknown): ValidationResult<BookInput> {
     ...(startedAt !== undefined ? { startedAt } : {}),
     ...(finishedAt !== undefined ? { finishedAt } : {}),
     ...(readingDays !== undefined ? { readingDays } : {}),
+    ...(readingLogs !== undefined ? { readingLogs } : {}),
     ...(coverColor !== undefined ? { coverColor } : {}),
     ...(currentPage !== undefined ? { currentPage } : {}),
     ...(totalPages !== undefined ? { totalPages } : {}),

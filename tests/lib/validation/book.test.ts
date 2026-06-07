@@ -115,6 +115,236 @@ describe("validateBookInput — startedAt / finishedAt (spec 012)", () => {
   });
 });
 
+describe("validateBookInput — readingLogs (spec 016)", () => {
+  it("omits readingLogs when not set", () => {
+    const result = validateBookInput(VALID_BOOK);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.readingLogs).toBeUndefined();
+    }
+  });
+
+  it("accepts a valid single reading log", () => {
+    const result = validateBookInput({
+      ...VALID_BOOK,
+      readingLogs: [
+        {
+          id: "log-1",
+          date: "2026-06-07",
+          pagesRead: 30,
+          currentPageAfter: 120,
+          createdAt: "2026-06-07T10:00:00.000Z",
+          updatedAt: "2026-06-07T10:00:00.000Z",
+        },
+      ],
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.readingLogs).toHaveLength(1);
+      expect(result.value.readingLogs![0]!.pagesRead).toBe(30);
+    }
+  });
+
+  it("aggregates multiple logs with the same date", () => {
+    const result = validateBookInput({
+      ...VALID_BOOK,
+      readingLogs: [
+        {
+          id: "log-1",
+          date: "2026-06-07",
+          pagesRead: 30,
+          currentPageAfter: 120,
+          createdAt: "2026-06-07T10:00:00.000Z",
+          updatedAt: "2026-06-07T10:00:00.000Z",
+        },
+        {
+          id: "log-2",
+          date: "2026-06-07",
+          pagesRead: 15,
+          currentPageAfter: 135,
+          createdAt: "2026-06-07T12:00:00.000Z",
+          updatedAt: "2026-06-07T12:00:00.000Z",
+        },
+      ],
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.readingLogs).toHaveLength(1);
+      expect(result.value.readingLogs![0]!.pagesRead).toBe(45);
+      expect(result.value.readingLogs![0]!.currentPageAfter).toBe(135);
+      expect(result.value.readingLogs![0]!.updatedAt).toBe(
+        "2026-06-07T12:00:00.000Z"
+      );
+    }
+  });
+
+  it("keeps separate dates as separate entries", () => {
+    const result = validateBookInput({
+      ...VALID_BOOK,
+      readingLogs: [
+        {
+          id: "log-1",
+          date: "2026-06-06",
+          pagesRead: 10,
+          currentPageAfter: 10,
+          createdAt: "2026-06-06T10:00:00.000Z",
+          updatedAt: "2026-06-06T10:00:00.000Z",
+        },
+        {
+          id: "log-2",
+          date: "2026-06-07",
+          pagesRead: 20,
+          currentPageAfter: 30,
+          createdAt: "2026-06-07T10:00:00.000Z",
+          updatedAt: "2026-06-07T10:00:00.000Z",
+        },
+      ],
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.readingLogs).toHaveLength(2);
+    }
+  });
+
+  it("sorts logs chronologically by date", () => {
+    const result = validateBookInput({
+      ...VALID_BOOK,
+      readingLogs: [
+        {
+          id: "log-2",
+          date: "2026-06-07",
+          pagesRead: 20,
+          currentPageAfter: 30,
+          createdAt: "2026-06-07T10:00:00.000Z",
+          updatedAt: "2026-06-07T10:00:00.000Z",
+        },
+        {
+          id: "log-1",
+          date: "2026-06-06",
+          pagesRead: 10,
+          currentPageAfter: 10,
+          createdAt: "2026-06-06T10:00:00.000Z",
+          updatedAt: "2026-06-06T10:00:00.000Z",
+        },
+      ],
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.readingLogs![0]!.date).toBe("2026-06-06");
+      expect(result.value.readingLogs![1]!.date).toBe("2026-06-07");
+    }
+  });
+
+  it("rejects an invalid date in reading log", () => {
+    const result = validateBookInput({
+      ...VALID_BOOK,
+      readingLogs: [
+        {
+          id: "log-1",
+          date: "2026/06/07",
+          pagesRead: 30,
+          currentPageAfter: 120,
+          createdAt: "2026-06-07T10:00:00.000Z",
+          updatedAt: "2026-06-07T10:00:00.000Z",
+        },
+      ],
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors["readingLogs.0.date"]).toBeDefined();
+    }
+  });
+
+  it("rejects a zero pagesRead", () => {
+    const result = validateBookInput({
+      ...VALID_BOOK,
+      readingLogs: [
+        {
+          id: "log-1",
+          date: "2026-06-07",
+          pagesRead: 0,
+          currentPageAfter: 120,
+          createdAt: "2026-06-07T10:00:00.000Z",
+          updatedAt: "2026-06-07T10:00:00.000Z",
+        },
+      ],
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors["readingLogs.0.pagesRead"]).toBeDefined();
+    }
+  });
+
+  it("rejects a negative currentPageAfter", () => {
+    const result = validateBookInput({
+      ...VALID_BOOK,
+      readingLogs: [
+        {
+          id: "log-1",
+          date: "2026-06-07",
+          pagesRead: 30,
+          currentPageAfter: -1,
+          createdAt: "2026-06-07T10:00:00.000Z",
+          updatedAt: "2026-06-07T10:00:00.000Z",
+        },
+      ],
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors["readingLogs.0.currentPageAfter"]).toBeDefined();
+    }
+  });
+
+  it("rejects a missing id", () => {
+    const result = validateBookInput({
+      ...VALID_BOOK,
+      readingLogs: [
+        {
+          date: "2026-06-07",
+          pagesRead: 30,
+          currentPageAfter: 120,
+          createdAt: "2026-06-07T10:00:00.000Z",
+          updatedAt: "2026-06-07T10:00:00.000Z",
+        },
+      ],
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors["readingLogs.0.id"]).toBeDefined();
+    }
+  });
+
+  it("rejects a non-array readingLogs", () => {
+    const result = validateBookInput({
+      ...VALID_BOOK,
+      readingLogs: "not-an-array",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors.readingLogs).toBeDefined();
+    }
+  });
+
+  it("normalises an empty array to undefined", () => {
+    const result = validateBookInput({
+      ...VALID_BOOK,
+      readingLogs: [],
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.readingLogs).toBeUndefined();
+    }
+  });
+
+  it("accepts legacy books without readingLogs", () => {
+    const result = validateBookInput(VALID_BOOK);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.readingLogs).toBeUndefined();
+    }
+  });
+});
+
 describe("validateBookInput — currentPage / totalPages (spec 015)", () => {
   it("omits both page fields when neither is set", () => {
     const result = validateBookInput(VALID_BOOK);
