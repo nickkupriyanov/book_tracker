@@ -203,4 +203,144 @@ describe("PageProgressQuickUpdate", () => {
       expect(updated?.currentPage).toBeUndefined();
     });
   });
+
+  describe("reading log creation (spec 016 FR-14–FR-17)", () => {
+    it("creates a reading log with pagesRead = newCurrentPage when there was no previous currentPage", async () => {
+      const user = userEvent.setup();
+      await seed([makeReadingBook({ id: "a" })]);
+      const book = useBookLibrary.getState().books[0];
+      if (book === undefined) throw new Error("missing seeded book");
+      render(<PageProgressQuickUpdate book={book} />);
+
+      const input = screen.getByTestId("page-progress-page-input");
+      fireEvent.change(input, { target: { value: "50" } });
+      await user.click(screen.getByTestId("page-progress-save"));
+
+      await waitFor(() => {
+        const updated = useBookLibrary
+          .getState()
+          .books.find((b) => b.id === "a");
+        expect(updated?.readingLogs).toHaveLength(1);
+        expect(updated?.readingLogs![0]!.pagesRead).toBe(50);
+        expect(updated?.readingLogs![0]!.currentPageAfter).toBe(50);
+        expect(updated?.readingLogs![0]!.date).toBe(
+          new Date().toISOString().slice(0, 10)
+        );
+      });
+    });
+
+    it("creates a reading log with positive delta when currentPage increases", async () => {
+      const user = userEvent.setup();
+      await seed([makeReadingBook({ id: "a", currentPage: 50 })]);
+      const book = useBookLibrary.getState().books[0];
+      if (book === undefined) throw new Error("missing seeded book");
+      render(<PageProgressQuickUpdate book={book} />);
+
+      const input = screen.getByTestId("page-progress-page-input");
+      fireEvent.change(input, { target: { value: "80" } });
+      await user.click(screen.getByTestId("page-progress-save"));
+
+      await waitFor(() => {
+        const updated = useBookLibrary
+          .getState()
+          .books.find((b) => b.id === "a");
+        expect(updated?.readingLogs).toHaveLength(1);
+        expect(updated?.readingLogs![0]!.pagesRead).toBe(30);
+      });
+    });
+
+    it("does not add log pages when currentPage stays the same", async () => {
+      const user = userEvent.setup();
+      await seed([makeReadingBook({ id: "a", currentPage: 50 })]);
+      const book = useBookLibrary.getState().books[0];
+      if (book === undefined) throw new Error("missing seeded book");
+      render(<PageProgressQuickUpdate book={book} />);
+
+      const input = screen.getByTestId("page-progress-page-input");
+      fireEvent.change(input, { target: { value: "50" } });
+      await user.click(screen.getByTestId("page-progress-save"));
+
+      await waitFor(() => {
+        const updated = useBookLibrary
+          .getState()
+          .books.find((b) => b.id === "a");
+        expect(updated?.currentPage).toBe(50);
+        expect(updated?.readingLogs).toBeUndefined();
+      });
+    });
+
+    it("does not add log pages when currentPage decreases", async () => {
+      const user = userEvent.setup();
+      await seed([makeReadingBook({ id: "a", currentPage: 100 })]);
+      const book = useBookLibrary.getState().books[0];
+      if (book === undefined) throw new Error("missing seeded book");
+      render(<PageProgressQuickUpdate book={book} />);
+
+      const input = screen.getByTestId("page-progress-page-input");
+      fireEvent.change(input, { target: { value: "70" } });
+      await user.click(screen.getByTestId("page-progress-save"));
+
+      await waitFor(() => {
+        const updated = useBookLibrary
+          .getState()
+          .books.find((b) => b.id === "a");
+        expect(updated?.currentPage).toBe(70);
+        expect(updated?.readingLogs).toBeUndefined();
+      });
+    });
+
+    it("does not create a reading log when currentPage is cleared", async () => {
+      const user = userEvent.setup();
+      await seed([makeReadingBook({ id: "a", currentPage: 100 })]);
+      const book = useBookLibrary.getState().books[0];
+      if (book === undefined) throw new Error("missing seeded book");
+      render(<PageProgressQuickUpdate book={book} />);
+
+      const input = screen.getByTestId("page-progress-page-input");
+      fireEvent.change(input, { target: { value: "" } });
+      await user.click(screen.getByTestId("page-progress-save"));
+
+      await waitFor(() => {
+        const updated = useBookLibrary
+          .getState()
+          .books.find((b) => b.id === "a");
+        expect(updated?.currentPage).toBeUndefined();
+        expect(updated?.readingLogs).toBeUndefined();
+      });
+    });
+
+    it("aggregates multiple saves on the same day into one log entry", async () => {
+      const user = userEvent.setup();
+      await seed([makeReadingBook({ id: "a", currentPage: 10 })]);
+      const book = useBookLibrary.getState().books[0];
+      if (book === undefined) throw new Error("missing seeded book");
+      render(<PageProgressQuickUpdate book={book} />);
+
+      // First save: 10 → 40 (+30)
+      const input = screen.getByTestId("page-progress-page-input");
+      fireEvent.change(input, { target: { value: "40" } });
+      await user.click(screen.getByTestId("page-progress-save"));
+
+      await waitFor(() => {
+        const updated = useBookLibrary
+          .getState()
+          .books.find((b) => b.id === "a");
+        expect(updated?.readingLogs).toHaveLength(1);
+        expect(updated?.readingLogs![0]!.pagesRead).toBe(30);
+      });
+
+      // Second save: 40 → 100 (+60, aggregate = 90)
+      fireEvent.change(input, { target: { value: "100" } });
+      await user.click(screen.getByTestId("page-progress-save"));
+
+      await waitFor(() => {
+        const updated = useBookLibrary
+          .getState()
+          .books.find((b) => b.id === "a");
+        expect(updated?.readingLogs).toHaveLength(1);
+        expect(updated?.readingLogs![0]!.pagesRead).toBe(90);
+        expect(updated?.readingLogs![0]!.currentPageAfter).toBe(100);
+      });
+    });
+  });
 });

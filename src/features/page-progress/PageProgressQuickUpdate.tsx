@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { validateBookInput } from "@/lib/validation/book";
 import { useBookLibrary } from "@/state/book-library";
-import type { Book } from "@/types/book";
+import type { Book, ReadingLog } from "@/types/book";
 
 export interface PageProgressQuickUpdateProps {
   /** The currently focused reading book. */
@@ -16,7 +16,70 @@ export interface PageProgressQuickUpdateProps {
 }
 
 /**
- * The focused home page progress block (spec 015 §5.1). Lets the
+ * Returns today's local calendar date as `YYYY-MM-DD`.
+ * Used for reading-log dating (spec 016 FR-17).
+ */
+function todayLocalDate(): string {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+/**
+ * Builds the next `readingLogs` array after a positive page delta,
+ * or returns `undefined` when no log update is needed.
+ *
+ * Rules (spec 016 §5.6):
+ * - No previous currentPage → pagesRead = newCurrentPage.
+ * - newCurrentPage > oldCurrentPage → pagesRead = positive delta.
+ * - newCurrentPage <= oldCurrentPage → no log update.
+ * - Clearing currentPage → no log update.
+ */
+function buildNextReadingLogs(
+  book: Book,
+  nextCurrentPage: number | undefined,
+): ReadingLog[] | undefined {
+  if (nextCurrentPage === undefined) return undefined;
+
+  const oldCurrentPage = book.currentPage;
+  const delta =
+    oldCurrentPage !== undefined
+      ? nextCurrentPage - oldCurrentPage
+      : nextCurrentPage;
+
+  if (delta <= 0) return undefined;
+
+  const existingLogs = book.readingLogs ?? [];
+  const today = todayLocalDate();
+  const now = new Date().toISOString();
+  const existingIndex = existingLogs.findIndex((l) => l.date === today);
+
+  const newLog: ReadingLog = {
+    id:
+      existingIndex >= 0
+        ? existingLogs[existingIndex]!.id
+        : crypto.randomUUID(),
+    date: today,
+    pagesRead:
+      (existingIndex >= 0 ? existingLogs[existingIndex]!.pagesRead : 0) + delta,
+    currentPageAfter: nextCurrentPage,
+    createdAt:
+      existingIndex >= 0 ? existingLogs[existingIndex]!.createdAt : now,
+    updatedAt: now,
+  };
+
+  if (existingIndex >= 0) {
+    const next = [...existingLogs];
+    next[existingIndex] = newLog;
+    return next;
+  }
+
+  return [...existingLogs, newLog];
+}
+
+/**
+ * The focused home page progress block (spec 015 §5.1 → spec 016 §5.6). Lets the
  * user type a current page for the active reading book and save —
  * without opening a book detail page. The parent owns active-book
  * selection through the compact reading lane.
@@ -71,13 +134,15 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
       return;
     }
 
-    // Validate through the same boundary the form uses, so the
-    // currentPage <= totalPages cross-field rule is enforced
-    // identically here. Build a BookInput shape and revalidate;
-    // any failure surfaces under the right field key.
+    // Derive reading logs from the page delta before
+    // validation (spec 016 §5.6, FR-14–FR-16). Build a
+    // BookInput shape and revalidate; any failure surfaces
+    // under the right field key.
+    const nextReadingLogs = buildNextReadingLogs(book, nextCurrentPage);
     const candidate = {
       ...book,
       currentPage: nextCurrentPage,
+      ...(nextReadingLogs !== undefined ? { readingLogs: nextReadingLogs } : {}),
     };
     const result = validateBookInput(candidate);
     if (!result.ok) {
