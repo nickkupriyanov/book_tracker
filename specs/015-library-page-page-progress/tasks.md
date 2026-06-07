@@ -1,6 +1,6 @@
 # Tasks: Library Page And Page Progress
 
-> **Status:** Draft
+> **Status:** Done
 > **Spec:** `./spec.md`
 > **Plan:** `./plan.md`
 

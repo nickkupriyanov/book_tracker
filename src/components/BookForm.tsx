@@ -102,7 +102,21 @@ export function BookForm({
 
     const result = validateBookInput(input);
     if (!result.ok) {
-      setErrors(result.errors);
+      // The `currentPage > totalPages` cross-field rule
+      // (spec 015 FR-5) fires on the `currentPage` field,
+      // but the form doesn't expose `currentPage` — the
+      // value is carried over from the book record. Re-route
+      // the message to the `totalPages` field the user is
+      // actually editing, so the error is visible.
+      const fieldErrors = { ...result.errors };
+      if (
+        fieldErrors.currentPage !== undefined &&
+        fieldErrors.totalPages === undefined
+      ) {
+        fieldErrors.totalPages = fieldErrors.currentPage;
+        delete fieldErrors.currentPage;
+      }
+      setErrors(fieldErrors);
       setIsSubmitting(false);
       return;
     }
