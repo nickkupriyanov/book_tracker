@@ -4,13 +4,57 @@ import { ShelfClient } from "@/app/ShelfClient";
 import { LocalStorageAdapter } from "@/storage/local-storage-adapter";
 import { useBookLibrary, __resetBookLibrary } from "@/state/book-library";
 
-describe("ShelfClient — Reading Calendar integration (spec 013)", () => {
+describe("ShelfClient — focused reading home (spec 015)", () => {
   beforeEach(async () => {
     __resetBookLibrary();
     localStorage.clear();
   });
 
-  it("renders the Reading Calendar above the shelf when status is ready and library is non-empty", async () => {
+  it("renders the loading state when the store has not been initialised", () => {
+    __resetBookLibrary();
+    render(<ShelfClient />);
+    expect(screen.getByText(/loading your library/i)).toBeInTheDocument();
+  });
+
+  it("renders the error state when the store is in 'error' status", () => {
+    __resetBookLibrary();
+    useBookLibrary.setState({ status: "error" });
+    render(<ShelfClient />);
+    expect(
+      screen.getByText(/couldn't load your library/i)
+    ).toBeInTheDocument();
+  });
+
+  it("renders the empty-shelf affordance when the library is empty", async () => {
+    await useBookLibrary.getState().init(new LocalStorageAdapter());
+    render(<ShelfClient />);
+    expect(
+      screen.getByRole("button", { name: /add your first book/i })
+    ).toBeInTheDocument();
+  });
+
+  it("shows the no-reading empty state with 'Open library' when the library has books but none are reading", async () => {
+    await useBookLibrary.getState().init(new LocalStorageAdapter());
+    await useBookLibrary.getState().addBook({
+      title: "Want Book",
+      author: "A",
+      status: "want",
+      tags: [],
+    });
+    await useBookLibrary.getState().addBook({
+      title: "Read Book",
+      author: "C",
+      status: "read",
+      tags: [],
+    });
+    render(<ShelfClient />);
+    expect(screen.getByText(/no books in progress/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /open library/i })
+    ).toBeInTheDocument();
+  });
+
+  it("renders the 'Open library' link on the home page in the ready non-empty state", async () => {
     await useBookLibrary.getState().init(new LocalStorageAdapter());
     await useBookLibrary.getState().addBook({
       title: "Piranesi",
@@ -19,27 +63,84 @@ describe("ShelfClient — Reading Calendar integration (spec 013)", () => {
       tags: [],
     });
     render(<ShelfClient />);
-    const calendar = screen.getByTestId("reading-calendar");
-    expect(calendar).toBeInTheDocument();
-    // Both the calendar and the shelf list are present.
-    expect(screen.getByTestId("reading-calendar")).toBeInTheDocument();
-    // The calendar appears before the shelf list in the DOM.
-    const shelf = document.querySelector("[data-testid='home-shelf-area']");
-    expect(calendar.compareDocumentPosition(shelf ?? document.body) &
-      Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: /open library/i })
+    ).toBeInTheDocument();
   });
 
-  it("does not render the Reading Calendar when the library is empty", async () => {
+  it("shows only reading books on the home page (excludes want and read)", async () => {
     await useBookLibrary.getState().init(new LocalStorageAdapter());
+    await useBookLibrary.getState().addBook({
+      title: "Want Book",
+      author: "A",
+      status: "want",
+      tags: [],
+    });
+    await useBookLibrary.getState().addBook({
+      title: "Reading Book",
+      author: "B",
+      status: "reading",
+      tags: [],
+    });
+    await useBookLibrary.getState().addBook({
+      title: "Read Book",
+      author: "C",
+      status: "read",
+      tags: [],
+    });
     render(<ShelfClient />);
+    expect(screen.getByText("Reading Book")).toBeInTheDocument();
+    expect(screen.queryByText("Want Book")).not.toBeInTheDocument();
+    expect(screen.queryByText("Read Book")).not.toBeInTheDocument();
+  });
+
+  it("does not render the shelf search input on the home page", async () => {
+    await useBookLibrary.getState().init(new LocalStorageAdapter());
+    await useBookLibrary.getState().addBook({
+      title: "Piranesi",
+      author: "Susanna Clarke",
+      status: "reading",
+      tags: [],
+    });
+    render(<ShelfClient />);
+    expect(screen.queryByTestId("shelf-search")).not.toBeInTheDocument();
+  });
+
+  it("does not render the shelf status tabs on the home page", async () => {
+    await useBookLibrary.getState().init(new LocalStorageAdapter());
+    await useBookLibrary.getState().addBook({
+      title: "Piranesi",
+      author: "Susanna Clarke",
+      status: "reading",
+      tags: [],
+    });
+    render(<ShelfClient />);
+    expect(screen.queryByRole("tab", { name: /^All/ })).not.toBeInTheDocument();
     expect(
-      screen.queryByTestId("reading-calendar")
+      screen.queryByRole("tab", { name: /^Reading/ })
     ).not.toBeInTheDocument();
   });
 
-  it("does not render the Reading Calendar while the store is loading", () => {
-    // Don't init the store — status stays at the initial "loading".
-    __resetBookLibrary();
+  it("does not render the shelf sort menu on the home page", async () => {
+    await useBookLibrary.getState().init(new LocalStorageAdapter());
+    await useBookLibrary.getState().addBook({
+      title: "Piranesi",
+      author: "Susanna Clarke",
+      status: "reading",
+      tags: [],
+    });
+    render(<ShelfClient />);
+    expect(screen.queryByTestId("shelf-sort")).not.toBeInTheDocument();
+  });
+
+  it("does not render the Reading Calendar on the home page", async () => {
+    await useBookLibrary.getState().init(new LocalStorageAdapter());
+    await useBookLibrary.getState().addBook({
+      title: "Piranesi",
+      author: "Susanna Clarke",
+      status: "reading",
+      tags: [],
+    });
     render(<ShelfClient />);
     expect(
       screen.queryByTestId("reading-calendar")
@@ -47,34 +148,30 @@ describe("ShelfClient — Reading Calendar integration (spec 013)", () => {
   });
 });
 
-describe("ShelfClient — responsive page layout (spec 014)", () => {
+describe("ShelfClient — page container (spec 014, preserved on focused home)", () => {
   beforeEach(async () => {
     __resetBookLibrary();
     localStorage.clear();
   });
 
   it("renders every state inside the shared page container", async () => {
-    // Loading state — no init, status stays at the initial "loading".
     __resetBookLibrary();
     const { unmount } = render(<ShelfClient />);
     expect(screen.getByTestId("page-container")).toHaveClass("max-w-6xl");
     unmount();
 
-    // Error state — set directly to avoid wiring a failing adapter.
     __resetBookLibrary();
     useBookLibrary.setState({ status: "error" });
     const { unmount: unmount2 } = render(<ShelfClient />);
     expect(screen.getByTestId("page-container")).toHaveClass("max-w-6xl");
     unmount2();
 
-    // Empty state.
     __resetBookLibrary();
     await useBookLibrary.getState().init(new LocalStorageAdapter());
     const { unmount: unmount3 } = render(<ShelfClient />);
     expect(screen.getByTestId("page-container")).toHaveClass("max-w-6xl");
     unmount3();
 
-    // Ready non-empty state.
     await useBookLibrary.getState().addBook({
       title: "Piranesi",
       author: "Susanna Clarke",
@@ -83,36 +180,5 @@ describe("ShelfClient — responsive page layout (spec 014)", () => {
     });
     render(<ShelfClient />);
     expect(screen.getByTestId("page-container")).toHaveClass("max-w-6xl");
-  });
-
-  it("places the calendar rail and the shelf area inside the home layout in the ready non-empty state", async () => {
-    await useBookLibrary.getState().init(new LocalStorageAdapter());
-    await useBookLibrary.getState().addBook({
-      title: "Piranesi",
-      author: "Susanna Clarke",
-      status: "reading",
-      tags: [],
-    });
-    render(<ShelfClient />);
-
-    expect(screen.getByTestId("home-calendar-rail")).toBeInTheDocument();
-    expect(screen.getByTestId("home-shelf-area")).toBeInTheDocument();
-  });
-
-  it("keeps the Reading Calendar before the shelf in DOM order in the ready non-empty state", async () => {
-    await useBookLibrary.getState().init(new LocalStorageAdapter());
-    await useBookLibrary.getState().addBook({
-      title: "Piranesi",
-      author: "Susanna Clarke",
-      status: "reading",
-      tags: [],
-    });
-    render(<ShelfClient />);
-
-    const rail = screen.getByTestId("home-calendar-rail");
-    const shelf = screen.getByTestId("home-shelf-area");
-    expect(
-      rail.compareDocumentPosition(shelf) & Node.DOCUMENT_POSITION_FOLLOWING
-    ).toBeTruthy();
   });
 });
