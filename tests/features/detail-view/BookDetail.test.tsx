@@ -267,4 +267,31 @@ describe("BookDetail", () => {
       expect(cards[1]!.textContent).toContain("Older passage.");
     });
   });
+
+  describe("reading days section (spec 013)", () => {
+    it("renders the Reading days section below the Quotes section", () => {
+      render(<BookDetail bookId={sampleBook.id} />);
+      const quotes = screen.getByRole("heading", {
+        level: 2,
+        name: "Quotes",
+      });
+      const readingDays = screen.getByRole("heading", {
+        level: 2,
+        name: "Reading days",
+      });
+      expect(quotes).toBeInTheDocument();
+      expect(readingDays).toBeInTheDocument();
+      expect(
+        quotes.compareDocumentPosition(readingDays) &
+          Node.DOCUMENT_POSITION_FOLLOWING
+      ).toBeTruthy();
+    });
+
+    it("renders the empty state when the book has no reading days", () => {
+      render(<BookDetail bookId={sampleBook.id} />);
+      expect(screen.getByTestId("reading-days-empty")).toHaveTextContent(
+        /no reading days logged yet/i
+      );
+    });
+  });
 });

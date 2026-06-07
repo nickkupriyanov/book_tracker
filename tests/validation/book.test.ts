@@ -690,4 +690,228 @@ describe("validateBookInput", () => {
       });
     });
   });
+
+  describe("readingDays (spec 013)", () => {
+    it("accepts a single YYYY-MM-DD date", () => {
+      const result = validateBookInput({
+        ...baseInput,
+        readingDays: ["2026-06-06"],
+      });
+      expect(result).toEqual({
+        ok: true,
+        value: { ...baseInput, readingDays: ["2026-06-06"] },
+      });
+    });
+
+    it("accepts multiple dates", () => {
+      const result = validateBookInput({
+        ...baseInput,
+        readingDays: ["2026-06-01", "2026-06-02", "2026-06-03"],
+      });
+      expect(result).toEqual({
+        ok: true,
+        value: {
+          ...baseInput,
+          readingDays: ["2026-06-01", "2026-06-02", "2026-06-03"],
+        },
+      });
+    });
+
+    it("accepts missing readingDays (undefined)", () => {
+      const result = validateBookInput(baseInput);
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect("readingDays" in result.value).toBe(false);
+      }
+    });
+
+    it("accepts null readingDays and normalises to absent", () => {
+      const result = validateBookInput({ ...baseInput, readingDays: null });
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect("readingDays" in result.value).toBe(false);
+      }
+    });
+
+    it("normalises an empty array to absent", () => {
+      const result = validateBookInput({ ...baseInput, readingDays: [] });
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect("readingDays" in result.value).toBe(false);
+      }
+    });
+
+    it("sorts unsorted dates ascending", () => {
+      const result = validateBookInput({
+        ...baseInput,
+        readingDays: ["2026-06-03", "2026-06-01", "2026-06-02"],
+      });
+      expect(result).toEqual({
+        ok: true,
+        value: {
+          ...baseInput,
+          readingDays: ["2026-06-01", "2026-06-02", "2026-06-03"],
+        },
+      });
+    });
+
+    it("deduplicates repeated dates", () => {
+      const result = validateBookInput({
+        ...baseInput,
+        readingDays: ["2026-06-01", "2026-06-01", "2026-06-02"],
+      });
+      expect(result).toEqual({
+        ok: true,
+        value: { ...baseInput, readingDays: ["2026-06-01", "2026-06-02"] },
+      });
+    });
+
+    it("rejects a non-array value", () => {
+      const result = validateBookInput({
+        ...baseInput,
+        readingDays: "2026-06-01" as unknown as string[],
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors.readingDays).toMatch(/array/);
+      }
+    });
+
+    it("rejects an array with a non-string entry", () => {
+      const result = validateBookInput({
+        ...baseInput,
+        readingDays: [42 as unknown as string],
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors["readingDays.0"]).toMatch(/YYYY-MM-DD/);
+      }
+    });
+
+    it("rejects malformed dates with a per-index error", () => {
+      const result = validateBookInput({
+        ...baseInput,
+        readingDays: ["2026-06-01", "06/01/2026", "2026-06-03"],
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors["readingDays.1"]).toMatch(/YYYY-MM-DD/);
+      }
+    });
+
+    it("rejects calendar-invalid dates (e.g. 2026-02-30)", () => {
+      const result = validateBookInput({
+        ...baseInput,
+        readingDays: ["2026-02-30"],
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors["readingDays.0"]).toMatch(/real calendar date/);
+      }
+    });
+  });
+
+  describe("coverColor (spec 013)", () => {
+    it("accepts a 6-digit hex color and normalises to lowercase", () => {
+      const result = validateBookInput({
+        ...baseInput,
+        coverColor: "#B85B45",
+      });
+      expect(result).toEqual({
+        ok: true,
+        value: { ...baseInput, coverColor: "#b85b45" },
+      });
+    });
+
+    it("accepts a 3-digit hex color and normalises to lowercase", () => {
+      const result = validateBookInput({ ...baseInput, coverColor: "#F0A" });
+      expect(result).toEqual({
+        ok: true,
+        value: { ...baseInput, coverColor: "#f0a" },
+      });
+    });
+
+    it("trims surrounding whitespace", () => {
+      const result = validateBookInput({
+        ...baseInput,
+        coverColor: "  #b85b45  ",
+      });
+      expect(result).toEqual({
+        ok: true,
+        value: { ...baseInput, coverColor: "#b85b45" },
+      });
+    });
+
+    it("accepts missing coverColor (undefined)", () => {
+      const result = validateBookInput(baseInput);
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect("coverColor" in result.value).toBe(false);
+      }
+    });
+
+    it("normalises empty string to absent", () => {
+      const result = validateBookInput({ ...baseInput, coverColor: "" });
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect("coverColor" in result.value).toBe(false);
+      }
+    });
+
+    it("normalises whitespace-only string to absent", () => {
+      const result = validateBookInput({ ...baseInput, coverColor: "   " });
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect("coverColor" in result.value).toBe(false);
+      }
+    });
+
+    it("accepts null coverColor and normalises to absent", () => {
+      const result = validateBookInput({ ...baseInput, coverColor: null });
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect("coverColor" in result.value).toBe(false);
+      }
+    });
+
+    it("rejects a non-hex color string", () => {
+      const result = validateBookInput({
+        ...baseInput,
+        coverColor: "red",
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors.coverColor).toMatch(/hex/);
+      }
+    });
+
+    it("rejects a hex color without the leading #", () => {
+      const result = validateBookInput({
+        ...baseInput,
+        coverColor: "b85b45",
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors.coverColor).toMatch(/hex/);
+      }
+    });
+
+    it("rejects a hex color with 4 or 5 digits", () => {
+      for (const bad of ["#b85b4", "#b85b455", "#b85b4x"]) {
+        const result = validateBookInput({ ...baseInput, coverColor: bad });
+        expect(result.ok).toBe(false);
+      }
+    });
+
+    it("rejects a non-string coverColor", () => {
+      const result = validateBookInput({
+        ...baseInput,
+        coverColor: 42 as unknown as string,
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors.coverColor).toMatch(/hex/);
+      }
+    });
+  });
 });

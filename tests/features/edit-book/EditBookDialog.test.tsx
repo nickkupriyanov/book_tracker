@@ -101,6 +101,36 @@ describe("EditBookDialog", () => {
     expect(screen.getByLabelText("Finished (optional)")).toHaveValue("");
   });
 
+  it("pre-fills the Cover color field from the book (spec 013)", async () => {
+    __resetBookLibrary();
+    localStorage.clear();
+    await useBookLibrary.getState().init(new LocalStorageAdapter());
+    const bookWithColor = await useBookLibrary.getState().addBook({
+      title: "Coloured Cover",
+      author: "Author",
+      status: "reading",
+      tags: [],
+      coverColor: "#b85b45",
+    });
+    render(
+      <EditBookDialog
+        book={bookWithColor}
+        open={true}
+        onOpenChange={vi.fn()}
+      />
+    );
+    await screen.findByRole("dialog");
+    expect(screen.getByLabelText("Cover color (optional)")).toHaveValue(
+      "#b85b45"
+    );
+  });
+
+  it("leaves Cover color empty when the book has none", async () => {
+    renderDialog();
+    await screen.findByRole("dialog");
+    expect(screen.getByLabelText("Cover color (optional)")).toHaveValue("");
+  });
+
   it("calls updateBook, shows Updated toast, and closes on valid save", async () => {
     const { onOpenChange } = renderDialog();
     await screen.findByRole("dialog");

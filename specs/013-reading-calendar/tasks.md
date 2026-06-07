@@ -14,7 +14,7 @@ polish and full verification.
 
 ---
 
-## T1. Domain fields + validator (TDD) — [ ]
+## T1. Domain fields + validator (TDD) — [x]
 
 - **Files:**
   `src/types/book.ts`,
@@ -43,7 +43,7 @@ polish and full verification.
   - Date validity should round-trip the `YYYY-MM-DD` string, not rely on
     `Date` rollover behavior.
 
-## T2. Calendar and color helpers (TDD) — [ ]
+## T2. Calendar and color helpers (TDD) — [x]
 
 - **Files:**
   `src/lib/reading-calendar.ts` (new),
@@ -83,7 +83,7 @@ polish and full verification.
   - Keep these helpers pure except `extractDominantCoverColor`.
   - Do not import React in either helper file.
 
-## T3. Cover color in BookForm (TDD) — [ ]
+## T3. Cover color in BookForm (TDD) — [x]
 
 - **Files:**
   `src/components/BookForm.tsx`,
@@ -112,7 +112,7 @@ polish and full verification.
     include it in the same commit.
   - Add no npm dependency.
 
-## T4. ReadingDaysSection on detail page (TDD) — [ ]
+## T4. ReadingDaysSection on detail page (TDD) — [x]
 
 - **Files:**
   `src/features/detail-view/ReadingDaysSection.tsx` (new),
@@ -141,7 +141,7 @@ polish and full verification.
   - Use existing shadcn `Button`, `Input`, and `Label` components.
   - Use local-date formatting helpers; avoid UTC date drift.
 
-## T5. Home ReadingCalendar UI (TDD) — [ ]
+## T5. Home ReadingCalendar UI (TDD) — [x]
 
 - **Files:**
   `src/features/reading-calendar/ReadingCalendar.tsx` (new),
@@ -175,7 +175,7 @@ polish and full verification.
   - Keep the calendar display-only in this spec; do not add day-click
     editing.
 
-## T6. Polish, QA, and SDD closeout — [ ]
+## T6. Polish, QA, and SDD closeout — [x]
 
 - **Files:**
   `specs/013-reading-calendar/spec.md`,

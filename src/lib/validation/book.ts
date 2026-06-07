@@ -223,6 +223,134 @@ function validateOptionalDate(
   return raw;
 }
 
+/**
+ * Validates a single `YYYY-MM-DD` date string for use inside
+ * `readingDays`. Returns the date string on success, or
+ * pushes a contextual error to `errors[field]` and returns
+ * `undefined` on failure. Spec 013 §8.2 — same shape and
+ * calendar-validity rules as `validateOptionalDate`, but
+ * re-usable from the per-entry validator.
+ */
+function validateReadingDayString(
+  raw: unknown,
+  errors: Record<string, string>,
+  field: string
+): string | undefined {
+  if (typeof raw !== "string") {
+    errors[field] = "Reading day must be a YYYY-MM-DD date.";
+    return undefined;
+  }
+  if (!DATE_PATTERN.test(raw)) {
+    errors[field] = "Reading day must be a YYYY-MM-DD date.";
+    return undefined;
+  }
+  const d = new Date(`${raw}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) {
+    errors[field] = "Reading day must be a real calendar date.";
+    return undefined;
+  }
+  if (d.toISOString().slice(0, 10) !== raw) {
+    errors[field] = "Reading day must be a real calendar date.";
+    return undefined;
+  }
+  return raw;
+}
+
+/**
+ * Validates `readingDays`. Returns the normalised
+ * sorted-unique array on success, `undefined` on failure.
+ *
+ * - `undefined` / `null` → `undefined` (no logged days, no
+ *   error). The spec also normalises an empty array to
+ *   `undefined` so the persisted shape is canonical.
+ * - Non-array → error on `readingDays`.
+ * - Each entry must be a valid `YYYY-MM-DD` date; failures
+ *   are reported under `readingDays.<index>` so the UI can
+ *   point at the right row.
+ * - On success: sort ascending (chronological because
+ *   YYYY-MM-DD sorts lexicographically) and deduplicate.
+ *
+ * Spec 013 §5.1 (D3, D4), §7 (FR-1, FR-2), §8.2.
+ */
+function validateReadingDays(
+  raw: unknown,
+  errors: Record<string, string>
+): string[] | undefined {
+  if (raw === undefined || raw === null) {
+    return undefined;
+  }
+  if (!Array.isArray(raw)) {
+    errors.readingDays = "Reading days must be an array of YYYY-MM-DD dates.";
+    return undefined;
+  }
+  // Empty array normalises to absent — keeps the persisted
+  // shape canonical (FR-2 / §8.2).
+  if (raw.length === 0) {
+    return undefined;
+  }
+  const out: string[] = [];
+  for (let i = 0; i < raw.length; i++) {
+    const entryField = `readingDays.${i}`;
+    const value = validateReadingDayString(raw[i], errors, entryField);
+    if (value === undefined) {
+      return undefined;
+    }
+    out.push(value);
+  }
+  // Sort + dedupe. YYYY-MM-DD sorts lexicographically the
+  // same as chronologically, so a single comparison works.
+  out.sort();
+  const seen = new Set<string>();
+  const deduped: string[] = [];
+  for (const date of out) {
+    if (!seen.has(date)) {
+      seen.add(date);
+      deduped.push(date);
+    }
+  }
+  return deduped;
+}
+
+// `#RGB` or `#RRGGBB`. Lowercase the hex digits in the
+// normalised value so the cover-color helpers don't have to
+// compare against mixed-case strings. Spec 013 §5.1 D5.
+const COVER_COLOR_PATTERN = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
+/**
+ * Validates `coverColor`. Returns the trimmed, lowercased
+ * hex string on success, or `undefined` on failure (with
+ * an inline error on `coverColor`).
+ *
+ * - `undefined` / `null` / `""` (after trim) → `undefined`
+ *   (no colour, no error). The spec normalises empty input
+ *   to absent.
+ * - Non-string → error.
+ * - Anything that doesn't match `#RGB` or `#RRGGBB` → error.
+ *
+ * Spec 013 §7 (FR-3), §8.2.
+ */
+function validateCoverColor(
+  raw: unknown,
+  errors: Record<string, string>
+): string | undefined {
+  if (raw === undefined || raw === null) {
+    return undefined;
+  }
+  if (typeof raw !== "string") {
+    errors.coverColor = "Cover color must be a hex string like #B85B45.";
+    return undefined;
+  }
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) {
+    return undefined;
+  }
+  if (!COVER_COLOR_PATTERN.test(trimmed)) {
+    errors.coverColor = "Cover color must be a hex string like #B85B45.";
+    return undefined;
+  }
+  return trimmed.toLowerCase();
+}
+
 function isProseMirrorDoc(value: unknown): value is JSONContent {
   if (!isObject(value)) return false;
   if (value["type"] !== "doc") return false;
@@ -469,6 +597,8 @@ export function validateBookInput(input: unknown): ValidationResult<BookInput> {
     errors,
     "finishedAt"
   );
+  const readingDays = validateReadingDays(input["readingDays"], errors);
+  const coverColor = validateCoverColor(input["coverColor"], errors);
 
   if (Object.keys(errors).length > 0) {
     return { ok: false, errors };
@@ -511,6 +641,8 @@ export function validateBookInput(input: unknown): ValidationResult<BookInput> {
     ...(quotes !== undefined ? { quotes } : {}),
     ...(startedAt !== undefined ? { startedAt } : {}),
     ...(finishedAt !== undefined ? { finishedAt } : {}),
+    ...(readingDays !== undefined ? { readingDays } : {}),
+    ...(coverColor !== undefined ? { coverColor } : {}),
   };
   return { ok: true, value };
 }

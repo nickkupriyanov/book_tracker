@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AddBookButton, AddBookDialog } from "@/features/add-book";
 import { ShelfList } from "@/features/shelf-list";
+import { ReadingCalendar } from "@/features/reading-calendar";
 import { useBookLibrary } from "@/state/book-library";
 import { EmptyShelf } from "@/components/EmptyShelf";
 
@@ -11,6 +12,11 @@ import { EmptyShelf } from "@/components/EmptyShelf";
  * the root layout, so this component just reads the store and
  * renders the appropriate state (loading / empty / list /
  * error). No useEffect for init here.
+ *
+ * When the library is ready and has at least one book, the
+ * Reading Calendar is rendered above the shelf (spec 013
+ * §6.1 / FR-10). The calendar is display-only — editing
+ * happens on the book detail page.
  */
 export function ShelfClient() {
   const status = useBookLibrary((s) => s.status);
@@ -39,7 +45,10 @@ export function ShelfClient() {
       {status === "ready" && books.length === 0 && <EmptyShelf />}
 
       {status === "ready" && books.length > 0 && (
-        <ShelfList books={books} />
+        <>
+          <ReadingCalendar books={books} />
+          <ShelfList books={books} />
+        </>
       )}
 
       <AddBookDialog open={dialogOpen} onOpenChange={setDialogOpen} />

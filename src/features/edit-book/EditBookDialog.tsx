@@ -37,6 +37,7 @@ export function EditBookDialog({
     author: book.author,
     status: book.status,
     ...(book.coverUrl !== undefined ? { coverUrl: book.coverUrl } : {}),
+    ...(book.coverColor !== undefined ? { coverColor: book.coverColor } : {}),
     ...(book.startedAt !== undefined ? { startedAt: book.startedAt } : {}),
     ...(book.finishedAt !== undefined ? { finishedAt: book.finishedAt } : {}),
     tags: book.tags,

@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CoverColorField } from "@/components/CoverColorField";
 import { validateBookInput } from "@/lib/validation/book";
 import type { BookInput, ReadingStatus } from "@/types/book";
 
@@ -46,6 +47,13 @@ export function BookForm({
     initialValues.rating?.toString() ?? ""
   );
   const [coverUrl, setCoverUrl] = useState(initialValues.coverUrl ?? "");
+  // Cover color (spec 013). Independent from coverUrl: the user
+  // can set a color manually, the form may suggest one from the
+  // cover image, and an empty / unset value stays absent from
+  // the submitted BookInput.
+  const [coverColor, setCoverColor] = useState(
+    initialValues.coverColor ?? ""
+  );
   const [tags, setTags] = useState(initialValues.tags.join(", "));
   // Reading dates (spec 012). Both optional, both validated by
   // `validateBookInput`. The native date input always emits a
@@ -76,6 +84,7 @@ export function BookForm({
       author,
       status,
       ...(coverUrl ? { coverUrl } : {}),
+      ...(coverColor ? { coverColor } : {}),
       ...(rating ? { rating: Number(rating) as 1 | 2 | 3 | 4 | 5 } : {}),
       ...(startedAt ? { startedAt } : {}),
       ...(finishedAt ? { finishedAt } : {}),
@@ -205,6 +214,16 @@ export function BookForm({
           </p>
         )}
       </div>
+
+      <CoverColorField
+        value={coverColor}
+        onChange={setCoverColor}
+        coverUrl={coverUrl}
+        disabled={isSubmitting}
+        {...(errors.coverColor !== undefined
+          ? { error: errors.coverColor }
+          : {})}
+      />
 
       <div className="space-y-1.5">
         <Label htmlFor="book-form-tags">Tags (optional, comma-separated)</Label>

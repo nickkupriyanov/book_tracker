@@ -316,4 +316,191 @@ describe("BookForm", () => {
       expect("rating" in callArg).toBe(false);
     });
   });
+
+  describe("cover color field (spec 013)", () => {
+    it("renders the cover color input with the right label", () => {
+      render(
+        <BookForm
+          initialValues={baseInput}
+          submitLabel="Save"
+          onSubmit={vi.fn()}
+        />
+      );
+      expect(screen.getByLabelText("Cover color (optional)")).toBeInTheDocument();
+      expect(
+        screen.getByTestId("book-form-use-cover-color")
+      ).toBeInTheDocument();
+    });
+
+    it("pre-fills the color input from initialValues.coverColor", () => {
+      render(
+        <BookForm
+          initialValues={{ ...baseInput, coverColor: "#b85b45" }}
+          submitLabel="Save"
+          onSubmit={vi.fn()}
+        />
+      );
+      expect(
+        screen.getByLabelText("Cover color (optional)")
+      ).toHaveValue("#b85b45");
+    });
+
+    it("includes a valid coverColor in the onSubmit input", async () => {
+      const onSubmit = vi.fn().mockResolvedValue(undefined);
+      const user = userEvent.setup();
+      render(
+        <BookForm
+          initialValues={baseInput}
+          submitLabel="Save"
+          onSubmit={onSubmit}
+        />
+      );
+      fireEvent.change(screen.getByLabelText("Cover color (optional)"), {
+        target: { value: "#b85b45" },
+      });
+      await user.click(screen.getByRole("button", { name: "Save" }));
+      await waitFor(() => {
+        expect(onSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({ coverColor: "#b85b45" })
+        );
+      });
+    });
+
+    it("omits coverColor from onSubmit input when the field is empty", async () => {
+      const onSubmit = vi.fn().mockResolvedValue(undefined);
+      const user = userEvent.setup();
+      render(
+        <BookForm
+          initialValues={baseInput}
+          submitLabel="Save"
+          onSubmit={onSubmit}
+        />
+      );
+      await user.click(screen.getByRole("button", { name: "Save" }));
+      await waitFor(() => {
+        expect(onSubmit).toHaveBeenCalled();
+      });
+      const callArg = onSubmit.mock.calls[0]?.[0] as BookInput;
+      expect("coverColor" in callArg).toBe(false);
+    });
+
+    it("rejects a malformed coverColor with an inline error and keeps the form open", async () => {
+      const onSubmit = vi.fn().mockResolvedValue(undefined);
+      const user = userEvent.setup();
+      render(
+        <BookForm
+          initialValues={baseInput}
+          submitLabel="Save"
+          onSubmit={onSubmit}
+        />
+      );
+      fireEvent.change(screen.getByLabelText("Cover color (optional)"), {
+        target: { value: "not-a-color" },
+      });
+      await user.click(screen.getByRole("button", { name: "Save" }));
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("book-form-cover-color-error")
+        ).toHaveTextContent(/hex/);
+      });
+      expect(onSubmit).not.toHaveBeenCalled();
+    });
+
+    it("disables the auto-fill button when coverUrl is empty", () => {
+      render(
+        <BookForm
+          initialValues={baseInput}
+          submitLabel="Save"
+          onSubmit={vi.fn()}
+        />
+      );
+      expect(
+        screen.getByTestId("book-form-use-cover-color")
+      ).toBeDisabled();
+    });
+
+    it("enables the auto-fill button when coverUrl is set", () => {
+      render(
+        <BookForm
+          initialValues={{ ...baseInput, coverUrl: "https://example.com/c.jpg" }}
+          submitLabel="Save"
+          onSubmit={vi.fn()}
+        />
+      );
+      expect(
+        screen.getByTestId("book-form-use-cover-color")
+      ).not.toBeDisabled();
+    });
+
+    it("does not auto-extract on render — manual color is preserved without a click", async () => {
+      // The user types a manual color; we render the form and never
+      // click the auto-fill button. The submitted BookInput must
+      // carry the manual color verbatim, untouched.
+      const onSubmit = vi.fn().mockResolvedValue(undefined);
+      const user = userEvent.setup();
+      render(
+        <BookForm
+          initialValues={{
+            ...baseInput,
+            coverUrl: "https://example.com/c.jpg",
+          }}
+          submitLabel="Save"
+          onSubmit={onSubmit}
+        />
+      );
+      fireEvent.change(screen.getByLabelText("Cover color (optional)"), {
+        target: { value: "#123456" },
+      });
+      await user.click(screen.getByRole("button", { name: "Save" }));
+      await waitFor(() => {
+        expect(onSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({ coverColor: "#123456" })
+        );
+      });
+    });
+
+    it("shows a non-blocking extract error when auto-fill returns null and leaves the form usable", async () => {
+      // We mock the module so the extraction always returns null.
+      // The manual entry path stays open and the form can be saved.
+      const extractSpy = vi
+        .spyOn(await import("@/lib/cover-color"), "extractDominantCoverColor")
+        .mockResolvedValue(null);
+      try {
+        const onSubmit = vi.fn().mockResolvedValue(undefined);
+        const user = userEvent.setup();
+        render(
+          <BookForm
+            initialValues={{
+              ...baseInput,
+              coverUrl: "https://example.com/c.jpg",
+            }}
+            submitLabel="Save"
+            onSubmit={onSubmit}
+          />
+        );
+        await user.click(screen.getByTestId("book-form-use-cover-color"));
+        await waitFor(() => {
+          expect(
+            screen.getByTestId("book-form-cover-color-extract-error")
+          ).toHaveTextContent(/couldn't read a color/i);
+        });
+        // No form-level alert, no crash. The Save button still works.
+        expect(
+          screen.queryByRole("alert")
+        ).not.toBeInTheDocument();
+        expect(
+          screen.getByRole("button", { name: "Save" })
+        ).not.toBeDisabled();
+        // Save still goes through with no coverColor set (manual entry untouched).
+        await user.click(screen.getByRole("button", { name: "Save" }));
+        await waitFor(() => {
+          expect(onSubmit).toHaveBeenCalled();
+        });
+        const callArg = onSubmit.mock.calls[0]?.[0] as BookInput;
+        expect("coverColor" in callArg).toBe(false);
+      } finally {
+        extractSpy.mockRestore();
+      }
+    });
+  });
 });
