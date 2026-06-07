@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { ShelfClient } from "@/app/ShelfClient";
 import { LocalStorageAdapter } from "@/storage/local-storage-adapter";
 import { useBookLibrary, __resetBookLibrary } from "@/state/book-library";
@@ -49,8 +49,12 @@ describe("ShelfClient — focused reading home (spec 015)", () => {
     });
     render(<ShelfClient />);
     expect(screen.getByText(/no books in progress/i)).toBeInTheDocument();
+    // The empty-state 'Open library' link is scoped to the
+    // no-reading area; the header also has an 'Open library'
+    // link, so query inside the empty-state container.
+    const noReading = screen.getByTestId("home-no-reading");
     expect(
-      screen.getByRole("link", { name: /open library/i })
+      noReading.querySelector("a[href='/library']")
     ).toBeInTheDocument();
   });
 
@@ -89,9 +93,14 @@ describe("ShelfClient — focused reading home (spec 015)", () => {
       tags: [],
     });
     render(<ShelfClient />);
-    expect(screen.getByText("Reading Book")).toBeInTheDocument();
-    expect(screen.queryByText("Want Book")).not.toBeInTheDocument();
-    expect(screen.queryByText("Read Book")).not.toBeInTheDocument();
+    // The reading book appears in the quick update Select AND
+    // in the BookCard grid. Scope the assertion to the grid
+    // area so we test that the card is rendered, not just that
+    // the option exists.
+    const grid = screen.getByTestId("reading-books-list");
+    expect(within(grid).getByText("Reading Book")).toBeInTheDocument();
+    expect(within(grid).queryByText("Want Book")).not.toBeInTheDocument();
+    expect(within(grid).queryByText("Read Book")).not.toBeInTheDocument();
   });
 
   it("does not render the shelf search input on the home page", async () => {
