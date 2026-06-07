@@ -1,6 +1,6 @@
 # Spec: Responsive Page Layout
 
-> **Status:** In Review
+> **Status:** Implemented
 > **Author:** Codex
 > **Created:** 2026-06-07
 > **Spec ID:** 014-responsive-page-layout
@@ -75,15 +75,15 @@ The feature does not add, remove, or alter storage methods. Existing initializat
 
 ## 10. Acceptance criteria
 
-- [ ] On a phone-width viewport, the home page shows header, Reading Calendar, shelf controls, and book grid in a single vertical flow.
-- [ ] On a desktop-width viewport with books, the home page shows shelf content as the main left area and Reading Calendar as a right companion rail.
-- [ ] On desktop, the calendar rail remains visible while scrolling a long shelf and does not overlap other content.
-- [ ] Shelf search, status filters, sort, tag filters, and clear-filters behavior are unchanged.
-- [ ] Empty, loading, and error home states still render with comfortable page spacing.
-- [ ] `/book/[id]` found state has the same outer page padding rhythm as the home page.
-- [ ] `/book/[id]` loading and not-found states still render correctly with the same outer page padding rhythm.
-- [ ] `npm run lint` passes.
-- [ ] `npm run test` passes.
+- [x] On a phone-width viewport, the home page shows header, Reading Calendar, shelf controls, and book grid in a single vertical flow.
+- [x] On a desktop-width viewport with books, the home page shows shelf content as the main left area and Reading Calendar as a right companion rail.
+- [x] On desktop, the calendar rail remains visible while scrolling a long shelf and does not overlap other content.
+- [x] Shelf search, status filters, sort, tag filters, and clear-filters behavior are unchanged.
+- [x] Empty, loading, and error home states still render with comfortable page spacing.
+- [x] `/book/[id]` found state has the same outer page padding rhythm as the home page.
+- [x] `/book/[id]` loading and not-found states still render correctly with the same outer page padding rhythm.
+- [x] `npm run lint` passes.
+- [x] `npm run test` passes.
 
 ## 11. Out of scope (for this spec)
 
