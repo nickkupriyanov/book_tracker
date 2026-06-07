@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { ShelfClient } from "@/app/ShelfClient";
 import { LocalStorageAdapter } from "@/storage/local-storage-adapter";
 import { useBookLibrary, __resetBookLibrary } from "@/state/book-library";
@@ -56,6 +57,7 @@ describe("ShelfClient — focused reading home (spec 015)", () => {
     expect(
       noReading.querySelector("a[href='/library']")
     ).toBeInTheDocument();
+    expect(screen.getByTestId("reading-calendar")).toBeInTheDocument();
   });
 
   it("renders the 'Open library' link on the home page in the ready non-empty state", async () => {
@@ -93,10 +95,8 @@ describe("ShelfClient — focused reading home (spec 015)", () => {
       tags: [],
     });
     render(<ShelfClient />);
-    // The reading book appears in the quick update Select AND
-    // in the BookCard grid. Scope the assertion to the grid
-    // area so we test that the card is rendered, not just that
-    // the option exists.
+    // Scope the assertion to the compact reading lane so we test that
+    // the home card is rendered, not just the focus panel title.
     const grid = screen.getByTestId("reading-books-list");
     expect(within(grid).getByText("Reading Book")).toBeInTheDocument();
     expect(within(grid).queryByText("Want Book")).not.toBeInTheDocument();
@@ -142,7 +142,7 @@ describe("ShelfClient — focused reading home (spec 015)", () => {
     expect(screen.queryByTestId("shelf-sort")).not.toBeInTheDocument();
   });
 
-  it("does not render the Reading Calendar on the home page", async () => {
+  it("renders the Reading Calendar on the home page when the library is non-empty", async () => {
     await useBookLibrary.getState().init(new LocalStorageAdapter());
     await useBookLibrary.getState().addBook({
       title: "Piranesi",
@@ -151,9 +151,35 @@ describe("ShelfClient — focused reading home (spec 015)", () => {
       tags: [],
     });
     render(<ShelfClient />);
-    expect(
-      screen.queryByTestId("reading-calendar")
-    ).not.toBeInTheDocument();
+    expect(screen.getByTestId("reading-calendar")).toBeInTheDocument();
+  });
+
+  it("switches the focused progress book when a compact reading card is clicked", async () => {
+    const user = userEvent.setup();
+    await useBookLibrary.getState().init(new LocalStorageAdapter());
+    await useBookLibrary.getState().addBook({
+      title: "Alpha",
+      author: "A",
+      status: "reading",
+      tags: [],
+      currentPage: 10,
+    });
+    await useBookLibrary.getState().addBook({
+      title: "Beta",
+      author: "B",
+      status: "reading",
+      tags: [],
+      currentPage: 44,
+    });
+    render(<ShelfClient />);
+
+    const focus = screen.getByTestId("page-progress-quick-update");
+    expect(within(focus).getByText("Beta")).toBeInTheDocument();
+
+    const lane = screen.getByTestId("reading-books-list");
+    await user.click(within(lane).getByRole("button", { name: /focus alpha/i }));
+
+    expect(within(focus).getByText("Alpha")).toBeInTheDocument();
   });
 });
 

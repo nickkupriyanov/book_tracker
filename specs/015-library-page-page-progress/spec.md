@@ -1,6 +1,6 @@
 # Spec: Library Page And Page Progress
 
-> **Status:** Draft
+> **Status:** Implemented
 > **Author:** Codex
 > **Created:** 2026-06-07
 > **Spec ID:** 015-library-page-page-progress
@@ -48,9 +48,9 @@ book's current page directly from the home page.
 ## 4. Users & scenarios
 
 **Story.** Andy is reading three books. He opens Book Tracker, lands on
-the home page, sees only those three books, selects *Piranesi* in the
-quick update block, enters page 123, and saves. The book card updates to
-show the new progress.
+the home page, sees a cozy focus panel for one active book, clicks
+*Piranesi* in the compact reading lane, enters page 123, and saves. The
+focus panel and the small home card update to show the new progress.
 
 **Story.** Andy wants to browse everything he owns. He clicks
 **Open library** and lands on `/library`, where the familiar shelf
@@ -76,13 +76,19 @@ bookish layout rather than a metrics panel.
 The ready state with reading books includes:
 
 - a page header with the app title and **Open library** button;
-- a compact quick update block above the reading list;
+- a focused active-book progress panel;
+- a compact reading lane for switching the active book;
+- the Reading Calendar as a home-page memory surface;
 - only books with `status: "reading"`;
 - no search, status tabs, tag filter, sort menu, or clear-filter control.
 
-The quick update block includes:
+On desktop, the active-book panel and compact reading lane sit in the
+main left column, while the Reading Calendar sits in a sticky right rail.
+On mobile, the order is active-book panel, reading lane, then calendar.
 
-- a shadcn `Select` listing the current reading books;
+The focused active-book panel includes:
+
+- the selected book's title and author;
 - a numeric current-page input for the selected book;
 - a save button;
 - progress text such as `123 / 420 pages` when `totalPages` exists, or
@@ -92,9 +98,14 @@ The quick update block includes:
   the selected book has no `totalPages`;
 - a soft **Mark as read** action when `currentPage === totalPages`.
 
+The compact reading lane uses smaller, softer home-only book cards. Each
+card switches the active book when clicked, shows lightweight progress
+when available, and omits edit/delete actions. The full library card
+remains available on `/library`.
+
 If the library is ready and has books but none are in progress, the home
-page shows a quiet empty state and **Open library**. It does not fall
-back to showing the full library.
+page shows the Reading Calendar, a quiet empty state, and **Open library**.
+It does not fall back to showing the full library.
 
 If the library is empty, the existing empty-shelf / add-book entry point
 remains available so first use still has an obvious next step.
@@ -130,9 +141,9 @@ page greater than `totalPages` is rejected when `totalPages` is known.
 - **FR-5.** If both `currentPage` and `totalPages` are present,
   `currentPage <= totalPages`.
 - **FR-6.** The home page shows only books whose status is `reading`.
-- **FR-7.** The home page quick update block lets the user select one
-  reading book and save a new `currentPage` without navigating to
-  `/book/[id]`.
+- **FR-7.** The home page focused progress area lets the user select one
+  reading book from compact home cards and save a new `currentPage`
+  without navigating to `/book/[id]`.
 - **FR-8.** Saving page progress persists through the existing
   `useBookLibrary.updateBook` path.
 - **FR-9.** When a selected book has `totalPages` and
@@ -148,6 +159,11 @@ page greater than `totalPages` is rejected when `totalPages` is known.
   menu.
 - **FR-14.** Loading, error, empty-library, and no-reading-books states
   are explicit.
+- **FR-15.** The Reading Calendar renders on the home page when the
+  library is ready and non-empty.
+- **FR-16.** Saving an empty current-page draft clears `currentPage`.
+- **FR-17.** Editing a book preserves an existing `currentPage` unless a
+  progress-specific action changes or clears it.
 
 ## 7. Data
 
@@ -208,11 +224,14 @@ whole `BookInput` shape and returns existing records as books.
 - [ ] `/` shows only `reading` books in the ready non-empty reading
       state.
 - [ ] `/` has an **Open library** button.
+- [ ] `/` renders the Reading Calendar when the library is ready and
+      non-empty.
 - [ ] `/` does not render shelf search, status filters, tag filters, or
       sort controls.
-- [ ] The home quick update block can select among reading books.
-- [ ] The home quick update block saves `currentPage` without opening a
-      book detail page.
+- [ ] The home focused progress area can select among reading books via
+      compact home cards.
+- [ ] The home focused progress area saves and clears `currentPage`
+      without opening a book detail page.
 - [ ] Books without `totalPages` can still save `currentPage`.
 - [ ] Books with `totalPages` show progress text and a progress bar.
 - [ ] `currentPage > totalPages` is rejected.
@@ -241,7 +260,7 @@ None. The design decisions are fixed for implementation:
 
 - route is `/library`;
 - button copy is **Open library**;
-- quick update uses a shadcn `Select`;
+- active book selection is local UI state driven by compact home cards;
 - page progress means current page, not pages-read deltas;
 - `totalPages` is optional;
 - the home page has no shelf filters or sort controls;

@@ -158,6 +158,78 @@ describe("EditBookDialog", () => {
     expect(stored[0]?.createdAt).toBe(sampleBook.createdAt);
   });
 
+  it("preserves currentPage when editing other book fields", async () => {
+    __resetBookLibrary();
+    localStorage.clear();
+    await useBookLibrary.getState().init(new LocalStorageAdapter());
+    const bookWithProgress = await useBookLibrary.getState().addBook({
+      title: "Progress Book",
+      author: "Author",
+      status: "reading",
+      tags: [],
+      currentPage: 120,
+      totalPages: 300,
+    });
+    render(
+      <EditBookDialog
+        book={bookWithProgress}
+        open={true}
+        onOpenChange={vi.fn()}
+      />
+    );
+    await screen.findByRole("dialog");
+    const user = userEvent.setup();
+
+    const titleInput = screen.getByLabelText("Title");
+    await user.clear(titleInput);
+    await user.type(titleInput, "Progress Book Updated");
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    await waitFor(() => {
+      const book = useBookLibrary
+        .getState()
+        .books.find((b) => b.id === bookWithProgress.id);
+      expect(book?.title).toBe("Progress Book Updated");
+      expect(book?.currentPage).toBe(120);
+      expect(book?.totalPages).toBe(300);
+    });
+  });
+
+  it("shows a visible totalPages error when totalPages is lower than currentPage", async () => {
+    __resetBookLibrary();
+    localStorage.clear();
+    await useBookLibrary.getState().init(new LocalStorageAdapter());
+    const bookWithProgress = await useBookLibrary.getState().addBook({
+      title: "Progress Book",
+      author: "Author",
+      status: "reading",
+      tags: [],
+      currentPage: 120,
+      totalPages: 300,
+    });
+    render(
+      <EditBookDialog
+        book={bookWithProgress}
+        open={true}
+        onOpenChange={vi.fn()}
+      />
+    );
+    await screen.findByRole("dialog");
+    const user = userEvent.setup();
+
+    const totalPages = screen.getByLabelText("Total pages (optional)");
+    await user.clear(totalPages);
+    await user.type(totalPages, "100");
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/current page must be 100 or fewer/i)
+      ).toBeInTheDocument();
+    });
+    expect(totalPages).toHaveAttribute("aria-invalid", "true");
+  });
+
   it("does not update last-status on edit (D2 of spec 002)", async () => {
     renderDialog();
     await screen.findByRole("dialog");

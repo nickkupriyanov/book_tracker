@@ -1,6 +1,6 @@
 # Plan: Library Page And Page Progress
 
-> **Status:** Draft
+> **Status:** Approved
 > **Spec:** `./spec.md` (read this first)
 > **Author:** Codex
 > **Created:** 2026-06-07
@@ -14,10 +14,11 @@ keeping the existing storage architecture unchanged. `RootClient`
 continues to initialize the Zustand library store once for all routes.
 `/library` becomes the full shelf route and reuses the existing
 `ShelfList` behavior. `/` becomes a focused currently-reading route that
-derives `readingBooks` from `useBookLibrary.books`, renders a small
-quick page update component, and persists progress through the existing
-`useBookLibrary.updateBook` method. Page progress is added to the
-`Book` domain type and validated at the `validateBookInput` boundary.
+derives `readingBooks` from `useBookLibrary.books`, renders a focused
+active-book progress panel, a compact home reading lane, and the Reading
+Calendar. Page progress persists through the existing
+`useBookLibrary.updateBook` method and is validated at the
+`validateBookInput` boundary.
 
 ## 2. Module / file layout
 
@@ -31,10 +32,12 @@ quick page update component, and persists progress through the existing
   render the full shelf experience at `/library`.
 - `src/components/BookForm.tsx` - add optional `totalPages` input to the
   shared add/edit form.
-- `src/features/page-progress/PageProgressQuickUpdate.tsx` - focused
-  home quick-update component.
-- `src/features/page-progress/ReadingBooksList.tsx` - focused
-  reading-only book list for the home page.
+- `src/features/page-progress/PageProgressQuickUpdate.tsx` - active-book
+  progress panel.
+- `src/features/page-progress/ReadingBooksList.tsx` - compact home
+  reading lane for active-book switching.
+- `src/features/page-progress/ReadingBookCard.tsx` - smaller, softer
+  home-only book card.
 - `src/features/shelf-list/BookCard.tsx` - show lightweight page progress
   when available.
 - `tests/lib/validation/book.test.ts` - page field validation coverage.
@@ -48,14 +51,15 @@ Home happy path:
 1. `RootClient` initializes `useBookLibrary` with `LocalStorageAdapter`.
 2. Home reads `status`, `books`, and `updateBook` from the store.
 3. Home derives `readingBooks = books.filter((b) => b.status === "reading")`.
-4. Quick update selects an active book id from `readingBooks`.
+4. Home owns a local active book id; clicking a compact reading card
+   changes it.
 5. User enters a current page and saves.
 6. The component validates the next book shape through
    `validateBookInput({ ...book, currentPage })`.
 7. On success, it calls `updateBook(book.id, result.value)`.
 8. The adapter persists the full updated book record.
 9. Zustand replaces the book in memory and the home page re-renders with
-   updated progress text/bar.
+   updated focus panel, compact card, and calendar.
 
 Library happy path:
 
@@ -76,32 +80,34 @@ Library happy path:
 
 - **Home/ShelfClient focused view**
   - **Props:** none.
-  - **State:** add-book dialog state for empty-library first use, if
-    reusing current empty flow.
-  - **Behavior:** renders header, **Open library**, quick update, and
-    reading-only list; no shelf controls.
+  - **State:** local active book id and add-book dialog state for
+    empty-library first use.
+  - **Behavior:** renders header, **Open library**, active-book progress
+    panel, compact reading lane, and Reading Calendar; no shelf controls.
   - **Tests:** only reading books render; non-reading books do not render;
     no shelf search/filter/sort controls appear; no-reading empty state
     appears when appropriate.
 
 - **PageProgressQuickUpdate**
-  - **Props:** `books: Book[]`.
-  - **State:** selected book id, current page draft, saving/error state,
-    completion prompt visibility.
-  - **Behavior:** reads `updateBook` from `useBookLibrary`, selects one
-    reading book, edits current page, validates, persists, and offers
-    **Mark as read** when final page is reached.
-  - **Tests:** selected book can change; saving updates the selected book;
-    invalid pages show an error; final page shows **Mark as read** without
-    automatic status change.
+  - **Props:** `book: Book`.
+  - **State:** current page draft, saving/error state, completion prompt
+    visibility.
+  - **Behavior:** reads `updateBook` from `useBookLibrary`, edits the
+    active book's current page, validates, persists, allows clearing the
+    page, and offers **Mark as read** when final page is reached.
+  - **Tests:** saving updates the active book; empty draft clears
+    `currentPage`; invalid pages show an error; final page shows
+    **Mark as read** without automatic status change.
 
 - **ReadingBooksList**
-  - **Props:** `books: Book[]`.
-  - **State:** none unless edit/delete actions are included locally.
-  - **Behavior:** renders a compact grid/list of reading books, using the
-    existing `BookCard` without edit/delete actions.
-  - **Tests:** renders one card per reading book and displays progress
-    text when available.
+  - **Props:** `books: Book[]`, `activeBookId: string`,
+    `onSelectBook: (bookId: string) => void`.
+  - **State:** none.
+  - **Behavior:** renders compact home cards; clicking a card selects the
+    active book. Cards omit edit/delete actions and use softer styling
+    than full library cards.
+  - **Tests:** renders one card per reading book, marks the active card,
+    and calls `onSelectBook` when another card is clicked.
 
 - **BookForm page-count field**
   - **Props:** no public prop changes.
@@ -124,8 +130,8 @@ while keeping legacy records with missing fields valid.
 - Chose a separate `/library` route over making the home shelf conditional
   because it gives each surface a clear job and avoids turning `ShelfList`
   into a mode-heavy component.
-- Chose a shadcn `Select` for active-book switching because it works well
-  on mobile and does not conflict with card navigation or card actions.
+- Chose compact home cards for active-book switching over a shadcn
+  `Select` because the action should stay visually attached to the book.
 - Chose current-page tracking over page-delta sessions because the user's
   requested habit is "where am I now?", not a reading log.
 - Chose optional `totalPages` because current-page tracking remains useful
@@ -140,11 +146,10 @@ while keeping legacy records with missing fields valid.
 - Moving the full shelf from `/` to `/library` can break tests that assume
   `ShelfClient` always renders `ShelfList`; update tests to assert the new
   route responsibilities.
-- The quick update block could feel like a dashboard if progress is too
+- The progress panel could feel like a dashboard if progress is too
   visually loud; keep progress text/bar modest and book-centered.
-- Reusing `BookCard` on the home page can make the focused view too busy
-  if edit/delete affordances appear there; `ReadingBooksList` renders
-  home cards without those actions.
+- Reusing full shelf cards on the home page makes the focused view too
+  busy; `ReadingBooksList` uses a home-only compact card instead.
 - `BookForm` already has many fields; add `totalPages` compactly and avoid
   making page progress dominate the add/edit flow.
 - Validation must avoid `any` and keep legacy optional fields valid.
@@ -156,9 +161,10 @@ while keeping legacy records with missing fields valid.
 - Manual QA steps:
   - Start with an empty library and verify `/` offers the add-book path.
   - Add `want`, `reading`, and `read` books; verify `/` shows only
-    `reading`.
+    `reading` plus the Reading Calendar.
   - Verify `/library` shows all books and existing shelf controls.
   - Save current page for a reading book without `totalPages`.
+  - Clear current page for a reading book with an existing `currentPage`.
   - Add `totalPages`, save current page, and verify progress text/bar.
   - Try `currentPage > totalPages` and verify validation blocks save.
   - Save the final page and verify **Mark as read** appears without

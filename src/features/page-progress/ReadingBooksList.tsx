@@ -1,32 +1,37 @@
 "use client";
 
-import { BookCard } from "@/features/shelf-list";
+import { ReadingBookCard } from "./ReadingBookCard";
 import type { Book } from "@/types/book";
 
 export interface ReadingBooksListProps {
   books: Book[];
+  activeBookId: string;
+  onSelectBook: (bookId: string) => void;
 }
 
 /**
  * Compact, focused book list for the home page (spec 015). Renders
- * a grid of {@link BookCard} for the supplied reading books without
- * shelf edit/delete affordances — those live on /library. The home
- * surface is for the daily "what am I reading now?" habit; editing
- * belongs to the full library.
- *
- * `BookCard` is presentational; the cards still link to /book/<id>
- * for the detail view (spec 005) and display progress text/bar from
- * the lightweight `currentPage` / `totalPages` rendering (spec 015
- * §5.2, T7).
+ * a small lane of cozy cards for the supplied reading books. Clicking
+ * a card changes the active book in the progress panel; editing belongs
+ * to the full library.
  */
-export function ReadingBooksList({ books }: ReadingBooksListProps) {
+export function ReadingBooksList({
+  books,
+  activeBookId,
+  onSelectBook,
+}: ReadingBooksListProps) {
   return (
     <div
       data-testid="reading-books-list"
-      className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4"
+      className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"
     >
       {books.map((book) => (
-        <BookCard key={book.id} book={book} />
+        <ReadingBookCard
+          key={book.id}
+          book={book}
+          active={book.id === activeBookId}
+          onSelect={() => onSelectBook(book.id)}
+        />
       ))}
     </div>
   );

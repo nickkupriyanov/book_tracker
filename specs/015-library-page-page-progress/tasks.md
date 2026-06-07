@@ -42,7 +42,7 @@ acceptance line is satisfied and `npm run lint && npm run test` passes.
 ## T6. Implement focused home and quick update
 
 - **Files:** `src/app/ShelfClient.tsx`, `src/features/page-progress/PageProgressQuickUpdate.tsx`, `src/features/page-progress/ReadingBooksList.tsx`
-- **Acceptance:** `/` renders a reading-only home page with **Open library**, a shadcn `Select` quick update block, current-page save behavior, no-reading empty state, and no full shelf controls.
+- **Acceptance:** `/` renders a reading-only home page with **Open library**, active-book progress, compact reading-card switching, current-page save behavior, no-reading empty state, Reading Calendar, and no full shelf controls.
 - **Notes:** Persist through `useBookLibrary.updateBook` and `validateBookInput`. If `currentPage === totalPages`, show **Mark as read** without changing status automatically.
 
 ## T7. Add total pages input and progress display
@@ -56,3 +56,15 @@ acceptance line is satisfied and `npm run lint && npm run test` passes.
 - **Files:** affected implementation and test files
 - **Acceptance:** Manual QA covers empty library, no reading books, reading books with/without `totalPages`, invalid progress, final-page prompt, `/library` controls, and both `npm run lint` and `npm run test` pass.
 - **Notes:** Re-read `spec.md` acceptance criteria before marking this done.
+
+## T9. Revise home calendar and focus-book UX
+
+- **Files:** `src/app/ShelfClient.tsx`, `src/features/page-progress/PageProgressQuickUpdate.tsx`, `src/features/page-progress/ReadingBooksList.tsx`, `src/features/page-progress/ReadingBookCard.tsx`, `tests/app/ShelfClient.test.tsx`, `tests/features/page-progress/PageProgressQuickUpdate.test.tsx`
+- **Acceptance:** Home renders Reading Calendar, focused active-book progress, and compact reading-card lane; clicking a compact card changes the active book; no shelf controls appear on home. — Done
+- **Notes:** Keep active selection local and unpersisted. On desktop use a sticky calendar rail; on mobile place calendar after the reading lane.
+
+## T10. Fix page-progress edit and clear behavior
+
+- **Files:** `src/components/BookForm.tsx`, `src/features/edit-book/EditBookDialog.tsx`, `src/features/page-progress/PageProgressQuickUpdate.tsx`, `tests/components/BookForm.test.tsx`, `tests/features/edit-book/EditBookDialog.test.tsx`, `tests/features/page-progress/PageProgressQuickUpdate.test.tsx`
+- **Acceptance:** Editing a book preserves existing `currentPage`; conflicting `totalPages` errors are visible on the form; saving an empty progress draft clears `currentPage`. — Done
+- **Notes:** Preserve the existing `StorageAdapter` contract and avoid adding new persistence methods.

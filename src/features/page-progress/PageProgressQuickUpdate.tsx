@@ -6,35 +6,20 @@ import { BookOpen, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { validateBookInput } from "@/lib/validation/book";
 import { useBookLibrary } from "@/state/book-library";
 import type { Book } from "@/types/book";
 
 export interface PageProgressQuickUpdateProps {
-  /**
-   * The user's currently-reading books. The component
-   * derives its own `selectedBookId` from this list and
-   * falls back to the first entry when the current
-   * selection drops out of the list (e.g. after a
-   * "Mark as read" removes it).
-   */
-  books: Book[];
+  /** The currently focused reading book. */
+  book: Book;
 }
-
-const SELECT_NONE = "__none__";
 
 /**
  * The focused home page progress block (spec 015 §5.1). Lets the
- * user pick one of their reading books from a shadcn `Select`,
- * type a current page, and save — without opening a book detail
- * page.
+ * user type a current page for the active reading book and save —
+ * without opening a book detail page. The parent owns active-book
+ * selection through the compact reading lane.
  *
  * - Persists through `useBookLibrary.updateBook` and
  *   `validateBookInput`, so the validation rules (positive
@@ -56,53 +41,25 @@ const SELECT_NONE = "__none__";
  * render it (it should be hidden when there are no reading
  * books — see {@link ShelfClient}).
  */
-export function PageProgressQuickUpdate({ books }: PageProgressQuickUpdateProps) {
+export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) {
   const updateBook = useBookLibrary((s) => s.updateBook);
 
-  const initialId = books[0]?.id ?? SELECT_NONE;
-  const [selectedBookId, setSelectedBookId] = useState<string>(initialId);
   const [pageDraft, setPageDraft] = useState<string>(
-    books[0]?.currentPage?.toString() ?? ""
+    book.currentPage?.toString() ?? ""
   );
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isMarkingRead, setIsMarkingRead] = useState(false);
 
-  // If the selected book drops out of the reading list
-  // (e.g. it was marked read on another surface, or it was
-  // the only reading book and the user navigated away),
-  // fall back to the first remaining entry. Reset the draft
-  // to that book's `currentPage`. Spec 015 §9 — "A book
-  // can stop being `reading` after it was selected in the
-  // quick update block. The home page should derive the
-  // selected book from the current reading list and fall
-  // back to the first reading book when needed."
   useEffect(() => {
-    const stillInList = books.some((b) => b.id === selectedBookId);
-    if (!stillInList) {
-      const next = books[0];
-      setSelectedBookId(next?.id ?? SELECT_NONE);
-      setPageDraft(next?.currentPage?.toString() ?? "");
-    }
-  }, [books, selectedBookId]);
-
-  const selectedBook = useMemo<Book | undefined>(
-    () => books.find((b) => b.id === selectedBookId),
-    [books, selectedBookId]
-  );
-
-  function handleBookChange(nextId: string): void {
-    setSelectedBookId(nextId);
-    const next = books.find((b) => b.id === nextId);
-    setPageDraft(next?.currentPage?.toString() ?? "");
+    setPageDraft(book.currentPage?.toString() ?? "");
     setError(null);
     setInfo(null);
-  }
+  }, [book.id, book.currentPage]);
 
   async function handleSavePage(e: React.FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault();
-    if (selectedBook === undefined) return;
     setError(null);
     setInfo(null);
 
@@ -119,7 +76,7 @@ export function PageProgressQuickUpdate({ books }: PageProgressQuickUpdateProps)
     // identically here. Build a BookInput shape and revalidate;
     // any failure surfaces under the right field key.
     const candidate = {
-      ...selectedBook,
+      ...book,
       currentPage: nextCurrentPage,
     };
     const result = validateBookInput(candidate);
@@ -131,7 +88,7 @@ export function PageProgressQuickUpdate({ books }: PageProgressQuickUpdateProps)
 
     setIsSaving(true);
     try {
-      await updateBook(selectedBook.id, result.value);
+      await updateBook(book.id, result.value);
     } catch {
       // Spec 015 §5.3: storage failure keeps the user's typed
       // value visible and leaves the quick update block usable.
@@ -142,20 +99,19 @@ export function PageProgressQuickUpdate({ books }: PageProgressQuickUpdateProps)
   }
 
   async function handleMarkAsRead(): Promise<void> {
-    if (selectedBook === undefined) return;
     setError(null);
     setInfo(null);
     setIsMarkingRead(true);
     try {
       // Preserve the page fields explicitly so the update path
       // carries them through unchanged. Spec 015 FR-10.
-      await updateBook(selectedBook.id, {
-        ...selectedBook,
+      await updateBook(book.id, {
+        ...book,
         status: "read",
       });
       // The book leaves the reading list after this; the
       // useEffect above re-derives the selection.
-      setInfo(`Marked "${selectedBook.title}" as read.`);
+      setInfo(`Marked "${book.title}" as read.`);
     } catch {
       setError("Couldn't save. Your browser storage is full or disabled.");
     } finally {
@@ -163,43 +119,37 @@ export function PageProgressQuickUpdate({ books }: PageProgressQuickUpdateProps)
     }
   }
 
-  const canSave = !isSaving && selectedBook !== undefined;
-  const draftIsEmpty = pageDraft.trim() === "";
+  const canSave = !isSaving;
 
-  const hasTotal = selectedBook?.totalPages !== undefined;
+  const hasTotal = book.totalPages !== undefined;
   const reachedEnd =
-    selectedBook?.currentPage !== undefined &&
-    selectedBook.totalPages !== undefined &&
-    selectedBook.currentPage === selectedBook.totalPages;
+    book.currentPage !== undefined &&
+    book.totalPages !== undefined &&
+    book.currentPage === book.totalPages;
 
   const progressText = useMemo<string | null>(() => {
-    if (selectedBook === undefined) return null;
-    if (
-      selectedBook.currentPage !== undefined &&
-      selectedBook.totalPages !== undefined
-    ) {
-      return `${selectedBook.currentPage} / ${selectedBook.totalPages} pages`;
+    if (book.currentPage !== undefined && book.totalPages !== undefined) {
+      return `${book.currentPage} / ${book.totalPages} pages`;
     }
-    if (selectedBook.currentPage !== undefined) {
-      return `Page ${selectedBook.currentPage}`;
+    if (book.currentPage !== undefined) {
+      return `Page ${book.currentPage}`;
     }
     return null;
-  }, [selectedBook]);
+  }, [book]);
 
   const percent = useMemo<number | null>(() => {
     if (
-      selectedBook === undefined ||
-      selectedBook.currentPage === undefined ||
-      selectedBook.totalPages === undefined ||
-      selectedBook.totalPages === 0
+      book.currentPage === undefined ||
+      book.totalPages === undefined ||
+      book.totalPages === 0
     ) {
       return null;
     }
     return Math.min(
       100,
-      Math.round((selectedBook.currentPage / selectedBook.totalPages) * 100)
+      Math.round((book.currentPage / book.totalPages) * 100)
     );
-  }, [selectedBook]);
+  }, [book]);
 
   return (
     <section
@@ -212,34 +162,16 @@ export function PageProgressQuickUpdate({ books }: PageProgressQuickUpdateProps)
         <h2 className="font-serif text-lg text-foreground">Where are you?</h2>
       </header>
 
+      <div className="mb-4">
+        <p className="font-serif text-2xl text-foreground">{book.title}</p>
+        <p className="text-muted-foreground text-sm">{book.author}</p>
+      </div>
+
       <form
         onSubmit={handleSavePage}
         className="space-y-3"
         aria-describedby={error ? "page-progress-error" : undefined}
       >
-        <div className="space-y-1.5">
-          <Label htmlFor="page-progress-book">Currently reading</Label>
-          <Select
-            value={selectedBookId}
-            onValueChange={handleBookChange}
-          >
-            <SelectTrigger
-              id="page-progress-book"
-              data-testid="page-progress-book-trigger"
-              className="w-full"
-            >
-              <SelectValue placeholder="Choose a book…" />
-            </SelectTrigger>
-            <SelectContent>
-              {books.map((book) => (
-                <SelectItem key={book.id} value={book.id}>
-                  {book.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
         <div className="space-y-1.5">
           <Label htmlFor="page-progress-page">Current page</Label>
           <div className="flex items-center gap-2">
@@ -256,14 +188,13 @@ export function PageProgressQuickUpdate({ books }: PageProgressQuickUpdateProps)
                 setInfo(null);
               }}
               placeholder="e.g. 123"
-              disabled={selectedBook === undefined}
               aria-invalid={error ? true : undefined}
               aria-describedby={error ? "page-progress-error" : undefined}
               className="flex-1"
             />
             <Button
               type="submit"
-              disabled={!canSave || draftIsEmpty}
+              disabled={!canSave}
               data-testid="page-progress-save"
             >
               {isSaving ? "Saving…" : "Save"}
@@ -292,14 +223,14 @@ export function PageProgressQuickUpdate({ books }: PageProgressQuickUpdateProps)
               />
             </div>
           )}
-          {selectedBook !== undefined && !hasTotal && (
+          {!hasTotal && (
             <p
               data-testid="page-progress-add-total"
               className="text-muted-foreground text-sm"
             >
               Add the total page count through{" "}
               <Link
-                href={`/book/${selectedBook.id}`}
+                href={`/book/${book.id}`}
                 className="text-foreground underline underline-offset-2 hover:no-underline"
               >
                 the book&apos;s edit page

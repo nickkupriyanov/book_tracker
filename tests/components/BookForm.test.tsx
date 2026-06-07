@@ -552,6 +552,48 @@ describe("BookForm", () => {
       });
     });
 
+    it("preserves initialValues.currentPage when submitting book edits", async () => {
+      const onSubmit = vi.fn().mockResolvedValue(undefined);
+      const user = userEvent.setup();
+      render(
+        <BookForm
+          initialValues={{ ...baseInput, currentPage: 120, totalPages: 300 }}
+          submitLabel="Save"
+          onSubmit={onSubmit}
+        />
+      );
+      await user.click(screen.getByRole("button", { name: "Save" }));
+      await waitFor(() => {
+        expect(onSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({ currentPage: 120, totalPages: 300 })
+        );
+      });
+    });
+
+    it("shows a totalPages error when it is lower than existing currentPage", async () => {
+      const user = userEvent.setup();
+      render(
+        <BookForm
+          initialValues={{ ...baseInput, currentPage: 120, totalPages: 300 }}
+          submitLabel="Save"
+          onSubmit={vi.fn()}
+        />
+      );
+      fireEvent.change(screen.getByLabelText("Total pages (optional)"), {
+        target: { value: "100" },
+      });
+      await user.click(screen.getByRole("button", { name: "Save" }));
+      await waitFor(() => {
+        expect(
+          screen.getByText(/current page must be 100 or fewer/i)
+        ).toBeInTheDocument();
+      });
+      expect(screen.getByLabelText("Total pages (optional)")).toHaveAttribute(
+        "aria-invalid",
+        "true"
+      );
+    });
+
     it("omits totalPages from onSubmit input when the field is empty", async () => {
       const onSubmit = vi.fn().mockResolvedValue(undefined);
       const user = userEvent.setup();

@@ -96,6 +96,9 @@ export function BookForm({
       ...(rating ? { rating: Number(rating) as 1 | 2 | 3 | 4 | 5 } : {}),
       ...(startedAt ? { startedAt } : {}),
       ...(finishedAt ? { finishedAt } : {}),
+      ...(initialValues.currentPage !== undefined
+        ? { currentPage: initialValues.currentPage }
+        : {}),
       ...(totalPages ? { totalPages: Number(totalPages) } : {}),
       tags: [tags],
     };
