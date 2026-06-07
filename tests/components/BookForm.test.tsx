@@ -503,4 +503,111 @@ describe("BookForm", () => {
       }
     });
   });
+
+  describe("total pages field (spec 015)", () => {
+    it("renders the total pages input with the right label", () => {
+      render(
+        <BookForm
+          initialValues={baseInput}
+          submitLabel="Save"
+          onSubmit={vi.fn()}
+        />
+      );
+      expect(
+        screen.getByLabelText("Total pages (optional)")
+      ).toBeInTheDocument();
+    });
+
+    it("pre-fills the input from initialValues.totalPages", () => {
+      render(
+        <BookForm
+          initialValues={{ ...baseInput, totalPages: 420 }}
+          submitLabel="Save"
+          onSubmit={vi.fn()}
+        />
+      );
+      expect(
+        screen.getByLabelText("Total pages (optional)")
+      ).toHaveValue(420);
+    });
+
+    it("includes a valid totalPages in the onSubmit input", async () => {
+      const onSubmit = vi.fn().mockResolvedValue(undefined);
+      const user = userEvent.setup();
+      render(
+        <BookForm
+          initialValues={baseInput}
+          submitLabel="Save"
+          onSubmit={onSubmit}
+        />
+      );
+      fireEvent.change(screen.getByLabelText("Total pages (optional)"), {
+        target: { value: "300" },
+      });
+      await user.click(screen.getByRole("button", { name: "Save" }));
+      await waitFor(() => {
+        expect(onSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({ totalPages: 300 })
+        );
+      });
+    });
+
+    it("omits totalPages from onSubmit input when the field is empty", async () => {
+      const onSubmit = vi.fn().mockResolvedValue(undefined);
+      const user = userEvent.setup();
+      render(
+        <BookForm
+          initialValues={baseInput}
+          submitLabel="Save"
+          onSubmit={onSubmit}
+        />
+      );
+      await user.click(screen.getByRole("button", { name: "Save" }));
+      await waitFor(() => {
+        expect(onSubmit).toHaveBeenCalled();
+      });
+      const callArg = onSubmit.mock.calls[0]?.[0] as BookInput;
+      expect("totalPages" in callArg).toBe(false);
+    });
+
+    it("rejects a zero totalPages with an inline error", async () => {
+      const user = userEvent.setup();
+      render(
+        <BookForm
+          initialValues={baseInput}
+          submitLabel="Save"
+          onSubmit={vi.fn()}
+        />
+      );
+      fireEvent.change(screen.getByLabelText("Total pages (optional)"), {
+        target: { value: "0" },
+      });
+      await user.click(screen.getByRole("button", { name: "Save" }));
+      await waitFor(() => {
+        expect(
+          screen.getByText(/total page must be a whole number/i)
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("rejects a decimal totalPages with an inline error", async () => {
+      const user = userEvent.setup();
+      render(
+        <BookForm
+          initialValues={baseInput}
+          submitLabel="Save"
+          onSubmit={vi.fn()}
+        />
+      );
+      fireEvent.change(screen.getByLabelText("Total pages (optional)"), {
+        target: { value: "12.5" },
+      });
+      await user.click(screen.getByRole("button", { name: "Save" }));
+      await waitFor(() => {
+        expect(
+          screen.getByText(/total page must be a whole number/i)
+        ).toBeInTheDocument();
+      });
+    });
+  });
 });

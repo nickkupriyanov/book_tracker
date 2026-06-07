@@ -213,4 +213,38 @@ describe("BookCard", () => {
       );
     });
   });
+
+  describe("page progress (spec 015)", () => {
+    it("does not render progress text when neither currentPage nor totalPages is set", () => {
+      render(<BookCard book={baseBook} />);
+      expect(
+        screen.queryByTestId("book-card-progress")
+      ).not.toBeInTheDocument();
+    });
+
+    it("renders 'Page N' when only currentPage is set", () => {
+      render(<BookCard book={{ ...baseBook, currentPage: 42 }} />);
+      expect(screen.getByTestId("book-card-progress")).toHaveTextContent(
+        "Page 42"
+      );
+    });
+
+    it("renders 'N / M pages' when both currentPage and totalPages are set", () => {
+      render(
+        <BookCard
+          book={{ ...baseBook, currentPage: 123, totalPages: 420 }}
+        />
+      );
+      expect(screen.getByTestId("book-card-progress")).toHaveTextContent(
+        "123 / 420 pages"
+      );
+    });
+
+    it("does not render progress text when only totalPages is set (no currentPage)", () => {
+      render(<BookCard book={{ ...baseBook, totalPages: 420 }} />);
+      expect(
+        screen.queryByTestId("book-card-progress")
+      ).not.toBeInTheDocument();
+    });
+  });
 });

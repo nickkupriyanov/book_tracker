@@ -63,6 +63,14 @@ export function BookForm({
   const [finishedAt, setFinishedAt] = useState(
     initialValues.finishedAt ?? ""
   );
+  // Total page count (spec 015). Optional. Edited through
+  // the shared BookForm; the currentPage lives on the
+  // home quick-update block instead. Empty string = no
+  // total pages; only included in the submitted BookInput
+  // when provided.
+  const [totalPages, setTotalPages] = useState(
+    initialValues.totalPages?.toString() ?? ""
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -88,6 +96,7 @@ export function BookForm({
       ...(rating ? { rating: Number(rating) as 1 | 2 | 3 | 4 | 5 } : {}),
       ...(startedAt ? { startedAt } : {}),
       ...(finishedAt ? { finishedAt } : {}),
+      ...(totalPages ? { totalPages: Number(totalPages) } : {}),
       tags: [tags],
     };
 
@@ -281,6 +290,32 @@ export function BookForm({
             className="text-sm text-destructive"
           >
             {errors.finishedAt}
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="book-form-total-pages">Total pages (optional)</Label>
+        <Input
+          id="book-form-total-pages"
+          data-testid="book-form-total-pages"
+          type="number"
+          inputMode="numeric"
+          min={1}
+          value={totalPages}
+          onChange={(e) => setTotalPages(e.target.value)}
+          placeholder="e.g. 420"
+          aria-invalid={errors.totalPages ? true : undefined}
+          aria-describedby={
+            errors.totalPages ? "book-form-total-pages-error" : undefined
+          }
+        />
+        {errors.totalPages && (
+          <p
+            id="book-form-total-pages-error"
+            className="text-sm text-destructive"
+          >
+            {errors.totalPages}
           </p>
         )}
       </div>

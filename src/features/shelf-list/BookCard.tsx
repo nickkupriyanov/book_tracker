@@ -43,6 +43,17 @@ export function BookCard({ book, onEdit, onDelete }: BookCardProps) {
 
   const hasActions = onEdit !== undefined || onDelete !== undefined;
 
+  // Lightweight page progress text (spec 015 §5.2 / T7).
+  // Shown on every surface that renders the card. The bar
+  // lives on the home quick-update block; the card stays
+  // text-only to remain warm and book-centered.
+  const progressText: string | null =
+    book.currentPage !== undefined && book.totalPages !== undefined
+      ? `${book.currentPage} / ${book.totalPages} pages`
+      : book.currentPage !== undefined
+        ? `Page ${book.currentPage}`
+        : null;
+
   return (
     <Card>
       <div className="bg-muted relative aspect-[2/3] overflow-hidden">
@@ -107,6 +118,14 @@ export function BookCard({ book, onEdit, onDelete }: BookCardProps) {
           {book.author}
         </p>
         <StatusPill status={book.status} />
+        {progressText !== null && (
+          <p
+            data-testid="book-card-progress"
+            className="text-muted-foreground text-xs"
+          >
+            {progressText}
+          </p>
+        )}
         {(visibleTags.length > 0 || overflow > 0) && (
           <div className="flex flex-wrap gap-1 pt-1">
             {visibleTags.map((tag) => (

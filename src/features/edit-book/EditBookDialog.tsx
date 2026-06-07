@@ -40,6 +40,7 @@ export function EditBookDialog({
     ...(book.coverColor !== undefined ? { coverColor: book.coverColor } : {}),
     ...(book.startedAt !== undefined ? { startedAt: book.startedAt } : {}),
     ...(book.finishedAt !== undefined ? { finishedAt: book.finishedAt } : {}),
+    ...(book.totalPages !== undefined ? { totalPages: book.totalPages } : {}),
     tags: book.tags,
   };
 
