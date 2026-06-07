@@ -351,6 +351,32 @@ function validateCoverColor(
   return trimmed.toLowerCase();
 }
 
+/**
+ * Validates an optional page number. `undefined` / `null`
+ * means "no page" (returns undefined, no error). Otherwise
+ * must be a positive whole number within `PAGE_MIN..PAGE_MAX`
+ * (spec 015 FR-3 / FR-4).
+ */
+function validateOptionalPage(
+  raw: unknown,
+  errors: Record<string, string>,
+  field: "currentPage" | "totalPages"
+): number | undefined {
+  if (raw === undefined || raw === null) {
+    return undefined;
+  }
+  if (
+    typeof raw !== "number" ||
+    !Number.isInteger(raw) ||
+    raw < PAGE_MIN ||
+    raw > PAGE_MAX
+  ) {
+    errors[field] = `${field === "currentPage" ? "Current" : "Total"} page must be a whole number between ${PAGE_MIN} and ${PAGE_MAX}.`;
+    return undefined;
+  }
+  return raw;
+}
+
 function isProseMirrorDoc(value: unknown): value is JSONContent {
   if (!isObject(value)) return false;
   if (value["type"] !== "doc") return false;
@@ -599,6 +625,16 @@ export function validateBookInput(input: unknown): ValidationResult<BookInput> {
   );
   const readingDays = validateReadingDays(input["readingDays"], errors);
   const coverColor = validateCoverColor(input["coverColor"], errors);
+  const currentPage = validateOptionalPage(
+    input["currentPage"],
+    errors,
+    "currentPage"
+  );
+  const totalPages = validateOptionalPage(
+    input["totalPages"],
+    errors,
+    "totalPages"
+  );
 
   if (Object.keys(errors).length > 0) {
     return { ok: false, errors };
@@ -615,6 +651,19 @@ export function validateBookInput(input: unknown): ValidationResult<BookInput> {
     startedAt > finishedAt
   ) {
     errors.finishedAt = "Finish date must be on or after the start date.";
+    return { ok: false, errors };
+  }
+
+  // Cross-field rule (spec 015 FR-5): if both page numbers
+  // are set, currentPage must be <= totalPages. The error
+  // rides on `currentPage` — that's the field the user just
+  // typed and the one they're most likely to want to fix.
+  if (
+    currentPage !== undefined &&
+    totalPages !== undefined &&
+    currentPage > totalPages
+  ) {
+    errors.currentPage = `Current page must be ${totalPages} or fewer.`;
     return { ok: false, errors };
   }
 
@@ -643,6 +692,8 @@ export function validateBookInput(input: unknown): ValidationResult<BookInput> {
     ...(finishedAt !== undefined ? { finishedAt } : {}),
     ...(readingDays !== undefined ? { readingDays } : {}),
     ...(coverColor !== undefined ? { coverColor } : {}),
+    ...(currentPage !== undefined ? { currentPage } : {}),
+    ...(totalPages !== undefined ? { totalPages } : {}),
   };
   return { ok: true, value };
 }

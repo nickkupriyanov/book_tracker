@@ -90,6 +90,22 @@ export interface Book {
    * auto-extraction never overwrites a manual value.
    */
   coverColor?: string;
+  /**
+   * Optional current page the user is on. Positive whole
+   * number; when `totalPages` is also set, must be `<= totalPages`
+   * (spec 015 §7, FR-3, FR-5). Independent of `status` —
+   * a book can be `want` or `read` with a stale `currentPage`
+   * left over from when it was being read. Page numbers, not
+   * percentages and not session deltas.
+   */
+  currentPage?: number;
+  /**
+   * Optional total page count of the book. Positive whole
+   * number (spec 015 §7, FR-4). Set through the edit flow;
+   * `currentPage` remains useful even without it. Independent
+   * of `status`.
+   */
+  totalPages?: number;
 }
 
 /**
