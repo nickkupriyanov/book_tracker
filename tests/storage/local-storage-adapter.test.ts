@@ -400,7 +400,13 @@ describe("LocalStorageAdapter", () => {
 
     it("returns null and warns when the stored payload is missing required fields", async () => {
       const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-      localStorage.setItem(CHALLENGE_KEY, JSON.stringify({ year: 2026 }));
+      // Stored shape: a year-keyed map whose entry is missing
+      // `targetBooks` and `updatedAt`. The adapter should treat
+      // this as no saved challenge for the year and warn.
+      localStorage.setItem(
+        CHALLENGE_KEY,
+        JSON.stringify({ "2026": { year: 2026 } })
+      );
       const adapter = new LocalStorageAdapter();
       const result = await adapter.getAnnualReadingChallenge(2026);
       expect(result).toBeNull();

@@ -1,4 +1,8 @@
 import type { Book, BookInput } from "@/types/book";
+import type {
+  AnnualReadingChallenge,
+  AnnualReadingChallengeInput,
+} from "@/types/challenge";
 
 /**
  * Persistence contract for the books library.
@@ -49,4 +53,29 @@ export interface StorageAdapter {
    * @throws on storage failure (quota, disabled, network).
    */
   deleteBook(id: string): Promise<void>;
+
+  /**
+   * Read the per-year reading challenge (spec 018). Returns the
+   * saved challenge for the requested year, or `null` when nothing
+   * has been saved yet. Corrupt or malformed storage is treated
+   * as no saved challenge (the same way `listBooks` handles
+   * corrupt book data).
+   *
+   * @throws on real storage failure (quota, disabled, network).
+   */
+  getAnnualReadingChallenge(
+    year: number
+  ): Promise<AnnualReadingChallenge | null>;
+
+  /**
+   * Persist the per-year reading challenge. The adapter stamps
+   * `updatedAt` with the current time and returns the saved record.
+   * Implementations must not mutate `input` and must not touch
+   * book storage.
+   *
+   * @throws on storage failure (quota, disabled, network).
+   */
+  saveAnnualReadingChallenge(
+    input: AnnualReadingChallengeInput
+  ): Promise<AnnualReadingChallenge>;
 }
