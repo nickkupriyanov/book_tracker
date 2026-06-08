@@ -1,8 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { LocalStorageAdapter } from "@/storage/local-storage-adapter";
 import type { BookInput } from "@/types/book";
+import type { AnnualReadingChallengeInput } from "@/types/challenge";
 
 const STORAGE_KEY = "book-tracker:books";
+const CHALLENGE_KEY = "book-tracker:annual-reading-challenge";
 
 describe("LocalStorageAdapter", () => {
   beforeEach(() => {
@@ -336,6 +338,162 @@ describe("LocalStorageAdapter", () => {
           throw err;
         });
       await expect(adapter.deleteBook(added.id)).rejects.toThrow();
+      setItemSpy.mockRestore();
+    });
+  });
+
+  describe("getAnnualReadingChallenge", () => {
+    it("returns null when no challenge has been saved", async () => {
+      const adapter = new LocalStorageAdapter();
+      const result = await adapter.getAnnualReadingChallenge(2026);
+      expect(result).toBeNull();
+    });
+
+    it("returns the saved challenge for the requested year", async () => {
+      const adapter = new LocalStorageAdapter();
+      const input: AnnualReadingChallengeInput = {
+        year: 2026,
+        targetBooks: 12,
+      };
+      await adapter.saveAnnualReadingChallenge(input);
+      const result = await adapter.getAnnualReadingChallenge(2026);
+      expect(result).not.toBeNull();
+      expect(result?.year).toBe(2026);
+      expect(result?.targetBooks).toBe(12);
+      expect(typeof result?.updatedAt).toBe("string");
+      expect(() => new Date(result!.updatedAt).toISOString()).not.toThrow();
+    });
+
+    it("stores each year's challenge independently", async () => {
+      const adapter = new LocalStorageAdapter();
+      await adapter.saveAnnualReadingChallenge({
+        year: 2025,
+        targetBooks: 8,
+      });
+      await adapter.saveAnnualReadingChallenge({
+        year: 2026,
+        targetBooks: 24,
+      });
+      expect((await adapter.getAnnualReadingChallenge(2025))?.targetBooks).toBe(8);
+      expect((await adapter.getAnnualReadingChallenge(2026))?.targetBooks).toBe(24);
+    });
+
+    it("returns null and warns when the stored payload is corrupt JSON", async () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      localStorage.setItem(CHALLENGE_KEY, "not valid json");
+      const adapter = new LocalStorageAdapter();
+      const result = await adapter.getAnnualReadingChallenge(2026);
+      expect(result).toBeNull();
+      expect(warnSpy).toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
+    it("returns null and warns when the stored payload is not an object", async () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      localStorage.setItem(CHALLENGE_KEY, JSON.stringify(42));
+      const adapter = new LocalStorageAdapter();
+      const result = await adapter.getAnnualReadingChallenge(2026);
+      expect(result).toBeNull();
+      expect(warnSpy).toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
+    it("returns null and warns when the stored payload is missing required fields", async () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      localStorage.setItem(CHALLENGE_KEY, JSON.stringify({ year: 2026 }));
+      const adapter = new LocalStorageAdapter();
+      const result = await adapter.getAnnualReadingChallenge(2026);
+      expect(result).toBeNull();
+      expect(warnSpy).toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
+    it("returns null when the requested year is absent but other years exist", async () => {
+      const adapter = new LocalStorageAdapter();
+      await adapter.saveAnnualReadingChallenge({
+        year: 2025,
+        targetBooks: 8,
+      });
+      const result = await adapter.getAnnualReadingChallenge(2026);
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("saveAnnualReadingChallenge", () => {
+    it("stamps updatedAt with the current ISO timestamp", async () => {
+      const adapter = new LocalStorageAdapter();
+      const saved = await adapter.saveAnnualReadingChallenge({
+        year: 2026,
+        targetBooks: 10,
+      });
+      expect(() => new Date(saved.updatedAt).toISOString()).not.toThrow();
+    });
+
+    it("overwrites a previous challenge for the same year", async () => {
+      const adapter = new LocalStorageAdapter();
+      await adapter.saveAnnualReadingChallenge({
+        year: 2026,
+        targetBooks: 10,
+      });
+      const updated = await adapter.saveAnnualReadingChallenge({
+        year: 2026,
+        targetBooks: 24,
+      });
+      expect(updated.targetBooks).toBe(24);
+      const loaded = await adapter.getAnnualReadingChallenge(2026);
+      expect(loaded?.targetBooks).toBe(24);
+    });
+
+    it("does not touch the books storage", async () => {
+      const adapter = new LocalStorageAdapter();
+      await adapter.addBook({
+        title: "Piranesi",
+        author: "Susanna Clarke",
+        status: "reading",
+        tags: [],
+      });
+      localStorage.removeItem(CHALLENGE_KEY);
+      await adapter.saveAnnualReadingChallenge({
+        year: 2026,
+        targetBooks: 12,
+      });
+      const booksRaw = localStorage.getItem(STORAGE_KEY);
+      expect(booksRaw).not.toBeNull();
+      const parsed = JSON.parse(booksRaw!);
+      expect(Array.isArray(parsed)).toBe(true);
+      expect(parsed).toHaveLength(1);
+      // The books key must not be repurposed as the challenge key.
+      expect(localStorage.getItem(`${STORAGE_KEY}:annual`)).toBeNull();
+    });
+
+    it("does not touch the challenge storage when adding a book", async () => {
+      const adapter = new LocalStorageAdapter();
+      await adapter.saveAnnualReadingChallenge({
+        year: 2026,
+        targetBooks: 12,
+      });
+      const before = localStorage.getItem(CHALLENGE_KEY);
+      await adapter.addBook({
+        title: "Piranesi",
+        author: "Susanna Clarke",
+        status: "reading",
+        tags: [],
+      });
+      expect(localStorage.getItem(CHALLENGE_KEY)).toBe(before);
+    });
+
+    it("propagates QuotaExceededError from setItem", async () => {
+      const adapter = new LocalStorageAdapter();
+      const setItemSpy = vi
+        .spyOn(Storage.prototype, "setItem")
+        .mockImplementation(() => {
+          const err = new Error("quota");
+          err.name = "QuotaExceededError";
+          throw err;
+        });
+      await expect(
+        adapter.saveAnnualReadingChallenge({ year: 2026, targetBooks: 12 })
+      ).rejects.toThrow();
       setItemSpy.mockRestore();
     });
   });
