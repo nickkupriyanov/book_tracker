@@ -336,12 +336,17 @@ describe("buildYearlyChallenge — pace labels (FR-12)", () => {
     expect(model.pace).toBeNull();
   });
 
-  it("treats day 1 of the year as 'on pace' for any progress below 1", () => {
-    // Jan 1, 2026. target 365, completed 0. expectedFloat ≈ 0, round = 0.
-    const model = buildYearlyChallenge([], makeChallenge({ targetBooks: 365 }), {
+  it("treats day 1 with one book as 'ahead' for a year-long target", () => {
+    // Jan 1, 2026. target 365, completed 1. expectedFloat = 0, round = 0.
+    // 1 >= 0 + 1, so the helper classifies this as ahead of pace.
+    const books = [
+      makeBook({ id: "a", status: "read", finishedAt: "2026-01-01" }),
+    ];
+    const model = buildYearlyChallenge(books, makeChallenge({ targetBooks: 365 }), {
       now: new Date(2026, 0, 1),
     });
-    expect(model.pace).toBe("on");
+    expect(model.state).toBe("in-progress");
+    expect(model.pace).toBe("ahead");
   });
 });
 
