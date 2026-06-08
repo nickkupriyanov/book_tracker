@@ -607,4 +607,51 @@ describe("ShelfList", () => {
       expect(searchInput).toHaveFocus();
     });
   });
+
+  describe("cohesive filter block (spec 020 §5.4 / FR-13)", () => {
+    it("renders search, status, sort, and tag filter inside one block", () => {
+      const taggedBooks: Book[] = [
+        {
+          id: "f1",
+          title: "Tagged Book",
+          author: "Author",
+          status: "reading",
+          tags: ["fiction"],
+          createdAt: "2026-06-01T00:00:00.000Z",
+        },
+      ];
+      render(<ShelfList books={taggedBooks} />);
+      const block = screen.getByTestId("shelf-filter-block");
+      expect(
+        within(block).getByTestId("shelf-search")
+      ).toBeInTheDocument();
+      expect(
+        within(block).getByRole("tab", { name: /^All \(/ })
+      ).toBeInTheDocument();
+      expect(within(block).getByTestId("shelf-sort")).toBeInTheDocument();
+      expect(
+        within(block).getByTestId("shelf-tag-fiction")
+      ).toBeInTheDocument();
+    });
+
+    it("the clear-filters button lives inside the block, not in its own row", async () => {
+      const user = userEvent.setup();
+      render(<ShelfList books={sampleBooks} />);
+      await user.type(screen.getByTestId("shelf-search"), "Book A");
+      const block = screen.getByTestId("shelf-filter-block");
+      // The button is a child of the cohesive block, not a
+      // sibling (spec 020 FR-13).
+      expect(
+        within(block).getByTestId("shelf-clear-filters")
+      ).toBeInTheDocument();
+    });
+
+    it("omits the tag-filter area when the library has no tags", () => {
+      render(<ShelfList books={sampleBooks} />);
+      const block = screen.getByTestId("shelf-filter-block");
+      expect(
+        within(block).queryByTestId("shelf-tag-filter")
+      ).not.toBeInTheDocument();
+    });
+  });
 });

@@ -25,24 +25,31 @@ export interface ShelfListProps {
  * (per spec 004 D4 — also local), and a view-level sort
  * state (per spec 012 D6 — local, default "recently-added",
  * matches the store's `sortByCreatedAtDesc` invariant).
- * Renders <ShelfSearch> + <ShelfFilters> + <ShelfSort> +
- * <ShelfTagFilter> + (grid of <BookCard> | <EmptyFilterResult>)
- * + a single shared <EditBookDialog> when a card's Edit button
- * fires, or a single shared <DeleteBookDialog> when a card's
- * Delete button fires.
  *
- * The two dialogs are mutually exclusive: clicking a card's pencil
- * clears the deleting slot and vice versa, so the shelf never
- * renders both at the same time (spec 004 D4 — precedence rule).
+ * The shelf renders a single cohesive filter block (spec
+ * 020 §5.4 / FR-13) — search, status tabs, sort, tags, and
+ * a conditional clear-filters action all live inside one
+ * `bg-card` surface — followed by the grid of <BookCard> (or
+ * <EmptyFilterResult>), and a single shared <EditBookDialog>
+ * / <DeleteBookDialog> when a card's Edit or Delete button
+ * fires.
+ *
+ * The two dialogs are mutually exclusive: clicking a card's
+ * pencil clears the deleting slot and vice versa, so the
+ * shelf never renders both at the same time (spec 004 D4 —
+ * precedence rule).
  *
  * Search, tag filter, and sort state are all local (per spec
- * 010 D5 and spec 012 D6); they reset on reload. The status tab
- * counts depend on the active search and tag filters (per spec
- * 011 D3) — they answer "how many books would I see if I
- * switched to this tab right now?" A "Clear filters" button
- * appears when any of the three filter dimensions is non-default
- * (spec 011 D2). Sort is independent of the filter dimensions
- * and is not cleared by the "Clear filters" button.
+ * 010 D5 and spec 012 D6); they reset on reload. The status
+ * tab counts depend on the active search and tag filters
+ * (per spec 011 D3) — they answer "how many books would I
+ * see if I switched to this tab right now?" A "Clear
+ * filters" button appears inside the filter block when any
+ * of the three filter dimensions is non-default (spec 011
+ * D2, spec 020 FR-13). Sort is independent of the filter
+ * dimensions and is not cleared by the "Clear filters"
+ * button. Clearing still resets search/selectedTags/status
+ * to defaults and focuses the search input (FR-14).
  */
 export function ShelfList({ books }: ShelfListProps) {
   const [filter, setFilter] = useState<FilterValue>("all");
@@ -101,21 +108,38 @@ export function ShelfList({ books }: ShelfListProps) {
 
   return (
     <div className="space-y-6">
-      <ShelfSearch
-        value={search}
-        onChange={setSearch}
-        inputRef={searchInputRef}
-      />
-      <ShelfFilters value={filter} onChange={setFilter} counts={counts} />
-      <div className="flex justify-end">
-        <ShelfSort value={sort} onChange={setSort} />
-      </div>
-      <ShelfTagFilter
-        tags={allTags}
-        selected={selectedTags}
-        onToggle={handleTagToggle}
-      />
-      {hasActiveFilters && <ClearFilters onClick={handleClearFilters} />}
+      <section
+        aria-label="Library filters"
+        data-testid="shelf-filter-block"
+        className="border-border bg-card space-y-3 rounded-lg border p-4"
+      >
+        <ShelfSearch
+          value={search}
+          onChange={setSearch}
+          inputRef={searchInputRef}
+        />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0 flex-1">
+            <ShelfFilters
+              value={filter}
+              onChange={setFilter}
+              counts={counts}
+            />
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            {hasActiveFilters && <ClearFilters onClick={handleClearFilters} />}
+            <ShelfSort value={sort} onChange={setSort} />
+          </div>
+        </div>
+        {allTags.length > 0 && (
+          <ShelfTagFilter
+            tags={allTags}
+            selected={selectedTags}
+            onToggle={handleTagToggle}
+          />
+        )}
+      </section>
+
       {filteredBooks.length === 0 ? (
         <EmptyFilterResult />
       ) : (
