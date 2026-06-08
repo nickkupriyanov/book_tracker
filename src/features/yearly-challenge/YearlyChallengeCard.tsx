@@ -175,7 +175,7 @@ export function YearlyChallengeCard({
               value={draft}
               onChange={handleDraftChange}
               disabled={isSaving}
-              className="h-8 w-20 text-sm"
+              className="h-8 min-w-0 flex-1 text-sm"
               {...inputAriaProps}
             />
             <Button

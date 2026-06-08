@@ -108,13 +108,17 @@ function ProfileStat({ label, value, testId }: ProfileStatProps) {
  * only — `aria-hidden` keeps it out of the accessibility tree, and
  * `pointer-events-none` keeps it from intercepting clicks. Low
  * opacity so it reads as paper texture, not a graphic.
+ *
+ * Position is offset inward from the top-right corner (spec 020
+ * FR-6) so the contour reads as tucked into the card rather than
+ * hanging off its right edge.
  */
 function BookmarkContour() {
   return (
     <svg
       aria-hidden
       viewBox="0 0 40 80"
-      className="pointer-events-none absolute -right-1 -top-1 h-20 w-10 text-primary/15"
+      className="pointer-events-none absolute -top-1 right-3 h-20 w-10 text-primary/15"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.5"

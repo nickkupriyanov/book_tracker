@@ -11,7 +11,11 @@ export interface ReadingBooksListProps {
 
 /**
  * Compact responsive grid of vertical cover-led reading cards
- * (spec 016 §5.4). Each card is ~160px wide.
+ * (spec 016 §5.4, spec 020 §5.2). The lane is the source of
+ * truth for column width — each card fills its column with
+ * `w-full` and the grid uses a `minmax(160px, 1fr)` track so
+ * cards stay readable on the narrowest layouts and grow with
+ * available space.
  */
 export function ReadingBooksList({
   books,

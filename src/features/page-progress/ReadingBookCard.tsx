@@ -11,10 +11,12 @@ export interface ReadingBookCardProps {
 }
 
 /**
- * Vertical cover-led card for the home reading lane (spec 016 §5.4).
- * ~160px wide, cover flush to top/left/right. Click selects
- * the active book for Where Are You; detail navigation lives
- * in the focus panel to keep this card a single interactive target.
+ * Vertical cover-led card for the home reading lane (spec 016
+ * §5.4, spec 020 §5.2). The card sizes from its parent lane
+ * (no fixed width — spec 020 FR-8) and keeps the cover flush
+ * to top/left/right. Click selects the active book for Where
+ * Are You; detail navigation lives in the focus panel to keep
+ * this card a single interactive target.
  */
 export function ReadingBookCard({
   book,
@@ -43,7 +45,7 @@ export function ReadingBookCard({
         }
       }}
       className={cn(
-        "w-[160px] rounded-lg bg-card shadow-sm transition",
+        "w-full rounded-lg bg-card shadow-sm transition",
         active
           ? "ring-primary/35 ring-2"
           : "ring-border/40 ring-1 hover:ring-border",

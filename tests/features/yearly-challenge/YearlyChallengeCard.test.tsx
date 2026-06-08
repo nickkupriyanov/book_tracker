@@ -387,3 +387,45 @@ describe("YearlyChallengeCard — inline editing", () => {
     expect(onSave).toHaveBeenCalledWith(24);
   });
 });
+
+describe("YearlyChallengeCard — goal input sizing (spec 020 FR-7)", () => {
+  it("the goal input has flex-1 and min-w-0 in setup state so it grows with the row", () => {
+    render(
+      <YearlyChallengeCard
+        books={[]}
+        challenge={null}
+        isSaving={false}
+        error={null}
+        onSaveTarget={vi.fn()}
+        now={NOW}
+      />
+    );
+    const input = screen.getByTestId("yearly-challenge-input");
+    const classes = input.getAttribute("class") ?? "";
+    expect(classes).toMatch(/\bflex-1\b/);
+    expect(classes).toMatch(/\bmin-w-0\b/);
+    // No fixed pixel width — the input grows to fill the row.
+    expect(classes).not.toMatch(/\bw-\[/);
+  });
+
+  it("the goal input has flex-1 and min-w-0 in edit state too", async () => {
+    const user = userEvent.setup();
+    render(
+      <YearlyChallengeCard
+        books={[]}
+        challenge={makeChallenge({ targetBooks: 12 })}
+        isSaving={false}
+        error={null}
+        onSaveTarget={vi.fn()}
+        now={NOW}
+      />
+    );
+    // The input is hidden until the user clicks "Edit goal".
+    await user.click(screen.getByTestId("yearly-challenge-edit"));
+    const input = screen.getByTestId("yearly-challenge-input");
+    const classes = input.getAttribute("class") ?? "";
+    expect(classes).toMatch(/\bflex-1\b/);
+    expect(classes).toMatch(/\bmin-w-0\b/);
+    expect(classes).not.toMatch(/\bw-\[/);
+  });
+});
