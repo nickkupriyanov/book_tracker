@@ -247,4 +247,21 @@ describe("BookCard", () => {
       ).not.toBeInTheDocument();
     });
   });
+
+  describe("soft shell (spec 020 §5.5 / FR-15)", () => {
+    it("does not use the default harsh card border or shadow", () => {
+      const { container } = render(<BookCard book={baseBook} />);
+      const card = container.querySelector('[data-slot="card"]');
+      expect(card).not.toBeNull();
+      const classes = card!.getAttribute("class") ?? "";
+      // The shadcn Card defaults to `border` (no opacity modifier)
+      // and `shadow-sm`; spec 020 FR-15 wants a softer shell.
+      // We override both via the BookCard.
+      expect(classes).toMatch(/\bborder-border\/70\b/);
+      expect(classes).toMatch(/\bshadow-none\b/);
+      // And we drop the Card's default py-6 (6 * 0.25rem = 1.5rem)
+      // so the cover sits flush at the top of the card.
+      expect(classes).not.toMatch(/\bpy-6\b/);
+    });
+  });
 });

@@ -55,7 +55,7 @@ export function BookCard({ book, onEdit, onDelete }: BookCardProps) {
         : null;
 
   return (
-    <Card>
+    <Card className="gap-0 rounded-lg border-border/70 bg-card py-0 shadow-none">
       <div className="bg-muted relative aspect-[2/3] overflow-hidden">
         {showCover ? (
           // Plain <img> on purpose: spec 002 plan D-P2. <Image> from
@@ -72,11 +72,11 @@ export function BookCard({ book, onEdit, onDelete }: BookCardProps) {
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
-            <BookOpen className="text-muted-foreground size-12" />
+            <BookOpen className="text-muted-foreground size-10" />
           </div>
         )}
         {hasActions && (
-          <div className="absolute top-2 right-2 flex gap-1">
+          <div className="absolute top-1.5 right-1.5 flex gap-1">
             {onEdit !== undefined && (
               <Button
                 type="button"
@@ -85,8 +85,9 @@ export function BookCard({ book, onEdit, onDelete }: BookCardProps) {
                 onClick={onEdit}
                 aria-label="Edit book"
                 data-testid="book-card-edit"
+                className="size-7"
               >
-                <Pencil className="size-4" />
+                <Pencil className="size-3.5" />
               </Button>
             )}
             {onDelete !== undefined && (
@@ -97,15 +98,15 @@ export function BookCard({ book, onEdit, onDelete }: BookCardProps) {
                 onClick={onDelete}
                 aria-label="Delete book"
                 data-testid="book-card-delete"
-                className="hover:text-destructive"
+                className="size-7 hover:text-destructive"
               >
-                <Trash2 className="size-4" />
+                <Trash2 className="size-3.5" />
               </Button>
             )}
           </div>
         )}
       </div>
-      <CardContent className="space-y-1.5 p-4">
+      <CardContent className="space-y-1 p-3">
         <Link
           href={`/book/${book.id}`}
           className="hover:underline underline-offset-2"
@@ -127,13 +128,17 @@ export function BookCard({ book, onEdit, onDelete }: BookCardProps) {
           </p>
         )}
         {(visibleTags.length > 0 || overflow > 0) && (
-          <div className="flex flex-wrap gap-1 pt-1">
+          <div className="flex flex-wrap gap-1 pt-0.5">
             {visibleTags.map((tag) => (
-              <Badge key={tag} variant="secondary">
+              <Badge key={tag} variant="secondary" className="text-[10px]">
                 {tag}
               </Badge>
             ))}
-            {overflow > 0 && <Badge variant="outline">+{overflow}</Badge>}
+            {overflow > 0 && (
+              <Badge variant="outline" className="text-[10px]">
+                +{overflow}
+              </Badge>
+            )}
           </div>
         )}
       </CardContent>
