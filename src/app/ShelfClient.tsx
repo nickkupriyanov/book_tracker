@@ -8,6 +8,7 @@ import {
   ReadingBooksList,
 } from "@/features/page-progress";
 import { ReadingCalendar } from "@/features/reading-calendar";
+import { ReaderProfileCard } from "@/features/reader-profile";
 import { useBookLibrary } from "@/state/book-library";
 import { EmptyShelf } from "@/components/EmptyShelf";
 import { PageContainer } from "@/components/PageContainer";
@@ -131,6 +132,7 @@ export function ShelfClient() {
             data-testid="home-calendar-rail"
             className="lg:order-2 lg:self-start lg:sticky lg:top-6"
           >
+            <ReaderProfileCard books={books} />
             <ReadingCalendar books={books} />
           </div>
         </div>

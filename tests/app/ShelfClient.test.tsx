@@ -154,6 +154,51 @@ describe("ShelfClient — focused reading home (spec 015)", () => {
     expect(screen.getByTestId("reading-calendar")).toBeInTheDocument();
   });
 
+  it("renders the reader profile card above the Reading Calendar in the ready non-empty state", async () => {
+    await useBookLibrary.getState().init(new LocalStorageAdapter());
+    await useBookLibrary.getState().addBook({
+      title: "Piranesi",
+      author: "Susanna Clarke",
+      status: "reading",
+      tags: [],
+    });
+    render(<ShelfClient />);
+    const rail = screen.getByTestId("home-calendar-rail");
+    const profile = within(rail).getByTestId("reader-profile-card");
+    const calendar = within(rail).getByTestId("reading-calendar");
+    expect(profile).toBeInTheDocument();
+    expect(calendar).toBeInTheDocument();
+    expect(
+      profile.compareDocumentPosition(calendar) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+  });
+
+  it("does not render the reader profile card during loading", () => {
+    __resetBookLibrary();
+    render(<ShelfClient />);
+    expect(
+      screen.queryByTestId("reader-profile-card")
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not render the reader profile card during the error state", () => {
+    __resetBookLibrary();
+    useBookLibrary.setState({ status: "error" });
+    render(<ShelfClient />);
+    expect(
+      screen.queryByTestId("reader-profile-card")
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not render the reader profile card on an empty library", async () => {
+    await useBookLibrary.getState().init(new LocalStorageAdapter());
+    render(<ShelfClient />);
+    expect(
+      screen.queryByTestId("reader-profile-card")
+    ).not.toBeInTheDocument();
+  });
+
   it("switches the focused progress book when a compact reading card is clicked", async () => {
     const user = userEvent.setup();
     await useBookLibrary.getState().init(new LocalStorageAdapter());
