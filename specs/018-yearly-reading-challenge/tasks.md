@@ -1,6 +1,6 @@
 # Tasks: Yearly Reading Challenge
 
-> **Status:** In Review
+> **Status:** Complete
 > **Spec:** `./spec.md`
 > **Plan:** `./plan.md`
 
