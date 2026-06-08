@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import {
@@ -9,6 +9,7 @@ import {
 } from "@/features/page-progress";
 import { ReadingCalendar } from "@/features/reading-calendar";
 import { ReaderProfileCard } from "@/features/reader-profile";
+import { YearlyChallengeCard } from "@/features/yearly-challenge";
 import { useBookLibrary } from "@/state/book-library";
 import { EmptyShelf } from "@/components/EmptyShelf";
 import { PageContainer } from "@/components/PageContainer";
@@ -31,7 +32,11 @@ import { Button } from "@/components/ui/button";
  *  - a compact reading lane for switching the active book;
  *  - the Reading Calendar as a home-page memory surface;
  *  - a no-reading empty state with an **Open library** link
- *    (when the library has books but none are reading).
+ *    (when the library has books but none are reading);
+ *  - a yearly reading challenge card in the right rail
+ *    (spec 018) — between the reader profile and the
+ *    Reading Calendar — when the library is non-empty and
+ *    the store is in the ready state.
  *
  * No shelf search, status tabs, tag filter, sort menu, or
  * clear-filter control appear here — those belong to /library.
@@ -39,6 +44,10 @@ import { Button } from "@/components/ui/button";
 export function ShelfClient() {
   const status = useBookLibrary((s) => s.status);
   const books = useBookLibrary((s) => s.books);
+  const challenge = useBookLibrary((s) => s.challenge);
+  const isSavingChallenge = useBookLibrary((s) => s.isSavingChallenge);
+  const challengeError = useBookLibrary((s) => s.challengeError);
+  const saveChallenge = useBookLibrary((s) => s.saveChallenge);
   const [activeBookId, setActiveBookId] = useState<string | null>(null);
 
   const readingBooks = useMemo(
@@ -58,6 +67,16 @@ export function ShelfClient() {
       setActiveBookId(readingBooks[0]?.id ?? null);
     }
   }, [activeBookId, readingBooks]);
+
+  const handleSaveTarget = useCallback(
+    async (targetBooks: number) => {
+      await saveChallenge({
+        year: new Date().getFullYear(),
+        targetBooks,
+      });
+    },
+    [saveChallenge]
+  );
 
   return (
     <PageContainer>
@@ -133,6 +152,13 @@ export function ShelfClient() {
             className="lg:order-2 lg:self-start lg:sticky lg:top-6"
           >
             <ReaderProfileCard books={books} />
+            <YearlyChallengeCard
+              books={books}
+              challenge={challenge}
+              isSaving={isSavingChallenge}
+              error={challengeError}
+              onSaveTarget={handleSaveTarget}
+            />
             <ReadingCalendar books={books} />
           </div>
         </div>

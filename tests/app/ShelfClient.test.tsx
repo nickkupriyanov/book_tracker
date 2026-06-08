@@ -199,6 +199,78 @@ describe("ShelfClient — focused reading home (spec 015)", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("renders the yearly challenge card between the reader profile and the Reading Calendar in the ready non-empty state (spec 018)", async () => {
+    await useBookLibrary.getState().init(new LocalStorageAdapter());
+    await useBookLibrary.getState().addBook({
+      title: "Piranesi",
+      author: "Susanna Clarke",
+      status: "reading",
+      tags: [],
+    });
+    render(<ShelfClient />);
+    const rail = screen.getByTestId("home-calendar-rail");
+    const profile = within(rail).getByTestId("reader-profile-card");
+    const challenge = within(rail).getByTestId("yearly-challenge-card");
+    const calendar = within(rail).getByTestId("reading-calendar");
+    // Profile < Challenge < Calendar
+    expect(
+      profile.compareDocumentPosition(challenge) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    expect(
+      challenge.compareDocumentPosition(calendar) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+  });
+
+  it("does not render the yearly challenge card during loading", () => {
+    __resetBookLibrary();
+    render(<ShelfClient />);
+    expect(
+      screen.queryByTestId("yearly-challenge-card")
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not render the yearly challenge card during the error state", () => {
+    __resetBookLibrary();
+    useBookLibrary.setState({ status: "error" });
+    render(<ShelfClient />);
+    expect(
+      screen.queryByTestId("yearly-challenge-card")
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not render the yearly challenge card on an empty library", async () => {
+    await useBookLibrary.getState().init(new LocalStorageAdapter());
+    render(<ShelfClient />);
+    expect(
+      screen.queryByTestId("yearly-challenge-card")
+    ).not.toBeInTheDocument();
+  });
+
+  it("persists a target through the home-rail save action", async () => {
+    const user = userEvent.setup();
+    await useBookLibrary.getState().init(new LocalStorageAdapter());
+    await useBookLibrary.getState().addBook({
+      title: "Piranesi",
+      author: "Susanna Clarke",
+      status: "reading",
+      tags: [],
+    });
+    render(<ShelfClient />);
+    const card = screen.getByTestId("yearly-challenge-card");
+    const input = within(card).getByTestId("yearly-challenge-input");
+    await user.clear(input);
+    await user.type(input, "18");
+    await user.click(within(card).getByTestId("yearly-challenge-save"));
+    // The store should now hold a saved challenge for the
+    // current year, which the home rail renders as "0 / 18".
+    expect(useBookLibrary.getState().challenge?.targetBooks).toBe(18);
+    expect(
+      within(card).getByTestId("yearly-challenge-progress")
+    ).toHaveTextContent("0 / 18");
+  });
+
   it("switches the focused progress book when a compact reading card is clicked", async () => {
     const user = userEvent.setup();
     await useBookLibrary.getState().init(new LocalStorageAdapter());
