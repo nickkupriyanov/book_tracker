@@ -11,7 +11,7 @@ acceptance line is satisfied and `npm run lint && npm run test` passes.
 
 ## T1. Add reader profile model tests
 
-- **Files:** `tests/lib/reader-profile.test.ts`
+- [x] **Files:** `tests/lib/reader-profile.test.ts`
 - **Acceptance:** Tests cover read count, page totals, unique-date streaks,
   yesterday-as-active streaks, legacy `readingDays`, duplicate dates, and
   zero-activity output.
@@ -19,7 +19,7 @@ acceptance line is satisfied and `npm run lint && npm run test` passes.
 
 ## T2. Implement reader profile model helper
 
-- **Files:** `src/lib/reader-profile.ts`
+- [x] **Files:** `src/lib/reader-profile.ts`
 - **Acceptance:** Helper returns display-ready nickname, initials, status,
   read count, streak, and page total from `Book[]`.
 - **Notes:** Ignore malformed optional legacy values defensively; do not use
@@ -27,7 +27,7 @@ acceptance line is satisfied and `npm run lint && npm run test` passes.
 
 ## T3. Add profile card component tests
 
-- **Files:** `tests/features/reader-profile/ReaderProfileCard.test.tsx`
+- [x] **Files:** `tests/features/reader-profile/ReaderProfileCard.test.tsx`
 - **Acceptance:** Tests verify the card renders `Quiet Reader`, one muted
   status, and the labels `Read`, `Streak`, `Pages`.
 - **Notes:** Keep this focused on render behavior; calculation coverage lives
@@ -35,7 +35,7 @@ acceptance line is satisfied and `npm run lint && npm run test` passes.
 
 ## T4. Implement ReaderProfileCard UI
 
-- **Files:** `src/features/reader-profile/ReaderProfileCard.tsx`,
+- [x] **Files:** `src/features/reader-profile/ReaderProfileCard.tsx`,
   `src/features/reader-profile/index.ts`
 - **Acceptance:** Component renders the Bookmark warmth card with monogram
   avatar, cozy status copy, three stat columns, and a subtle decorative
@@ -45,7 +45,7 @@ acceptance line is satisfied and `npm run lint && npm run test` passes.
 
 ## T5. Wire the card into the home rail
 
-- **Files:** `src/app/ShelfClient.tsx`, `tests/app/ShelfClient.test.tsx`
+- [x] **Files:** `src/app/ShelfClient.tsx`, `tests/app/ShelfClient.test.tsx`
 - **Acceptance:** Ready non-empty home renders the profile card above
   `ReadingCalendar`; loading, error, and empty-library states do not render
   it.
@@ -54,7 +54,7 @@ acceptance line is satisfied and `npm run lint && npm run test` passes.
 
 ## T6. Polish and gates
 
-- **Files:** affected docs, implementation, and tests
+- [x] **Files:** affected docs, implementation, and tests
 - **Acceptance:** Re-read `spec.md`, confirm acceptance criteria are satisfied,
   run `npm run lint`, and run `npm run test`.
 - **Notes:** Do not commit until the user explicitly approves after review.
