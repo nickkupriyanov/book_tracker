@@ -224,12 +224,12 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
       data-testid="page-progress-quick-update"
       className="bg-card border-border rounded-lg border p-5 shadow-sm"
     >
-      <header className="mb-3 flex items-center gap-2">
+      <header className="mb-4 flex items-center gap-2">
         <BookOpen className="text-muted-foreground size-4" />
         <h2 className="font-serif text-lg text-foreground">Where are you?</h2>
       </header>
 
-      <div className="mb-4 flex gap-4">
+      <div className="mb-5 flex gap-4">
         <div className="bg-muted/80 flex aspect-[2/3] w-20 shrink-0 items-center justify-center overflow-hidden rounded-md">
           {book.coverUrl !== undefined ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -243,21 +243,103 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-serif text-2xl text-foreground">{book.title}</p>
-          <p className="text-muted-foreground text-sm">{book.author}</p>
-          <Button
-            asChild
-            variant="link"
-            size="sm"
-            className="mt-2 h-auto px-0 text-sm"
-          >
-            <Link href={`/book/${book.id}`}>
-              Open book
-              <ArrowRight className="size-3.5" />
-            </Link>
-          </Button>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <p
+                data-testid="page-progress-title"
+                className="font-serif text-2xl text-foreground"
+              >
+                {book.title}
+              </p>
+              <p
+                data-testid="page-progress-author"
+                className="text-muted-foreground text-sm"
+              >
+                {book.author}
+              </p>
+            </div>
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="self-start sm:shrink-0"
+            >
+              <Link href={`/book/${book.id}`}>
+                Open book
+                <ArrowRight className="size-3.5" />
+              </Link>
+            </Button>
+          </div>
         </div>
       </div>
+
+      {hasTotal && book.currentPage !== undefined ? (
+        <div
+          data-testid="page-progress-summary"
+          className="mb-5 space-y-2"
+        >
+          <p className="text-muted-foreground text-xs uppercase tracking-wide">
+            Reading progress
+          </p>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
+            <p
+              data-testid="page-progress-text"
+              className="text-foreground text-sm font-medium"
+            >
+              {progressText}
+            </p>
+            {percent !== null && (
+              <p
+                data-testid="page-progress-percent"
+                className="text-muted-foreground text-sm"
+              >
+                {percent}% completed
+              </p>
+            )}
+          </div>
+          {percent !== null && (
+            <div
+              role="progressbar"
+              aria-label="Reading progress"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={percent}
+              data-testid="page-progress-bar"
+              className="bg-muted/60 h-1 w-full overflow-hidden rounded-full"
+            >
+              <div
+                className="bg-primary h-full rounded-full transition-[width]"
+                style={{ width: `${percent}%` }}
+              />
+            </div>
+          )}
+        </div>
+      ) : (
+        progressText !== null && (
+          <p
+            data-testid="page-progress-text"
+            className="text-muted-foreground mb-5 text-sm"
+          >
+            {progressText}
+          </p>
+        )
+      )}
+
+      {!hasTotal && (
+        <p
+          data-testid="page-progress-add-total"
+          className="text-muted-foreground mb-5 text-sm"
+        >
+          Add the total page count through{" "}
+          <Link
+            href={`/book/${book.id}`}
+            className="text-foreground underline underline-offset-2 hover:no-underline"
+          >
+            the book&apos;s edit page
+          </Link>{" "}
+          to see progress here.
+        </p>
+      )}
 
       <form
         onSubmit={handleSavePage}
@@ -292,60 +374,19 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
               {isSaving ? "Saving…" : "Save"}
             </Button>
           </div>
-          <div className="min-h-[3rem] space-y-1">
-            {progressText !== null && (
-              <p
-                data-testid="page-progress-text"
-                className="text-muted-foreground text-sm"
-              >
-                {progressText}
-              </p>
-            )}
-            {percent !== null && (
-              <div
-                role="progressbar"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={percent}
-                data-testid="page-progress-bar"
-                className="bg-muted h-1.5 w-full overflow-hidden rounded-full"
-              >
-                <div
-                  className="bg-primary h-full rounded-full transition-[width]"
-                  style={{ width: `${percent}%` }}
-                />
-              </div>
-            )}
-            {!hasTotal && (
-              <p
-                data-testid="page-progress-add-total"
-                className="text-muted-foreground text-sm"
-              >
-                Add the total page count through{" "}
-                <Link
-                  href={`/book/${book.id}`}
-                  className="text-foreground underline underline-offset-2 hover:no-underline"
-                >
-                  the book&apos;s edit page
-                </Link>{" "}
-                to see progress here.
-              </p>
-            )}
-          </div>
-          {reachedEnd && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => void handleMarkAsRead()}
-              disabled={isMarkingRead}
-              data-testid="page-progress-mark-as-read"
-              className="mt-1"
-            >
-              <Check className="size-4" />
-              {isMarkingRead ? "Marking…" : "Mark as read"}
-            </Button>
-          )}
         </div>
+        {reachedEnd && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void handleMarkAsRead()}
+            disabled={isMarkingRead}
+            data-testid="page-progress-mark-as-read"
+          >
+            <Check className="size-4" />
+            {isMarkingRead ? "Marking…" : "Mark as read"}
+          </Button>
+        )}
 
         {error !== null && (
           <p
