@@ -41,6 +41,19 @@ function calculatePercent(book: Book): number | null {
 }
 
 /**
+ * Returns the next `currentPage` for a quick additive action
+ * (e.g. `+10`, `+25`). Treats a missing `currentPage` as `0`
+ * and caps the result at `totalPages` when present
+ * (spec 019 FR-10, FR-11, FR-12).
+ */
+function calculateQuickActionTarget(book: Book, delta: number): number {
+  const current = book.currentPage ?? 0;
+  const next = current + delta;
+  if (book.totalPages === undefined) return next;
+  return Math.min(next, book.totalPages);
+}
+
+/**
  * Builds the next `readingLogs` array after a positive page delta,
  * or returns `undefined` when no log update is needed.
  *
@@ -135,23 +148,17 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
     setInfo(null);
   }, [book.id, book.currentPage]);
 
-  async function handleSavePage(e: React.FormEvent<HTMLFormElement>): Promise<void> {
-    e.preventDefault();
-    setError(null);
-    setInfo(null);
-
-    const trimmed = pageDraft.trim();
-    const nextCurrentPage = trimmed === "" ? undefined : Number(trimmed);
-
-    if (trimmed !== "" && !Number.isInteger(nextCurrentPage)) {
-      setError("Current page must be a whole number.");
-      return;
-    }
-
-    // Derive reading logs from the page delta before
-    // validation (spec 016 §5.6, FR-14–FR-16). Build a
-    // BookInput shape and revalidate; any failure surfaces
-    // under the right field key.
+  /**
+   * Persists a new `currentPage` value through the same
+   * validation + reading-log delta path used by the typed
+   * save. Used by both the typed form and the instant
+   * `+10` / `+25` quick actions so the rules (positive
+   * deltas only, `currentPage <= totalPages`, log
+   * aggregation) stay consistent. Spec 019 FR-9, FR-13.
+   */
+  async function persistCurrentPage(
+    nextCurrentPage: number | undefined,
+  ): Promise<void> {
     const nextReadingLogs = buildNextReadingLogs(book, nextCurrentPage);
     const candidate = {
       ...book,
@@ -169,12 +176,35 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
     try {
       await updateBook(book.id, result.value);
     } catch {
-      // Spec 015 §5.3: storage failure keeps the user's typed
-      // value visible and leaves the quick update block usable.
+      // Spec 015 §5.3: storage failure keeps the user's
+      // typed value visible and leaves the quick update
+      // block usable.
       setError("Couldn't save. Your browser storage is full or disabled.");
     } finally {
       setIsSaving(false);
     }
+  }
+
+  async function handleSavePage(e: React.FormEvent<HTMLFormElement>): Promise<void> {
+    e.preventDefault();
+    setError(null);
+    setInfo(null);
+
+    const trimmed = pageDraft.trim();
+    const nextCurrentPage = trimmed === "" ? undefined : Number(trimmed);
+
+    if (trimmed !== "" && !Number.isInteger(nextCurrentPage)) {
+      setError("Current page must be a whole number.");
+      return;
+    }
+
+    await persistCurrentPage(nextCurrentPage);
+  }
+
+  async function handleQuickAdd(delta: 10 | 25): Promise<void> {
+    setError(null);
+    setInfo(null);
+    await persistCurrentPage(calculateQuickActionTarget(book, delta));
   }
 
   async function handleMarkAsRead(): Promise<void> {
@@ -372,6 +402,28 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
               data-testid="page-progress-save"
             >
               {isSaving ? "Saving…" : "Update progress"}
+            </Button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void handleQuickAdd(10)}
+              disabled={isSaving || isMarkingRead}
+              data-testid="page-progress-quick-10"
+            >
+              +10 pages
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void handleQuickAdd(25)}
+              disabled={isSaving || isMarkingRead}
+              data-testid="page-progress-quick-25"
+            >
+              +25 pages
             </Button>
           </div>
         </div>
