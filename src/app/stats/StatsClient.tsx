@@ -1,8 +1,24 @@
 "use client";
 
+import { useMemo } from "react";
+import { buildReaderStats } from "@/lib/reader-stats";
 import { useBookLibrary } from "@/state/book-library";
 import { EmptyShelf } from "@/components/EmptyShelf";
 import { PageContainer } from "@/components/PageContainer";
+import { HeroPortrait } from "@/features/stats/HeroPortrait";
+import { FavoriteTagsSection } from "@/features/stats/FavoriteTagsSection";
+import { TopRatedSection } from "@/features/stats/TopRatedSection";
+import { ReadingRhythmSection } from "@/features/stats/ReadingRhythmSection";
+import { ShelfBalanceSection } from "@/features/stats/ShelfBalanceSection";
+
+export interface StatsClientProps {
+  /**
+   * Optional "now" injected for tests. Production callers
+   * should leave this unset so the streak anchors to real
+   * local time.
+   */
+  now?: Date;
+}
 
 /**
  * The /stats route (spec 021). The store is initialised by
@@ -13,12 +29,17 @@ import { PageContainer } from "@/components/PageContainer";
  * - `loading` — quiet loading message inside the page container.
  * - `error` — friendly inline error.
  * - `ready` + empty library — the shared `EmptyShelf`.
- * - `ready` + books — a portrait wrapper slot. The actual
- *   five-zone Reader Portrait is composed in T3.
+ * - `ready` + books — the Reader Portrait (T3): hero, favorite
+ *   tags, top-rated, reading rhythm, shelf balance.
  */
-export function StatsClient() {
+export function StatsClient({ now }: StatsClientProps = {}) {
   const status = useBookLibrary((s) => s.status);
   const books = useBookLibrary((s) => s.books);
+
+  const stats = useMemo(
+    () => buildReaderStats(books, now ? { now } : {}),
+    [books, now]
+  );
 
   return (
     <PageContainer>
@@ -55,7 +76,15 @@ export function StatsClient() {
         <div
           data-testid="stats-portrait"
           className="grid gap-6 md:grid-cols-2"
-        />
+        >
+          <div className="md:col-span-2">
+            <HeroPortrait hero={stats.hero} />
+          </div>
+          <FavoriteTagsSection tags={stats.favoriteTags} />
+          <TopRatedSection books={stats.topRated} />
+          <ReadingRhythmSection rhythm={stats.rhythm} />
+          <ShelfBalanceSection shelf={stats.shelf} />
+        </div>
       )}
     </PageContainer>
   );
