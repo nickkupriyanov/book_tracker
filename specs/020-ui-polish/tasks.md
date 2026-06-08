@@ -1,6 +1,6 @@
 # Tasks: UI Polish
 
-> **Status:** Draft
+> **Status:** Done
 > **Spec:** `./spec.md`
 > **Plan:** `./plan.md`
 
@@ -17,6 +17,8 @@ acceptance line is satisfied and `npm run lint && npm run test` passes.
   opens `AddBookDialog` when the store is ready and is disabled before ready.
 - **Notes:** Reuse `AddBookDialog`; do not create a second add-book flow.
 
+- [x] T1.
+
 ## T2. Remove duplicate home and library CTAs
 
 - **Files:** `src/app/ShelfClient.tsx`, `src/app/library/LibraryClient.tsx`,
@@ -24,6 +26,8 @@ acceptance line is satisfied and `npm run lint && npm run test` passes.
 - **Acceptance:** Home renders no `Open library` CTA in reading or no-reading
   states, and `/library` renders no page-local non-empty `Add book` button.
 - **Notes:** Preserve `EmptyShelf` add-first-book behavior.
+
+- [x] T2.
 
 ## T3. Polish home rail and reading-lane sizing
 
@@ -34,6 +38,8 @@ acceptance line is satisfied and `npm run lint && npm run test` passes.
   input flexes in its row, and reading-lane cards no longer set fixed
   `w-[160px]`.
 - **Notes:** Keep existing component props unchanged.
+
+- [x] T3.
 
 ## T4. Retheme and stabilize the reading calendar
 
@@ -47,6 +53,8 @@ acceptance line is satisfied and `npm run lint && npm run test` passes.
   empty months, and still shows logged days, stripes, and legend correctly.
 - **Notes:** Keep `buildReadingCalendarMonth` unchanged unless a test reveals
   a model bug.
+
+- [x] T4.
 
 ## T5. Group and align library filters
 
@@ -64,6 +72,8 @@ acceptance line is satisfied and `npm run lint && npm run test` passes.
 - **Notes:** Prefer composition changes in `ShelfList`; only touch child
   components where spacing or wrapping requires it.
 
+- [x] T5.
+
 ## T6. Compact and soften library book cards
 
 - **Files:** `src/features/shelf-list/BookCard.tsx`,
@@ -73,9 +83,14 @@ acceptance line is satisfied and `npm run lint && npm run test` passes.
   progress, tags, edit, and delete affordances usable.
 - **Notes:** Avoid shrinking text below comfortable readability.
 
+- [x] T6.
+
 ## T7. Verification and spec review
 
 - **Files:** affected implementation and tests
 - **Acceptance:** All spec acceptance criteria are reviewed, `npm run lint`
   passes, and `npm run test` passes.
 - **Notes:** Do not commit until the user reviews and explicitly approves.
+
+- [x] T7.
+

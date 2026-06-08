@@ -1,6 +1,6 @@
 # Spec: UI Polish
 
-> **Status:** Draft
+> **Status:** Done
 > **Author:** Codex
 > **Created:** 2026-06-08
 > **Spec ID:** 020-ui-polish
@@ -197,27 +197,27 @@ The global header action reuses `AddBookDialog`, which already writes through
 
 ## 10. Acceptance criteria
 
-- [ ] Header contains a right-aligned `Добавить книгу` button.
-- [ ] Header `Добавить книгу` opens the add-book dialog once the store is
+- [x] Header contains a right-aligned `Добавить книгу` button.
+- [x] Header `Добавить книгу` opens the add-book dialog once the store is
   ready.
-- [ ] Header add-book button is disabled while the store is not ready.
-- [ ] Home page no longer shows any `Open library` CTA.
-- [ ] Home no-reading state still explains that no books are in progress.
-- [ ] Reader profile bookmark contour appears tucked into the card rather than
+- [x] Header add-book button is disabled while the store is not ready.
+- [x] Home page no longer shows any `Open library` CTA.
+- [x] Home no-reading state still explains that no books are in progress.
+- [x] Reader profile bookmark contour appears tucked into the card rather than
   outside the right edge.
-- [ ] Yearly challenge goal input expands in its row.
-- [ ] Reading-lane cards size from their parent container, not a fixed
+- [x] Yearly challenge goal input expands in its row.
+- [x] Reading-lane cards size from their parent container, not a fixed
   `160px` class.
-- [ ] Calendar uses the warm app palette and no longer appears as a dark panel.
-- [ ] Calendar month grid appears for months with zero logged reading days.
-- [ ] Library page header no longer contains a page-local `Add book` button.
-- [ ] Library filters appear as a cohesive control block.
-- [ ] Clear filters still resets filters and focuses search.
-- [ ] Library cards are visibly smaller and lighter, with no harsh black
+- [x] Calendar uses the warm app palette and no longer appears as a dark panel.
+- [x] Calendar month grid appears for months with zero logged reading days.
+- [x] Library page header no longer contains a page-local `Add book` button.
+- [x] Library filters appear as a cohesive control block.
+- [x] Clear filters still resets filters and focuses search.
+- [x] Library cards are visibly smaller and lighter, with no harsh black
   border.
-- [ ] Home and library loading, error, and empty states still render.
-- [ ] `npm run lint` passes.
-- [ ] `npm run test` passes.
+- [x] Home and library loading, error, and empty states still render.
+- [x] `npm run lint` passes.
+- [x] `npm run test` passes.
 
 ## 11. Out of scope (for this spec)
 
