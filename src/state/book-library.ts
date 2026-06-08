@@ -1,18 +1,50 @@
 import { create } from "zustand";
 import type { Book, BookInput } from "@/types/book";
 import type { StorageAdapter } from "@/storage/storage-adapter";
+import type {
+  AnnualReadingChallenge,
+  AnnualReadingChallengeInput,
+} from "@/types/challenge";
 
 export type BookLibraryStatus = "loading" | "ready" | "error";
+
+/**
+ * Friendly inline error shown when a challenge save fails
+ * (spec 018 FR-14). The store keeps the previous saved target
+ * and exposes this string to the card so the user can retry.
+ */
+const CHALLENGE_SAVE_ERROR_MESSAGE =
+  "Could not save your reading goal. Please try again.";
 
 export interface BookLibraryState {
   /** All books, sorted by `createdAt` descending (newest first). */
   books: Book[];
   status: BookLibraryStatus;
   /**
-   * Initialize the store with an adapter. Loads existing books and
-   * primes the adapter reference for future {@link addBook} calls.
-   * Idempotent: the first successful init wins, subsequent calls are no-ops.
-   * If the first init fails, a later init with a working adapter can succeed.
+   * Current-year reading challenge (spec 018). `null` when
+   * nothing has been saved yet. The store loads this from the
+   * adapter during {@link init} and replaces it on save.
+   */
+  challenge: AnnualReadingChallenge | null;
+  /**
+   * `true` while a {@link saveChallenge} call is in flight. The
+   * card uses this to disable the save button and render a busy
+   * affordance.
+   */
+  isSavingChallenge: boolean;
+  /**
+   * Accessible inline error from the last failed
+   * {@link saveChallenge}. Cleared on the next save attempt.
+   * `null` when no error is active.
+   */
+  challengeError: string | null;
+  /**
+   * Initialize the store with an adapter. Loads existing books
+   * and the current-year challenge, then primes the adapter
+   * reference for future {@link addBook} / {@link saveChallenge}
+   * calls. Idempotent: the first successful init wins, subsequent
+   * calls are no-ops. If the first init fails, a later init with
+   * a working adapter can succeed.
    */
   init(adapter: StorageAdapter): Promise<void>;
   /**
@@ -34,6 +66,16 @@ export interface BookLibraryState {
    * or if no book with the given `id` exists.
    */
   deleteBook(id: string): Promise<void>;
+  /**
+   * Persist the current-year reading challenge via the adapter.
+   * Replaces the saved challenge in place and clears any prior
+   * error. On failure, the previous challenge is preserved and
+   * {@link challengeError} is set to a friendly message.
+   * @throws if {@link init} has not been called or if the adapter fails.
+   */
+  saveChallenge(
+    input: AnnualReadingChallengeInput
+  ): Promise<AnnualReadingChallenge>;
 }
 
 /**
@@ -47,6 +89,10 @@ function sortByCreatedAtDesc(books: Book[]): Book[] {
   return [...books].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
+function currentLocalYear(): number {
+  return new Date().getFullYear();
+}
+
 /**
  * @internal
  * Resets the store for tests: clears the adapter reference and the state.
@@ -54,17 +100,29 @@ function sortByCreatedAtDesc(books: Book[]): Book[] {
  */
 export function __resetBookLibrary(): void {
   adapter = null;
-  useBookLibrary.setState({ books: [], status: "loading" });
+  useBookLibrary.setState({
+    books: [],
+    status: "loading",
+    challenge: null,
+    isSavingChallenge: false,
+    challengeError: null,
+  });
 }
 
 export const useBookLibrary = create<BookLibraryState>((set) => ({
   books: [],
   status: "loading",
+  challenge: null,
+  isSavingChallenge: false,
+  challengeError: null,
   init: async (next) => {
     if (adapter !== null) return;
     try {
       const books = sortByCreatedAtDesc(await next.listBooks());
-      set({ books, status: "ready" });
+      const challenge = await next.getAnnualReadingChallenge(
+        currentLocalYear()
+      );
+      set({ books, challenge, status: "ready" });
       adapter = next;
     } catch (err) {
       set({ status: "error" });
@@ -121,6 +179,25 @@ export const useBookLibrary = create<BookLibraryState>((set) => ({
       }));
     } catch (err) {
       set({ status: "error" });
+      throw err;
+    }
+  },
+  saveChallenge: async (input) => {
+    if (adapter === null) {
+      throw new Error("useBookLibrary: saveChallenge called before init()");
+    }
+    // Clear any stale error at the start of the attempt — the user
+    // has acknowledged the previous failure by clicking save again.
+    set({ isSavingChallenge: true, challengeError: null });
+    try {
+      const saved = await adapter.saveAnnualReadingChallenge(input);
+      set({ challenge: saved, isSavingChallenge: false });
+      return saved;
+    } catch (err) {
+      set({
+        isSavingChallenge: false,
+        challengeError: CHALLENGE_SAVE_ERROR_MESSAGE,
+      });
       throw err;
     }
   },
