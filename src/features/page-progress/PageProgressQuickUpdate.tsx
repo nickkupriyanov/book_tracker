@@ -27,6 +27,20 @@ function todayLocalDate(): string {
 }
 
 /**
+ * Returns the rounded percent `[0, 100]` of a book.
+ * `null` when `totalPages` is missing or zero, or when
+ * `currentPage` is missing. Spec 019 §5.2 / FR-4.
+ */
+function calculatePercent(book: Book): number | null {
+  if (book.currentPage === undefined) return null;
+  if (book.totalPages === undefined || book.totalPages === 0) return null;
+  return Math.min(
+    100,
+    Math.round((book.currentPage / book.totalPages) * 100)
+  );
+}
+
+/**
  * Builds the next `readingLogs` array after a positive page delta,
  * or returns `undefined` when no log update is needed.
  *
@@ -192,6 +206,8 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
     book.totalPages !== undefined &&
     book.currentPage === book.totalPages;
 
+  const percent = useMemo(() => calculatePercent(book), [book]);
+
   const progressText = useMemo<string | null>(() => {
     if (book.currentPage !== undefined && book.totalPages !== undefined) {
       return `${book.currentPage} / ${book.totalPages} pages`;
@@ -200,20 +216,6 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
       return `Page ${book.currentPage}`;
     }
     return null;
-  }, [book]);
-
-  const percent = useMemo<number | null>(() => {
-    if (
-      book.currentPage === undefined ||
-      book.totalPages === undefined ||
-      book.totalPages === 0
-    ) {
-      return null;
-    }
-    return Math.min(
-      100,
-      Math.round((book.currentPage / book.totalPages) * 100)
-    );
   }, [book]);
 
   return (
