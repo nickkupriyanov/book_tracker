@@ -34,7 +34,7 @@ describe("ShelfClient — focused reading home (spec 015)", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows the no-reading empty state without an 'Open library' CTA when the library has books but none are reading (spec 020 FR-5)", async () => {
+  it("shows the no-reading empty state with an 'Open library' link when the library has books but none are reading", async () => {
     await useBookLibrary.getState().init(new LocalStorageAdapter());
     await useBookLibrary.getState().addBook({
       title: "Want Book",
@@ -50,14 +50,12 @@ describe("ShelfClient — focused reading home (spec 015)", () => {
     });
     render(<ShelfClient />);
     expect(screen.getByText(/no books in progress/i)).toBeInTheDocument();
-    // The no-reading state must not render any 'Open library' CTA
-    // (spec 020 FR-5). The header still navigates to /library,
-    // but the empty state itself is informational only.
+    // The no-reading state gets a scoped route back to the
+    // library so the reader can mark a book as in progress.
     const noReading = screen.getByTestId("home-no-reading");
-    expect(noReading.querySelector("a[href='/library']")).toBeNull();
     expect(
-      within(noReading).queryByRole("link", { name: /open library/i })
-    ).not.toBeInTheDocument();
+      within(noReading).getByRole("link", { name: /open library/i })
+    ).toHaveAttribute("href", "/library");
     expect(screen.getByTestId("reading-calendar")).toBeInTheDocument();
   });
 
@@ -160,7 +158,7 @@ describe("ShelfClient — focused reading home (spec 015)", () => {
     expect(screen.getByTestId("reading-calendar")).toBeInTheDocument();
   });
 
-  it("renders the reader profile card above the Reading Calendar in the ready non-empty state", async () => {
+  it("renders the reader profile card in the top mobile slot before the home content", async () => {
     await useBookLibrary.getState().init(new LocalStorageAdapter());
     await useBookLibrary.getState().addBook({
       title: "Piranesi",
@@ -169,13 +167,12 @@ describe("ShelfClient — focused reading home (spec 015)", () => {
       tags: [],
     });
     render(<ShelfClient />);
-    const rail = screen.getByTestId("home-calendar-rail");
-    const profile = within(rail).getByTestId("reader-profile-card");
-    const calendar = within(rail).getByTestId("reading-calendar");
+    const profileSlot = screen.getByTestId("home-profile-slot");
+    const profile = within(profileSlot).getByTestId("reader-profile-card");
+    const readingList = screen.getByTestId("reading-books-list");
     expect(profile).toBeInTheDocument();
-    expect(calendar).toBeInTheDocument();
     expect(
-      profile.compareDocumentPosition(calendar) &
+      profile.compareDocumentPosition(readingList) &
         Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
   });
@@ -205,7 +202,7 @@ describe("ShelfClient — focused reading home (spec 015)", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("renders the yearly challenge card between the reader profile and the Reading Calendar in the ready non-empty state (spec 018)", async () => {
+  it("renders the yearly challenge card before the Reading Calendar in the secondary rail", async () => {
     await useBookLibrary.getState().init(new LocalStorageAdapter());
     await useBookLibrary.getState().addBook({
       title: "Piranesi",
@@ -214,11 +211,12 @@ describe("ShelfClient — focused reading home (spec 015)", () => {
       tags: [],
     });
     render(<ShelfClient />);
+    const profileSlot = screen.getByTestId("home-profile-slot");
     const rail = screen.getByTestId("home-calendar-rail");
-    const profile = within(rail).getByTestId("reader-profile-card");
+    const profile = within(profileSlot).getByTestId("reader-profile-card");
     const challenge = within(rail).getByTestId("yearly-challenge-card");
     const calendar = within(rail).getByTestId("reading-calendar");
-    // Profile < Challenge < Calendar
+    // Mobile/default DOM order: Profile < Challenge < Calendar.
     expect(
       profile.compareDocumentPosition(challenge) &
         Node.DOCUMENT_POSITION_FOLLOWING

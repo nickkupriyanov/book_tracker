@@ -263,5 +263,26 @@ describe("BookCard", () => {
       // so the cover sits flush at the top of the card.
       expect(classes).not.toMatch(/\bpy-6\b/);
     });
+
+    it("keeps the cover rounded at the top of the compact card", () => {
+      const { container } = render(<BookCard book={baseBook} />);
+      const cover = container.querySelector('[data-slot="card"] > div');
+      expect(cover).not.toBeNull();
+      expect(cover).toHaveClass("rounded-t-lg");
+    });
+
+    it("renders the delete action on a readable surface over dark covers", () => {
+      render(
+        <BookCard
+          book={{ ...baseBook, coverUrl: "https://example.com/black.jpg" }}
+          onDelete={() => {}}
+        />
+      );
+      const button = screen.getByTestId("book-card-delete");
+      expect(button).toHaveAttribute("data-variant", "secondary");
+      expect(button).toHaveClass("bg-background/90");
+      expect(button).toHaveClass("shadow-sm");
+      expect(button).toHaveClass("hover:text-destructive");
+    });
   });
 });

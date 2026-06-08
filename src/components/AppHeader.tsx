@@ -41,14 +41,14 @@ export function AppHeader() {
 
   return (
     <header className="border-border border-b bg-card/50">
-      <div className="mx-auto flex max-w-6xl items-center gap-6 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3 sm:flex-nowrap sm:px-6">
         <Link
           href="/"
-          className="font-serif text-xl text-foreground transition-colors hover:text-primary"
+          className="font-serif text-xl whitespace-nowrap text-foreground transition-colors hover:text-primary"
         >
           Book Tracker
         </Link>
-        <nav className="flex items-center gap-4">
+        <nav className="flex min-w-0 flex-1 items-center gap-4 overflow-x-auto">
           {NAV_LINKS.map((link) => {
             const isActive = pathname === link.href;
             return (
@@ -68,7 +68,7 @@ export function AppHeader() {
             );
           })}
         </nav>
-        <div className="ml-auto flex items-center">
+        <div className="flex w-full items-center sm:ml-auto sm:w-auto">
           <Button
             type="button"
             onClick={() => setDialogOpen(true)}
@@ -76,7 +76,7 @@ export function AppHeader() {
             data-testid="header-add-book"
             data-state={canAddBook ? "ready" : "loading"}
             size="sm"
-            className="gap-1.5"
+            className="w-full gap-1.5 sm:w-auto"
           >
             <Plus className="size-4" aria-hidden />
             Добавить книгу

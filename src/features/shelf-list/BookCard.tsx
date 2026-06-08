@@ -56,7 +56,7 @@ export function BookCard({ book, onEdit, onDelete }: BookCardProps) {
 
   return (
     <Card className="gap-0 rounded-lg border-border/70 bg-card py-0 shadow-none">
-      <div className="bg-muted relative aspect-[2/3] overflow-hidden">
+      <div className="bg-muted relative aspect-[2/3] overflow-hidden rounded-t-lg">
         {showCover ? (
           // Plain <img> on purpose: spec 002 plan D-P2. <Image> from
           // next/image would require next.config `remotePatterns` config
@@ -93,12 +93,12 @@ export function BookCard({ book, onEdit, onDelete }: BookCardProps) {
             {onDelete !== undefined && (
               <Button
                 type="button"
-                variant="ghost"
+                variant="secondary"
                 size="icon-sm"
                 onClick={onDelete}
                 aria-label="Delete book"
                 data-testid="book-card-delete"
-                className="size-7 hover:text-destructive"
+                className="size-7 bg-background/90 text-muted-foreground shadow-sm hover:bg-background hover:text-destructive"
               >
                 <Trash2 className="size-3.5" />
               </Button>

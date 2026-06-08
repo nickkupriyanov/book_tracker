@@ -59,7 +59,7 @@ export function ReadingCalendar({ books }: ReadingCalendarProps) {
     <section
       aria-label="Reading Calendar"
       data-testid="reading-calendar"
-      className="border-border bg-card text-card-foreground mb-6 rounded-lg border p-5"
+      className="border-border bg-card text-card-foreground rounded-lg border p-5"
     >
       <header className="mb-4 flex flex-col gap-3">
         <h2 className="text-foreground font-serif text-lg">Reading Calendar</h2>

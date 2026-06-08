@@ -34,7 +34,7 @@ export function ReaderProfileCard({ books, now }: ReaderProfileCardProps) {
     <section
       aria-label="Reader profile"
       data-testid="reader-profile-card"
-      className="relative mb-6 overflow-hidden rounded-lg border border-border bg-card px-5 py-4 text-card-foreground shadow-sm"
+      className="relative overflow-hidden rounded-lg border border-border bg-card px-5 py-4 text-card-foreground shadow-sm"
     >
       <BookmarkContour />
 

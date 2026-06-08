@@ -77,10 +77,16 @@ describe("AppHeader", () => {
 
   it("renders a right-aligned 'Добавить книгу' button", () => {
     mockUsePathname.mockReturnValue("/");
-    render(<AppHeader />);
+    const { container } = render(<AppHeader />);
+    const headerInner = container.querySelector("header > div");
+    expect(headerInner).not.toBeNull();
+    expect(headerInner).toHaveClass("flex-wrap");
+    expect(headerInner).toHaveClass("sm:flex-nowrap");
     const button = screen.getByTestId("header-add-book");
     expect(button).toBeInTheDocument();
     expect(button).toHaveTextContent("Добавить книгу");
+    expect(button).toHaveClass("w-full");
+    expect(button).toHaveClass("sm:w-auto");
   });
 
   it("disables the add-book button while the store is loading", () => {

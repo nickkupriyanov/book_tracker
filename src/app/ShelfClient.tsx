@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import {
   PageProgressQuickUpdate,
   ReadingBooksList,
@@ -11,6 +13,7 @@ import { YearlyChallengeCard } from "@/features/yearly-challenge";
 import { useBookLibrary } from "@/state/book-library";
 import { EmptyShelf } from "@/components/EmptyShelf";
 import { PageContainer } from "@/components/PageContainer";
+import { Button } from "@/components/ui/button";
 
 /**
  * The focused home page (spec 015, spec 020 §5.2). The store
@@ -94,7 +97,32 @@ export function ShelfClient() {
 
       {status === "ready" && books.length > 0 && (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-          <div className="space-y-8 lg:order-1">
+          <div
+            data-testid="home-rail"
+            className="contents lg:order-2 lg:col-start-2 lg:row-start-1 lg:block lg:self-start lg:sticky lg:top-6 lg:space-y-6"
+          >
+            <div data-testid="home-profile-slot" className="order-1">
+              <ReaderProfileCard books={books} />
+            </div>
+            <div
+              data-testid="home-calendar-rail"
+              className="contents lg:block lg:space-y-6"
+            >
+              <div className="order-3">
+                <YearlyChallengeCard
+                  books={books}
+                  challenge={challenge}
+                  isSaving={isSavingChallenge}
+                  error={challengeError}
+                  onSaveTarget={handleSaveTarget}
+                />
+              </div>
+              <div className="order-4">
+                <ReadingCalendar books={books} />
+              </div>
+            </div>
+          </div>
+          <div className="order-2 space-y-6 lg:order-1 lg:col-start-1 lg:row-start-1 lg:space-y-8">
             {readingBooks.length === 0 || activeBook === undefined ? (
               <div
                 data-testid="home-no-reading"
@@ -107,6 +135,15 @@ export function ShelfClient() {
                   Nothing in your shelf is marked as reading. Open the
                   library to mark one as reading, or add a new one.
                 </p>
+                <Button asChild variant="outline" size="sm" className="mt-1">
+                  <Link
+                    href="/library"
+                    className="inline-flex items-center gap-1"
+                  >
+                    Open library
+                    <ArrowRight className="size-4" />
+                  </Link>
+                </Button>
               </div>
             ) : (
               <>
@@ -118,20 +155,6 @@ export function ShelfClient() {
                 />
               </>
             )}
-          </div>
-          <div
-            data-testid="home-calendar-rail"
-            className="lg:order-2 lg:self-start lg:sticky lg:top-6"
-          >
-            <ReaderProfileCard books={books} />
-            <YearlyChallengeCard
-              books={books}
-              challenge={challenge}
-              isSaving={isSavingChallenge}
-              error={challengeError}
-              onSaveTarget={handleSaveTarget}
-            />
-            <ReadingCalendar books={books} />
           </div>
         </div>
       )}

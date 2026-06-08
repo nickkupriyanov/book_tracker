@@ -134,7 +134,7 @@ export function YearlyChallengeCard({
     <section
       aria-label={`Yearly reading challenge ${model.year}`}
       data-testid="yearly-challenge-card"
-      className="relative mb-6 overflow-hidden rounded-lg border border-border bg-card px-5 py-4 text-card-foreground shadow-sm"
+      className="relative overflow-hidden rounded-lg border border-border bg-card px-5 py-4 text-card-foreground shadow-sm"
     >
       <header className="flex items-baseline justify-between gap-2">
         <h2 className="font-serif text-base text-foreground">
