@@ -1,8 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import {
   PageProgressQuickUpdate,
   ReadingBooksList,
@@ -13,25 +11,22 @@ import { YearlyChallengeCard } from "@/features/yearly-challenge";
 import { useBookLibrary } from "@/state/book-library";
 import { EmptyShelf } from "@/components/EmptyShelf";
 import { PageContainer } from "@/components/PageContainer";
-import { Button } from "@/components/ui/button";
 
 /**
- * The focused home page (spec 015). The store is initialised
- * by `RootClient` in the root layout, so this component just
- * reads the store and renders the appropriate state (loading
- * / empty / no-reading / reading-ready). No useEffect for
- * init here.
+ * The focused home page (spec 015, spec 020 §5.2). The store
+ * is initialised by `RootClient` in the root layout, so this
+ * component just reads the store and renders the appropriate
+ * state (loading / empty / no-reading / reading-ready). No
+ * useEffect for init here.
  *
  * The home page is a daily-habit surface for "what am I
  * reading now?" — the full shelf (search, filters, sort,
- * tag controls) lives on /library. The home page
- * only renders:
- *  - a header with the app title and an **Open library** link;
- *  - a focused active-book progress panel (when there are
+ * tag controls) lives on /library. The home page only
+ * renders:
+ *  - the focused active-book progress panel (when there are
  *    reading books);
  *  - a compact reading lane for switching the active book;
- *  - the Reading Calendar as a home-page memory surface;
- *  - a no-reading empty state with an **Open library** link
+ *  - a no-reading empty state with informational copy
  *    (when the library has books but none are reading);
  *  - a yearly reading challenge card in the right rail
  *    (spec 018) — between the reader profile and the
@@ -39,7 +34,12 @@ import { Button } from "@/components/ui/button";
  *    the store is in the ready state.
  *
  * No shelf search, status tabs, tag filter, sort menu, or
- * clear-filter control appear here — those belong to /library.
+ * clear-filter control appear here — those belong to
+ * /library. No "Open library" CTA either (spec 020 FR-4 /
+ * FR-5): the header already has navigation, so a duplicate
+ * CTA on the home page is removed. Adding a book is still
+ * reachable globally via the header's "Добавить книгу"
+ * button.
  */
 export function ShelfClient() {
   const status = useBookLibrary((s) => s.status);
@@ -93,26 +93,7 @@ export function ShelfClient() {
       {status === "ready" && books.length === 0 && <EmptyShelf />}
 
       {status === "ready" && books.length > 0 && (
-        <>
-          {readingBooks.length > 0 && (
-            <div className="mb-8 flex justify-end">
-              <Button
-                asChild
-                variant="outline"
-                size="sm"
-                data-testid="open-library-link"
-              >
-                <Link
-                  href="/library"
-                  className="inline-flex items-center gap-1"
-                >
-                  Open library
-                  <ArrowRight className="size-4" />
-                </Link>
-              </Button>
-            </div>
-          )}
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="space-y-8 lg:order-1">
             {readingBooks.length === 0 || activeBook === undefined ? (
               <div
@@ -123,18 +104,9 @@ export function ShelfClient() {
                   No books in progress
                 </p>
                 <p className="text-muted-foreground max-w-sm text-sm">
-                  Nothing in your shelf is marked as reading. Browse your
-                  library to start a book again.
+                  Nothing in your shelf is marked as reading. Open the
+                  library to mark one as reading, or add a new one.
                 </p>
-                <Button asChild variant="outline" className="mt-2">
-                  <Link
-                    href="/library"
-                    className="inline-flex items-center gap-1"
-                  >
-                    Open library
-                    <ArrowRight className="size-4" />
-                  </Link>
-                </Button>
               </div>
             ) : (
               <>
@@ -162,7 +134,6 @@ export function ShelfClient() {
             <ReadingCalendar books={books} />
           </div>
         </div>
-        </>
       )}
     </PageContainer>
   );

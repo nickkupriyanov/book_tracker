@@ -34,7 +34,7 @@ describe("ShelfClient — focused reading home (spec 015)", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows the no-reading empty state with 'Open library' when the library has books but none are reading", async () => {
+  it("shows the no-reading empty state without an 'Open library' CTA when the library has books but none are reading (spec 020 FR-5)", async () => {
     await useBookLibrary.getState().init(new LocalStorageAdapter());
     await useBookLibrary.getState().addBook({
       title: "Want Book",
@@ -50,17 +50,18 @@ describe("ShelfClient — focused reading home (spec 015)", () => {
     });
     render(<ShelfClient />);
     expect(screen.getByText(/no books in progress/i)).toBeInTheDocument();
-    // The empty-state 'Open library' link is scoped to the
-    // no-reading area; the header also has an 'Open library'
-    // link, so query inside the empty-state container.
+    // The no-reading state must not render any 'Open library' CTA
+    // (spec 020 FR-5). The header still navigates to /library,
+    // but the empty state itself is informational only.
     const noReading = screen.getByTestId("home-no-reading");
+    expect(noReading.querySelector("a[href='/library']")).toBeNull();
     expect(
-      noReading.querySelector("a[href='/library']")
-    ).toBeInTheDocument();
+      within(noReading).queryByRole("link", { name: /open library/i })
+    ).not.toBeInTheDocument();
     expect(screen.getByTestId("reading-calendar")).toBeInTheDocument();
   });
 
-  it("renders the 'Open library' link on the home page in the ready non-empty state", async () => {
+  it("does not render an 'Open library' CTA on the home page in the ready non-empty state (spec 020 FR-4)", async () => {
     await useBookLibrary.getState().init(new LocalStorageAdapter());
     await useBookLibrary.getState().addBook({
       title: "Piranesi",
@@ -69,9 +70,14 @@ describe("ShelfClient — focused reading home (spec 015)", () => {
       tags: [],
     });
     render(<ShelfClient />);
+    // Header has navigation, but no button or link labelled
+    // 'Open library' should appear anywhere on the home page.
     expect(
-      screen.getByRole("link", { name: /open library/i })
-    ).toBeInTheDocument();
+      screen.queryByRole("link", { name: /open library/i })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /open library/i })
+    ).not.toBeInTheDocument();
   });
 
   it("shows only reading books on the home page (excludes want and read)", async () => {

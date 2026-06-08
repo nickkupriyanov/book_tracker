@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { LibraryClient } from "@/app/library/LibraryClient";
 import { LocalStorageAdapter } from "@/storage/local-storage-adapter";
 import { useBookLibrary, __resetBookLibrary } from "@/state/book-library";
@@ -86,6 +86,35 @@ describe("LibraryClient — full shelf route (spec 015)", () => {
     render(<LibraryClient />);
     expect(
       screen.queryByRole("link", { name: /open library/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not render a page-local 'Add book' button when the shelf is non-empty (spec 020 FR-12)", async () => {
+    await useBookLibrary.getState().init(new LocalStorageAdapter());
+    await useBookLibrary.getState().addBook({
+      title: "Piranesi",
+      author: "Susanna Clarke",
+      status: "reading",
+      tags: [],
+    });
+    render(<LibraryClient />);
+    // The page-local button used to carry data-testid="add-book-button"
+    // (defined on AddBookButton). With spec 020 it is removed from the
+    // page header; the global header now exposes the add-book action.
+    expect(
+      screen.queryByTestId("add-book-button")
+    ).not.toBeInTheDocument();
+    // The only 'Add' / 'Добавить' text the library page itself contributes
+    // is from book card titles / form labels — the page header must not
+    // contain a page-local English 'Add book' button.
+    const pageHeader = screen.getByRole("heading", {
+      name: /your library/i,
+    }).parentElement;
+    expect(pageHeader).not.toBeNull();
+    expect(
+      within(pageHeader as HTMLElement).queryByRole("button", {
+        name: /^add book$/i,
+      })
     ).not.toBeInTheDocument();
   });
 });
