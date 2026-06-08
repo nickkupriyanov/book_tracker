@@ -1,7 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Plus } from "lucide-react";
+import { AddBookDialog } from "@/features/add-book";
+import { Button } from "@/components/ui/button";
+import { useBookLibrary } from "@/state/book-library";
 import { cn } from "@/lib/utils";
 
 interface NavLink {
@@ -15,8 +20,24 @@ const NAV_LINKS: NavLink[] = [
   { href: "/stats", label: "Статистика" },
 ];
 
+/**
+ * The global app header (spec 020 §5.1). Carries the app
+ * title, the section navigation, and a right-aligned primary
+ * `Добавить книгу` action that opens the shared `AddBookDialog`.
+ *
+ * The button is disabled while the library store is not
+ * `ready` so a click can never reach `useBookLibrary.addBook`
+ * before `RootClient` has finished initialising the adapter.
+ * Page-level loading and error messages are still responsible
+ * for explaining those states; the button just refuses to
+ * submit early.
+ */
 export function AppHeader() {
   const pathname = usePathname();
+  const status = useBookLibrary((s) => s.status);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const canAddBook = status === "ready";
 
   return (
     <header className="border-border border-b bg-card/50">
@@ -47,7 +68,22 @@ export function AppHeader() {
             );
           })}
         </nav>
+        <div className="ml-auto flex items-center">
+          <Button
+            type="button"
+            onClick={() => setDialogOpen(true)}
+            disabled={!canAddBook}
+            data-testid="header-add-book"
+            data-state={canAddBook ? "ready" : "loading"}
+            size="sm"
+            className="gap-1.5"
+          >
+            <Plus className="size-4" aria-hidden />
+            Добавить книгу
+          </Button>
+        </div>
       </div>
+      <AddBookDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </header>
   );
 }
