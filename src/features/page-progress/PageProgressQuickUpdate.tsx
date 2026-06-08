@@ -371,7 +371,7 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
               disabled={!canSave}
               data-testid="page-progress-save"
             >
-              {isSaving ? "Saving…" : "Save"}
+              {isSaving ? "Saving…" : "Update progress"}
             </Button>
           </div>
         </div>
