@@ -2,6 +2,10 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { useBookLibrary, __resetBookLibrary } from "@/state/book-library";
 import type { StorageAdapter } from "@/storage/storage-adapter";
 import type { Book, BookInput } from "@/types/book";
+import type {
+  AnnualReadingChallenge,
+  AnnualReadingChallengeInput,
+} from "@/types/challenge";
 
 function makeFakeAdapter(overrides: Partial<StorageAdapter> = {}): StorageAdapter {
   return {
@@ -33,6 +37,17 @@ function makeFakeAdapter(overrides: Partial<StorageAdapter> = {}): StorageAdapte
       })
     ),
     deleteBook: vi.fn(async (): Promise<void> => undefined),
+    getAnnualReadingChallenge: vi
+      .fn()
+      .mockResolvedValue(null),
+    saveAnnualReadingChallenge: vi.fn(
+      async (
+        input: AnnualReadingChallengeInput
+      ): Promise<AnnualReadingChallenge> => ({
+        ...input,
+        updatedAt: new Date().toISOString(),
+      })
+    ),
     ...overrides,
   };
 }
@@ -405,6 +420,169 @@ describe("useBookLibrary", () => {
       await expect(
         useBookLibrary.getState().deleteBook("a")
       ).rejects.toThrow(/init/);
+    });
+  });
+
+  describe("challenge state", () => {
+    const challenge2026: AnnualReadingChallenge = {
+      year: 2026,
+      targetBooks: 12,
+      updatedAt: "2026-06-15T10:00:00.000Z",
+    };
+
+    it("starts with no challenge and no error", () => {
+      const state = useBookLibrary.getState();
+      expect(state.challenge).toBeNull();
+      expect(state.isSavingChallenge).toBe(false);
+      expect(state.challengeError).toBeNull();
+    });
+
+    describe("init loading", () => {
+      it("loads the current-year challenge from the adapter", async () => {
+        const adapter = makeFakeAdapter({
+          getAnnualReadingChallenge: vi.fn().mockResolvedValue(challenge2026),
+        });
+        await useBookLibrary.getState().init(adapter);
+        const state = useBookLibrary.getState();
+        expect(state.challenge).toEqual(challenge2026);
+        expect(adapter.getAnnualReadingChallenge).toHaveBeenCalledWith(
+          new Date().getFullYear()
+        );
+      });
+
+      it("leaves the challenge null when nothing is saved", async () => {
+        const adapter = makeFakeAdapter();
+        await useBookLibrary.getState().init(adapter);
+        expect(useBookLibrary.getState().challenge).toBeNull();
+      });
+
+      it("propagates adapter errors and does not set a challenge", async () => {
+        const adapter = makeFakeAdapter({
+          getAnnualReadingChallenge: vi
+            .fn()
+            .mockRejectedValue(new Error("boom")),
+        });
+        await expect(
+          useBookLibrary.getState().init(adapter)
+        ).rejects.toThrow("boom");
+        expect(useBookLibrary.getState().challenge).toBeNull();
+      });
+
+      it("stays idempotent: a second init does not re-load the challenge", async () => {
+        const adapter = makeFakeAdapter({
+          getAnnualReadingChallenge: vi.fn().mockResolvedValue(challenge2026),
+        });
+        await useBookLibrary.getState().init(adapter);
+        await useBookLibrary.getState().init(adapter);
+        expect(adapter.getAnnualReadingChallenge).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    describe("saveChallenge", () => {
+      it("throws if init has not been called", async () => {
+        await expect(
+          useBookLibrary.getState().saveChallenge({ year: 2026, targetBooks: 12 })
+        ).rejects.toThrow(/init/);
+      });
+
+      it("calls adapter.saveAnnualReadingChallenge and updates state on success", async () => {
+        const saved: AnnualReadingChallenge = {
+          year: 2026,
+          targetBooks: 24,
+          updatedAt: "2026-06-15T10:00:00.000Z",
+        };
+        const adapter = makeFakeAdapter({
+          saveAnnualReadingChallenge: vi.fn().mockResolvedValue(saved),
+        });
+        await useBookLibrary.getState().init(adapter);
+        const result = await useBookLibrary.getState().saveChallenge({
+          year: 2026,
+          targetBooks: 24,
+        });
+        expect(result).toEqual(saved);
+        expect(adapter.saveAnnualReadingChallenge).toHaveBeenCalledWith({
+          year: 2026,
+          targetBooks: 24,
+        });
+        const state = useBookLibrary.getState();
+        expect(state.challenge).toEqual(saved);
+        expect(state.isSavingChallenge).toBe(false);
+        expect(state.challengeError).toBeNull();
+      });
+
+      it("tracks isSavingChallenge true while the adapter call is in flight", async () => {
+        let resolveSave: (value: AnnualReadingChallenge) => void = () => {};
+        const pending = new Promise<AnnualReadingChallenge>((resolve) => {
+          resolveSave = resolve;
+        });
+        const adapter = makeFakeAdapter({
+          saveAnnualReadingChallenge: vi.fn().mockReturnValue(pending),
+        });
+        await useBookLibrary.getState().init(adapter);
+        const promise = useBookLibrary
+          .getState()
+          .saveChallenge({ year: 2026, targetBooks: 12 });
+        expect(useBookLibrary.getState().isSavingChallenge).toBe(true);
+        resolveSave({
+          year: 2026,
+          targetBooks: 12,
+          updatedAt: "2026-06-15T10:00:00.000Z",
+        });
+        await promise;
+        expect(useBookLibrary.getState().isSavingChallenge).toBe(false);
+      });
+
+      it("preserves the previous challenge and sets challengeError on save failure", async () => {
+        const prior: AnnualReadingChallenge = {
+          year: 2026,
+          targetBooks: 12,
+          updatedAt: "2026-01-15T10:00:00.000Z",
+        };
+        const adapter = makeFakeAdapter({
+          getAnnualReadingChallenge: vi.fn().mockResolvedValue(prior),
+          saveAnnualReadingChallenge: vi
+            .fn()
+            .mockRejectedValue(new Error("quota exceeded")),
+        });
+        await useBookLibrary.getState().init(adapter);
+        await expect(
+          useBookLibrary.getState().saveChallenge({
+            year: 2026,
+            targetBooks: 24,
+          })
+        ).rejects.toThrow("quota exceeded");
+        const state = useBookLibrary.getState();
+        expect(state.challenge).toEqual(prior);
+        expect(state.isSavingChallenge).toBe(false);
+        expect(state.challengeError).toBeTruthy();
+      });
+
+      it("clears a stale challengeError on a subsequent successful save", async () => {
+        const adapter = makeFakeAdapter({
+          saveAnnualReadingChallenge: vi
+            .fn()
+            .mockRejectedValueOnce(new Error("first save fails"))
+            .mockResolvedValueOnce({
+              year: 2026,
+              targetBooks: 12,
+              updatedAt: "2026-06-15T10:00:00.000Z",
+            }),
+        });
+        await useBookLibrary.getState().init(adapter);
+        await expect(
+          useBookLibrary.getState().saveChallenge({
+            year: 2026,
+            targetBooks: 12,
+          })
+        ).rejects.toThrow();
+        expect(useBookLibrary.getState().challengeError).toBeTruthy();
+        await useBookLibrary.getState().saveChallenge({
+          year: 2026,
+          targetBooks: 12,
+        });
+        const state = useBookLibrary.getState();
+        expect(state.challengeError).toBeNull();
+      });
     });
   });
 });
