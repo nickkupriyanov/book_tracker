@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { BookOpen, Check } from "lucide-react";
+import { ArrowRight, BookOpen, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -243,6 +243,17 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
         <div className="min-w-0 flex-1">
           <p className="font-serif text-2xl text-foreground">{book.title}</p>
           <p className="text-muted-foreground text-sm">{book.author}</p>
+          <Button
+            asChild
+            variant="link"
+            size="sm"
+            className="mt-2 h-auto px-0 text-sm"
+          >
+            <Link href={`/book/${book.id}`}>
+              Open book
+              <ArrowRight className="size-3.5" />
+            </Link>
+          </Button>
         </div>
       </div>
 

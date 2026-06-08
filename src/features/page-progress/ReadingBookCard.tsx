@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Book } from "@/types/book";
@@ -13,8 +12,9 @@ export interface ReadingBookCardProps {
 
 /**
  * Vertical cover-led card for the home reading lane (spec 016 §5.4).
- * ~160px wide, cover flush to top/left/right, title links to detail,
- * body click selects the active book for Where Are You.
+ * ~160px wide, cover flush to top/left/right. Click selects
+ * the active book for Where Are You; detail navigation lives
+ * in the focus panel to keep this card a single interactive target.
  */
 export function ReadingBookCard({
   book,
@@ -62,13 +62,9 @@ export function ReadingBookCard({
         )}
       </div>
       <div className="space-y-1 p-3">
-        <Link
-          href={`/book/${book.id}`}
-          onClick={(e) => e.stopPropagation()}
-          className="font-serif text-sm text-foreground truncate block hover:underline"
-        >
+        <p className="font-serif text-sm text-foreground truncate">
           {book.title}
-        </Link>
+        </p>
         <p className="text-muted-foreground truncate text-xs">
           {book.author}
         </p>

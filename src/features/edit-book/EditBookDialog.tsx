@@ -42,6 +42,7 @@ export function EditBookDialog({
     ...(book.finishedAt !== undefined ? { finishedAt: book.finishedAt } : {}),
     ...(book.currentPage !== undefined ? { currentPage: book.currentPage } : {}),
     ...(book.totalPages !== undefined ? { totalPages: book.totalPages } : {}),
+    ...(book.readingLogs !== undefined ? { readingLogs: book.readingLogs } : {}),
     tags: book.tags,
   };
 

@@ -181,6 +181,25 @@ describe("ShelfClient — focused reading home (spec 015)", () => {
 
     expect(within(focus).getByText("Alpha")).toBeInTheDocument();
   });
+
+  it("keeps book detail navigation in the focus panel, not the compact reading lane", async () => {
+    await useBookLibrary.getState().init(new LocalStorageAdapter());
+    await useBookLibrary.getState().addBook({
+      title: "Alpha",
+      author: "A",
+      status: "reading",
+      tags: [],
+    });
+    render(<ShelfClient />);
+
+    const focus = screen.getByTestId("page-progress-quick-update");
+    expect(
+      within(focus).getByRole("link", { name: /open book/i })
+    ).toHaveAttribute("href", expect.stringMatching(/^\/book\//));
+
+    const lane = screen.getByTestId("reading-books-list");
+    expect(lane.querySelector("a[href^='/book/']")).not.toBeInTheDocument();
+  });
 });
 
 describe("ShelfClient — page container (spec 014, preserved on focused home)", () => {

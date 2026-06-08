@@ -1,6 +1,6 @@
 # Plan: Reading Log And Navigation Polish
 
-> **Status:** Draft
+> **Status:** Complete
 > **Spec:** `./spec.md` (read this first)
 > **Author:** Codex
 > **Created:** 2026-06-07
@@ -84,15 +84,15 @@ Calendar flow:
 - **ReadingBookCard**
   - **Props:** `book`, `active`, `onSelect`.
   - **State:** cover image fallback state only if needed.
-  - **Behavior:** vertical cover-led selection card with title link,
-    progress text, and tag overflow.
-  - **Tests:** title link, body selection, progress variants, tag overflow.
+  - **Behavior:** vertical cover-led selection card with progress text and
+    tag overflow; detail navigation is intentionally not inside the card.
+  - **Tests:** selection, progress variants, tag overflow, no nested detail link.
 
 - **PageProgressQuickUpdate**
   - **Props:** active `book`.
   - **State:** page draft, saving/error/info.
-  - **Behavior:** stable cover-aware progress panel; saves current page and
-    appends positive deltas to today's reading log.
+  - **Behavior:** stable cover-aware progress panel with active-book detail
+    link; saves current page and appends positive deltas to today's reading log.
   - **Tests:** cover/placeholder rendering, stable slots, positive-delta
     aggregation, no-log non-positive saves.
 
@@ -134,8 +134,8 @@ persists them as part of the whole book object.
   more complex; tests must cover legacy fallback.
 - Header in root layout may require updating page tests that query page
   headings or duplicate navigation.
-- Card title link inside a selectable card can create event propagation
-  mistakes; tests must verify title click does not select the card first.
+- Compact home cards must remain a single interaction target to avoid
+  nested interactive controls; detail navigation lives in the focus panel.
 - Calendar top-three ordering needs deterministic tie handling.
 
 ## 8. Rollout
@@ -148,7 +148,7 @@ persists them as part of the whole book object.
   - Verify calendar appears on home and not library.
   - Check home cards around 160px width on desktop and reasonable wrapping
     on mobile.
-  - Click card body to change active book; click title to open detail.
+  - Click card to change active book; use `Where are you?` to open detail.
   - Save a positive page delta and verify today's calendar updates.
   - Save same/lower page and verify no additional pages are logged.
   - Save multiple positive deltas for the same book/day and verify they

@@ -100,6 +100,9 @@ export function BookForm({
         ? { currentPage: initialValues.currentPage }
         : {}),
       ...(totalPages ? { totalPages: Number(totalPages) } : {}),
+      ...(initialValues.readingLogs !== undefined
+        ? { readingLogs: initialValues.readingLogs }
+        : {}),
       tags: [tags],
     };
 

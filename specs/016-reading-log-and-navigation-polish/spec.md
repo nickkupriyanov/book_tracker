@@ -1,6 +1,6 @@
 # Spec: Reading Log And Navigation Polish
 
-> **Status:** Draft
+> **Status:** Complete
 > **Author:** Codex
 > **Created:** 2026-06-07
 > **Spec ID:** 016-reading-log-and-navigation-polish
@@ -62,7 +62,8 @@ Calendar is not shown there.
 **Story.** Andy is reading three books. On the home page each book is a
 small vertical cozy card with the cover at the top, title, author,
 progress, and a compact tag row. Clicking a card makes it active in
-`Where are you?`; clicking the title opens the book detail page.
+`Where are you?`; the focused `Where are you?` panel links to the active
+book detail page.
 
 **Story.** Andy saves page 120 for *Piranesi* when the previous
 `currentPage` was 90. The app saves `currentPage = 120`, creates or
@@ -107,21 +108,23 @@ Home reading cards use the approved **Cover-led cozy cards** direction:
 - approximately 160px wide on comfortable viewports;
 - vertical orientation;
 - cover or placeholder at the top, flush to top/left/right edges;
-- title below the cover, linking to `/book/[id]`;
+- title below the cover;
 - author below the title;
 - page progress below the author: `123 / 420 pages`, `Page 123`, or
   `No page yet`;
 - tag row below progress: first two tags, then `+N` if more remain;
 - soft shadow/background/ring instead of an aggressive border.
 
-Clicking the card body selects the active book for `Where are you?`.
-Clicking the title navigates to detail and should not change the active
-book first.
+Clicking the card selects the active book for `Where are you?`.
+The compact card has a single interaction target; detail navigation lives
+in the `Where are you?` panel.
 
 ### 5.5 Where are you?
 
 The focus panel shows the active book's cover or placeholder alongside
 title, author, current-page input, progress text/bar, and actions.
+
+The focus panel includes a link to the active book detail page.
 
 The panel reserves stable vertical space for progress/help text so it
 does not jump when switching between books with and without progress.
@@ -163,7 +166,8 @@ priority for the top-three ordering.
   160px wide on comfortable viewports.
 - **FR-7.** Home reading card covers or placeholders are flush to the
   card's top, left, and right edges.
-- **FR-8.** Home reading card titles link to the book detail page.
+- **FR-8.** Home reading cards do not contain nested detail links; the
+  active `Where are you?` panel links to the selected book detail page.
 - **FR-9.** Clicking a home reading card body selects that book as active
   in `Where are you?`.
 - **FR-10.** Home reading cards show author, page progress or `No page
@@ -243,24 +247,24 @@ the existing `addBook` and `updateBook` methods.
 
 ## 10. Acceptance criteria
 
-- [ ] Shared header appears on home, library, detail, and stats pages.
-- [ ] Header active route is visible for `/`, `/library`, and `/stats`.
-- [ ] `/stats` placeholder exists.
-- [ ] Calendar appears on home only, not library.
-- [ ] Home cards match the vertical cover-led structure.
-- [ ] Home card body selects the active book.
-- [ ] Home card title links to detail.
-- [ ] `Where are you?` shows active book cover/placeholder.
-- [ ] `Where are you?` does not visibly jump between books with and
-      without progress.
-- [ ] Positive page deltas create/update today's aggregate reading log.
-- [ ] Non-positive page deltas do not add log pages.
-- [ ] Clearing current page does not create a log.
-- [ ] Calendar orders day colors by pages read and shows at most three.
-- [ ] Calendar accessible labels include page counts.
-- [ ] Legacy `readingDays` still render.
-- [ ] `npm run lint` passes.
-- [ ] `npm run test` passes.
+- [x] Shared header appears on home, library, detail, and stats pages.
+- [x] Header active route is visible for `/`, `/library`, and `/stats`.
+- [x] `/stats` placeholder exists.
+- [x] Calendar appears on home only, not library.
+- [x] Home cards match the vertical cover-led structure.
+- [x] Home card selects the active book.
+- [x] Detail navigation for active book lives in `Where are you?`.
+- [x] `Where are you?` shows active book cover/placeholder.
+- [x] `Where are you?` does not visibly jump between books with and
+  without progress.
+- [x] Positive page deltas create/update today's aggregate reading log.
+- [x] Non-positive page deltas do not add log pages.
+- [x] Clearing current page does not create a log.
+- [x] Calendar orders day colors by pages read and shows at most three.
+- [x] Calendar accessible labels include page counts.
+- [x] Legacy `readingDays` still render.
+- [x] `npm run lint` passes.
+- [x] `npm run test` passes.
 
 ## 11. Out of scope (for this spec)
 

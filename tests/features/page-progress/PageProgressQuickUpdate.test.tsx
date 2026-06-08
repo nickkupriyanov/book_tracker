@@ -120,6 +120,17 @@ describe("PageProgressQuickUpdate", () => {
     expect(prompt.querySelector("a")).toHaveAttribute("href", "/book/a");
   });
 
+  it("links to the active book detail page from the focus panel", async () => {
+    await seed([makeReadingBook({ id: "a", title: "Alpha" })]);
+    const book = useBookLibrary.getState().books[0];
+    if (book === undefined) throw new Error("missing seeded book");
+    render(<PageProgressQuickUpdate book={book} />);
+    expect(screen.getByRole("link", { name: /open book/i })).toHaveAttribute(
+      "href",
+      "/book/a"
+    );
+  });
+
   it("does not show the 'Mark as read' button unless currentPage === totalPages", async () => {
     await seed([
       makeReadingBook({ id: "a", currentPage: 50, totalPages: 420 }),

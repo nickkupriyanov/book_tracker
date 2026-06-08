@@ -195,6 +195,51 @@ describe("EditBookDialog", () => {
     });
   });
 
+  it("preserves readingLogs when editing other book fields", async () => {
+    __resetBookLibrary();
+    localStorage.clear();
+    await useBookLibrary.getState().init(new LocalStorageAdapter());
+    const bookWithLogs = await useBookLibrary.getState().addBook({
+      title: "Logged Book",
+      author: "Author",
+      status: "reading",
+      tags: [],
+      currentPage: 120,
+      readingLogs: [
+        {
+          id: "log-1",
+          date: "2026-06-08",
+          pagesRead: 40,
+          currentPageAfter: 120,
+          createdAt: "2026-06-08T10:00:00.000Z",
+          updatedAt: "2026-06-08T10:00:00.000Z",
+        },
+      ],
+    });
+    render(
+      <EditBookDialog
+        book={bookWithLogs}
+        open={true}
+        onOpenChange={vi.fn()}
+      />
+    );
+    await screen.findByRole("dialog");
+    const user = userEvent.setup();
+
+    const titleInput = screen.getByLabelText("Title");
+    await user.clear(titleInput);
+    await user.type(titleInput, "Logged Book Updated");
+    await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+    await waitFor(() => {
+      const book = useBookLibrary
+        .getState()
+        .books.find((b) => b.id === bookWithLogs.id);
+      expect(book?.title).toBe("Logged Book Updated");
+      expect(book?.readingLogs).toEqual(bookWithLogs.readingLogs);
+    });
+  });
+
   it("shows a visible totalPages error when totalPages is lower than currentPage", async () => {
     __resetBookLibrary();
     localStorage.clear();
