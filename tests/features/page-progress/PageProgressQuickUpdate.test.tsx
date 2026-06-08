@@ -131,31 +131,17 @@ describe("PageProgressQuickUpdate", () => {
     );
   });
 
-  it("does not show the 'Mark as read' button unless currentPage === totalPages", async () => {
+  it("shows the 'Finished' button at any currentPage", async () => {
     await seed([
       makeReadingBook({ id: "a", currentPage: 50, totalPages: 420 }),
     ]);
     const book = useBookLibrary.getState().books[0];
     if (book === undefined) throw new Error("missing seeded book");
     render(<PageProgressQuickUpdate book={book} />);
-    expect(
-      screen.queryByTestId("page-progress-mark-as-read")
-    ).not.toBeInTheDocument();
+    expect(screen.getByTestId("page-progress-finished")).toBeInTheDocument();
   });
 
-  it("shows 'Mark as read' when currentPage === totalPages", async () => {
-    await seed([
-      makeReadingBook({ id: "a", currentPage: 420, totalPages: 420 }),
-    ]);
-    const book = useBookLibrary.getState().books[0];
-    if (book === undefined) throw new Error("missing seeded book");
-    render(<PageProgressQuickUpdate book={book} />);
-    expect(
-      screen.getByTestId("page-progress-mark-as-read")
-    ).toBeInTheDocument();
-  });
-
-  it("'Mark as read' changes the book's status to 'read' and preserves page fields", async () => {
+  it("'Finished' changes the book's status to 'read' and sets currentPage to totalPages when known", async () => {
     const user = userEvent.setup();
     await seed([
       makeReadingBook({ id: "a", currentPage: 420, totalPages: 420 }),
@@ -163,7 +149,7 @@ describe("PageProgressQuickUpdate", () => {
     const book = useBookLibrary.getState().books[0];
     if (book === undefined) throw new Error("missing seeded book");
     render(<PageProgressQuickUpdate book={book} />);
-    await user.click(screen.getByTestId("page-progress-mark-as-read"));
+    await user.click(screen.getByTestId("page-progress-finished"));
 
     await waitFor(() => {
       const book = useBookLibrary
@@ -172,6 +158,43 @@ describe("PageProgressQuickUpdate", () => {
       expect(book?.status).toBe("read");
       expect(book?.currentPage).toBe(420);
       expect(book?.totalPages).toBe(420);
+    });
+  });
+
+  it("'Finished' sets currentPage to totalPages when totalPages is known but currentPage is behind", async () => {
+    const user = userEvent.setup();
+    await seed([
+      makeReadingBook({ id: "a", currentPage: 200, totalPages: 420 }),
+    ]);
+    const book = useBookLibrary.getState().books[0];
+    if (book === undefined) throw new Error("missing seeded book");
+    render(<PageProgressQuickUpdate book={book} />);
+    await user.click(screen.getByTestId("page-progress-finished"));
+
+    await waitFor(() => {
+      const book = useBookLibrary
+        .getState()
+        .books.find((b) => b.id === "a");
+      expect(book?.status).toBe("read");
+      expect(book?.currentPage).toBe(420);
+    });
+  });
+
+  it("'Finished' preserves currentPage when totalPages is unknown", async () => {
+    const user = userEvent.setup();
+    await seed([makeReadingBook({ id: "a", currentPage: 120 })]);
+    const book = useBookLibrary.getState().books[0];
+    if (book === undefined) throw new Error("missing seeded book");
+    render(<PageProgressQuickUpdate book={book} />);
+    await user.click(screen.getByTestId("page-progress-finished"));
+
+    await waitFor(() => {
+      const book = useBookLibrary
+        .getState()
+        .books.find((b) => b.id === "a");
+      expect(book?.status).toBe("read");
+      expect(book?.currentPage).toBe(120);
+      expect(book?.totalPages).toBeUndefined();
     });
   });
 

@@ -140,7 +140,7 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [isMarkingRead, setIsMarkingRead] = useState(false);
+  const [isFinishing, setIsFinishing] = useState(false);
 
   useEffect(() => {
     setPageDraft(book.currentPage?.toString() ?? "");
@@ -207,34 +207,45 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
     await persistCurrentPage(calculateQuickActionTarget(book, delta));
   }
 
-  async function handleMarkAsRead(): Promise<void> {
+  async function handleFinished(): Promise<void> {
     setError(null);
     setInfo(null);
-    setIsMarkingRead(true);
+    setIsFinishing(true);
     try {
-      // Preserve the page fields explicitly so the update path
-      // carries them through unchanged. Spec 015 FR-10.
-      await updateBook(book.id, {
+      // When `totalPages` is known, snap to the final page so the
+      // status flip and the page jump are persisted together
+      // (spec 019 FR-16). When `totalPages` is missing, preserve
+      // the existing page fields and only flip the status
+      // (spec 019 FR-17). Either way the saved book leaves the
+      // reading list, so the parent re-derives the active book.
+      const nextCurrentPage =
+        book.totalPages !== undefined ? book.totalPages : book.currentPage;
+      const nextReadingLogs = buildNextReadingLogs(book, nextCurrentPage);
+      const candidate = {
         ...book,
         status: "read",
-      });
-      // The book leaves the reading list after this; the
-      // useEffect above re-derives the selection.
-      setInfo(`Marked "${book.title}" as read.`);
+        currentPage: nextCurrentPage,
+        ...(nextReadingLogs !== undefined
+          ? { readingLogs: nextReadingLogs }
+          : {}),
+      };
+      const result = validateBookInput(candidate);
+      if (!result.ok) {
+        const first = result.errors.currentPage ?? result.errors._form;
+        setError(first ?? "Couldn't mark this book as read.");
+        return;
+      }
+      await updateBook(book.id, result.value);
     } catch {
       setError("Couldn't save. Your browser storage is full or disabled.");
     } finally {
-      setIsMarkingRead(false);
+      setIsFinishing(false);
     }
   }
 
   const canSave = !isSaving;
 
   const hasTotal = book.totalPages !== undefined;
-  const reachedEnd =
-    book.currentPage !== undefined &&
-    book.totalPages !== undefined &&
-    book.currentPage === book.totalPages;
 
   const percent = useMemo(() => calculatePercent(book), [book]);
 
@@ -410,7 +421,7 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
               variant="outline"
               size="sm"
               onClick={() => void handleQuickAdd(10)}
-              disabled={isSaving || isMarkingRead}
+              disabled={isSaving || isFinishing}
               data-testid="page-progress-quick-10"
             >
               +10 pages
@@ -420,25 +431,24 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
               variant="outline"
               size="sm"
               onClick={() => void handleQuickAdd(25)}
-              disabled={isSaving || isMarkingRead}
+              disabled={isSaving || isFinishing}
               data-testid="page-progress-quick-25"
             >
               +25 pages
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void handleFinished()}
+              disabled={isSaving || isFinishing}
+              data-testid="page-progress-finished"
+            >
+              <Check className="size-3.5" />
+              {isFinishing ? "Finishing…" : "Finished"}
+            </Button>
           </div>
         </div>
-        {reachedEnd && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => void handleMarkAsRead()}
-            disabled={isMarkingRead}
-            data-testid="page-progress-mark-as-read"
-          >
-            <Check className="size-4" />
-            {isMarkingRead ? "Marking…" : "Mark as read"}
-          </Button>
-        )}
 
         {error !== null && (
           <p
