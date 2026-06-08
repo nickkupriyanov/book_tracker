@@ -8,16 +8,19 @@ export interface ReadingCalendarDayProps {
 }
 
 /**
- * A single day cell on the Reading Calendar (spec 013 D7 / §6.2).
+ * A single day cell on the Reading Calendar (spec 013 D7 /
+ * §6.2, spec 020 §5.3).
  *
- * - No books: muted dark warm fill.
+ * - No books: muted warm fill using the app's `muted` and
+ *   `border` tokens — sits in the warm theme instead of an
+ *   isolated dark panel.
  * - One book: solid `book.color` background.
  * - Two or three books: CSS linear-gradient stripes (vertical
  *   slices) — preserves "multiple books on one day" without
  *   mixing colors.
- * - More than three books: same three-stripe rendering; the full
- *   list is exposed via `ariaLabel` / `title` (which the parent
- *   builds from the day model).
+ * - More than three books: same three-stripe rendering; the
+ *   full list is exposed via `ariaLabel` / `title` (which
+ *   the parent builds from the day model).
  *
  * Pure: no state, no store. The parent (ReadingCalendar) owns
  * the day model.
@@ -37,21 +40,17 @@ export function ReadingCalendarDay({ day }: ReadingCalendarDayProps) {
       className={cn(
         "relative aspect-square rounded-sm border text-xs",
         "flex items-end justify-end p-1",
-        // Muted empty fill — sits a notch above the dark panel.
-        !hasBooks && "border-white/5 bg-[#332920]"
+        // Muted warm fill for empty days — uses the app theme
+        // tokens instead of an inline dark color (spec 020 §5.3).
+        !hasBooks && "border-border bg-muted",
       )}
-      style={{
-        ...style,
-        borderColor: hasBooks ? "rgba(255,255,255,0.18)" : undefined,
-      }}
+      style={style}
     >
       <span
-        className="leading-none"
-        style={{
-          color: hasBooks
-            ? "rgba(255,255,255,0.92)"
-            : "rgba(255,255,255,0.42)",
-        }}
+        className={cn(
+          "leading-none",
+          hasBooks ? "text-white" : "text-muted-foreground",
+        )}
         aria-hidden="true"
       >
         {day.dayOfMonth}
@@ -63,7 +62,9 @@ export function ReadingCalendarDay({ day }: ReadingCalendarDayProps) {
 /**
  * Builds the inline `style` for a day cell. Empty days get
  * `undefined` so the CSS class controls the background; logged
- * days get a multi-stop linear-gradient for stripes.
+ * days get a multi-stop linear-gradient for stripes. The cell's
+ * own border also comes from the CSS class, so we no longer
+ * override it inline.
  */
 function stripeStyle(colors: string[]): React.CSSProperties | undefined {
   if (colors.length === 0) return undefined;

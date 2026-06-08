@@ -22,16 +22,19 @@ export interface ReadingCalendarProps {
 }
 
 /**
- * The home Reading Calendar (spec 013 D7 / §6.1). Display-only
- * in v1: the panel renders the current local month, lets the
- * user navigate previous/next months via icon buttons, and
- * shows day cells + a legend or a cozy empty state.
+ * The home Reading Calendar (spec 013 D7 / §6.1, spec 020 §5.3).
+ * Display-only: the panel renders the selected local month, lets
+ * the user navigate previous/next months via icon buttons, and
+ * shows day cells. When the visible month has no logged days,
+ * the grid still renders and a small secondary empty message
+ * appears below it (spec 020 FR-10 / FR-11).
  *
- * Visual direction is **Ink Shelf** — a warm dark panel with
- * compact square day cells, no dashboard metrics, no glass,
- * no oversized hero. Editing happens on the book detail page
- * (see `ReadingDaysSection`); this component owns nothing but
- * the visible month.
+ * Visual direction is **Warm Shelf** — the panel uses the app's
+ * theme tokens (`bg-card`, `text-card-foreground`, `border-border`,
+ * `muted`, `primary`) instead of the previous isolated dark OKLCH
+ * panel. Logged-day colors still come from each book's color, so
+ * the day cells remain color-led; multi-book stripes still render
+ * via the existing model.
  */
 export function ReadingCalendar({ books }: ReadingCalendarProps) {
   const [visibleMonth, setVisibleMonth] = useState<CalendarMonth>(() =>
@@ -56,16 +59,10 @@ export function ReadingCalendar({ books }: ReadingCalendarProps) {
     <section
       aria-label="Reading Calendar"
       data-testid="reading-calendar"
-      className="mb-6 rounded-lg p-5"
-      style={{
-        backgroundColor: "oklch(0.25 0.02 50)",
-        color: "oklch(0.95 0.01 60)",
-      }}
+      className="border-border bg-card text-card-foreground mb-6 rounded-lg border p-5"
     >
       <header className="mb-4 flex flex-col gap-3">
-        <h2 className="font-serif text-lg" style={{ color: "oklch(0.95 0.01 60)" }}>
-          Reading Calendar
-        </h2>
+        <h2 className="text-foreground font-serif text-lg">Reading Calendar</h2>
         <div className="flex w-full items-center gap-2">
           <Button
             type="button"
@@ -79,9 +76,8 @@ export function ReadingCalendar({ books }: ReadingCalendarProps) {
           </Button>
           <span
             aria-live="polite"
-            className="min-w-0 flex-1 text-center font-serif whitespace-nowrap"
+            className="text-muted-foreground min-w-0 flex-1 text-center font-serif whitespace-nowrap"
             data-testid="reading-calendar-month-label"
-            style={{ color: "oklch(0.85 0.01 60)" }}
           >
             {model.label}
           </span>
@@ -98,16 +94,12 @@ export function ReadingCalendar({ books }: ReadingCalendarProps) {
         </div>
       </header>
 
-      {model.hasLoggedDays ? (
-        <CalendarGrid
-          days={model.days}
-          firstDayOfWeek={firstDayOfWeek}
-        />
-      ) : (
+      <CalendarGrid days={model.days} firstDayOfWeek={firstDayOfWeek} />
+
+      {!model.hasLoggedDays && (
         <p
-          className="py-6 text-center text-sm"
+          className="text-muted-foreground py-3 text-center text-xs"
           data-testid="reading-calendar-empty"
-          style={{ color: "oklch(0.7 0.02 50)" }}
         >
           No reading days logged this month.
         </p>
@@ -129,6 +121,10 @@ interface CalendarGridProps {
  * correctly. No leading/trailing placeholder cells in v1
  * (spec 013 plan §5 "reading-calendar.ts" rules) — empty
  * grid positions are simply left blank by CSS Grid auto-flow.
+ *
+ * The grid renders for every visible month (spec 020 FR-10),
+ * even when the month has no logged days, so month shape and
+ * navigation stay stable.
  */
 function CalendarGrid({ days, firstDayOfWeek }: CalendarGridProps) {
   return (

@@ -49,10 +49,14 @@ describe("ReadingCalendarDay", () => {
     expect(cell.dataset["logged"]).toBe("false");
   });
 
-  it("uses a muted warm fill for empty days", () => {
+  it("uses a muted warm fill for empty days (spec 020 §5.3 theme tokens)", () => {
     render(<ReadingCalendarDay day={emptyDay()} />);
     const cell = screen.getByTestId("reading-calendar-day");
-    expect(cell).toHaveClass("bg-[#332920]");
+    // The previous dark inline palette (`bg-[#332920]`) was
+    // replaced by the app's `muted` and `border` tokens so the
+    // empty cells sit in the warm theme.
+    expect(cell).toHaveClass("bg-muted");
+    expect(cell).toHaveClass("border-border");
   });
 
   it("uses the aria-label for the empty state", () => {
@@ -61,6 +65,15 @@ describe("ReadingCalendarDay", () => {
       "aria-label",
       "2026-06-10 — No reading logged"
     );
+  });
+
+  it("renders the empty day number with muted foreground color (warm theme)", () => {
+    render(<ReadingCalendarDay day={emptyDay({ dayOfMonth: 17 })} />);
+    const cell = screen.getByTestId("reading-calendar-day");
+    const number = cell.querySelector("span");
+    expect(number).not.toBeNull();
+    expect(number!.className).toMatch(/text-muted-foreground/);
+    expect(number).toHaveTextContent("17");
   });
 
   it("uses a solid color background for a one-book day", () => {

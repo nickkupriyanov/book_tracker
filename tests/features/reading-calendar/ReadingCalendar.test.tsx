@@ -44,28 +44,34 @@ describe("ReadingCalendar (spec 013)", () => {
     expect(label).toMatch(/^[A-Z][a-z]+ \d{4}$/);
   });
 
-  it("renders the empty state and omits the legend when no days are logged", () => {
+  it("renders the grid plus a secondary empty note when no days are logged (spec 020 FR-10)", () => {
     render(<ReadingCalendar books={[]} />);
+    // The month grid still renders so month shape and
+    // navigation stay stable (spec 020 FR-10).
+    expect(screen.getByTestId("reading-calendar-grid")).toBeInTheDocument();
+    // The empty copy appears as secondary supporting text, not
+    // as a replacement for the grid.
     expect(
       screen.getByTestId("reading-calendar-empty")
     ).toHaveTextContent(/no reading days logged/i);
+    // No logged days → no legend.
     expect(
       screen.queryByTestId("reading-calendar-legend")
     ).not.toBeInTheDocument();
   });
 
-  it("renders the grid (not the empty state) when at least one day is logged", () => {
+  it("renders the grid (and no empty note) when at least one day is logged", () => {
     const book = makeBook({ readingDays: ["2026-06-10"] });
     // We don't care which month this resolves to for the test —
     // we just want the calendar to render its logged state. The
     // spec covers both shapes elsewhere.
     render(<ReadingCalendar books={[book]} />);
-    // Either the grid or the empty state is present, depending
-    // on whether the reading day falls in the current month. If
-    // it does, the grid is there; if not, the empty state is.
-    const grid = screen.queryByTestId("reading-calendar-grid");
-    const empty = screen.queryByTestId("reading-calendar-empty");
-    expect(grid !== null || empty !== null).toBe(true);
+    expect(screen.getByTestId("reading-calendar-grid")).toBeInTheDocument();
+    // When the visible month has logged days, the empty note
+    // is suppressed (it would be misleading).
+    expect(
+      screen.queryByTestId("reading-calendar-empty")
+    ).not.toBeInTheDocument();
   });
 
   it("previous button shifts the month label back by one month", async () => {

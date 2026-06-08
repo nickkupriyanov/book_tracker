@@ -8,15 +8,17 @@ export interface ReadingCalendarLegendProps {
 }
 
 /**
- * The visible-month book legend (spec 013 §6.3). One row per
- * book: a small color swatch and the book title. The parent
- * decides whether to render the legend at all (omit when the
- * visible month has no logged days).
+ * The visible-month book legend (spec 013 §6.3, spec 020
+ * §5.3). One row per book: a small color swatch and the book
+ * title. The parent decides whether to render the legend at
+ * all (omit when the visible month has no logged days).
  *
  * Swatches are square, book-like (slightly taller than wide)
  * rather than circular pills, to keep the visual language in
- * the family of "small book covers". The `role="list"` is
- * paired with `role="listitem"` on each row so screen readers
+ * the family of "small book covers". The swatch border and
+ * title text use the app's warm theme tokens instead of the
+ * previous dark inline palette. The `role="list"` is paired
+ * with `role="listitem"` on each row so screen readers
  * announce the structure even though the markup is `<ul>` /
  * `<li>` already — the explicit roles guard against future
  * markup refactors that swap the tag.
@@ -40,13 +42,12 @@ export function ReadingCalendarLegend({ entries }: ReadingCalendarLegendProps) {
           <span
             aria-hidden="true"
             data-testid="reading-calendar-legend-swatch"
-            className={cn("inline-block h-3.5 w-2.5 rounded-sm border")}
-            style={{
-              backgroundColor: entry.color,
-              borderColor: "rgba(255,255,255,0.18)",
-            }}
+            className={cn(
+              "border-border inline-block h-3.5 w-2.5 rounded-sm border",
+            )}
+            style={{ backgroundColor: entry.color }}
           />
-          <span style={{ color: "oklch(0.92 0.01 60)" }}>{entry.title}</span>
+          <span className="text-foreground">{entry.title}</span>
         </li>
       ))}
     </ul>
