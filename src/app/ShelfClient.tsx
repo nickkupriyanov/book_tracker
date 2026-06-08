@@ -93,7 +93,7 @@ export function ShelfClient() {
               </Button>
             </div>
           )}
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="space-y-8 lg:order-1">
             {readingBooks.length === 0 || activeBook === undefined ? (
               <div

@@ -34,7 +34,6 @@ const NICKNAME = "Quiet Reader";
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const STREAK_FOR_STEADY = 7;
 const READ_FOR_SEASONED = 10;
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /**
  * Builds the display-ready reader profile from the current
@@ -204,11 +203,7 @@ function startOfLocalDay(d: Date): Date {
 }
 
 function shiftDays(d: Date, delta: number): Date {
-  // Build from local components, then add days as ms. Going
-  // through local components keeps DST shifts from drifting
-  // the calendar day under us.
-  const start = startOfLocalDay(d);
-  return new Date(start.getTime() + delta * MS_PER_DAY);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + delta);
 }
 
 function formatLocalDate(d: Date): string {

@@ -92,13 +92,13 @@ interface ProfileStatProps {
 function ProfileStat({ label, value, testId }: ProfileStatProps) {
   return (
     <div className="flex flex-col items-center text-center">
+      <dt className="text-muted-foreground order-2 mt-1 text-xs">{label}</dt>
       <dd
         data-testid={testId}
-        className="font-serif text-xl leading-none text-foreground tabular-nums"
+        className="order-1 font-serif text-xl leading-none text-foreground tabular-nums"
       >
         {value}
       </dd>
-      <dt className="text-muted-foreground mt-1 text-xs">{label}</dt>
     </div>
   );
 }
@@ -114,7 +114,7 @@ function BookmarkContour() {
     <svg
       aria-hidden
       viewBox="0 0 40 80"
-      className="pointer-events-none absolute -right-2 -top-1 h-24 w-12 text-primary/15"
+      className="pointer-events-none absolute -right-1 -top-1 h-20 w-10 text-primary/15"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.5"
