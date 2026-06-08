@@ -54,6 +54,29 @@ function calculateQuickActionTarget(book: Book, delta: number): number {
 }
 
 /**
+ * Returns the pages left to read. `null` when
+ * `totalPages` is missing. Never below `0` (spec 019 FR-5).
+ */
+function calculatePagesLeft(book: Book): number | null {
+  if (book.currentPage === undefined) return null;
+  if (book.totalPages === undefined) return null;
+  return Math.max(0, book.totalPages - book.currentPage);
+}
+
+/**
+ * Returns the total pages read today for the active book,
+ * derived from `book.readingLogs`. `0` when no log exists
+ * for today's local date. Spec 019 §5.4 / FR-18.
+ */
+function calculateTodayPagesRead(book: Book): number {
+  const logs = book.readingLogs ?? [];
+  const today = todayLocalDate();
+  return logs
+    .filter((l) => l.date === today)
+    .reduce((sum, l) => sum + l.pagesRead, 0);
+}
+
+/**
  * Builds the next `readingLogs` array after a positive page delta,
  * or returns `undefined` when no log update is needed.
  *
@@ -248,6 +271,8 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
   const hasTotal = book.totalPages !== undefined;
 
   const percent = useMemo(() => calculatePercent(book), [book]);
+  const pagesLeft = useMemo(() => calculatePagesLeft(book), [book]);
+  const todayPagesRead = useMemo(() => calculateTodayPagesRead(book), [book]);
 
   const progressText = useMemo<string | null>(() => {
     if (book.currentPage !== undefined && book.totalPages !== undefined) {
@@ -354,6 +379,14 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
               />
             </div>
           )}
+          {pagesLeft !== null && (
+            <p
+              data-testid="page-progress-pages-left"
+              className="text-muted-foreground text-sm"
+            >
+              {pagesLeft} pages left
+            </p>
+          )}
         </div>
       ) : (
         progressText !== null && (
@@ -449,6 +482,15 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
             </Button>
           </div>
         </div>
+
+        {todayPagesRead > 0 && (
+          <p
+            data-testid="page-progress-today"
+            className="text-muted-foreground text-sm"
+          >
+            You read {todayPagesRead} pages today
+          </p>
+        )}
 
         {error !== null && (
           <p
