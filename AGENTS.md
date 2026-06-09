@@ -29,8 +29,15 @@ Book Tracker — cozy web app for tracking read books.
 - Prefer calm, warm, book-inspired UI.
 
 ## Development Rules
-- Do not add backend unless explicitly requested (a future spec will).
-- Do not introduce auth in MVP.
+- Frontend store and feature code depend on the `StorageAdapter` interface
+  only. Do not import `localStorage`, `fetch` with backend URLs, FastAPI,
+  PostgreSQL, or auth code from Zustand store modules or feature components.
+- For spec 023 (and any future post-MVP spec that introduces backend work),
+  backend code is allowed under `backend/`. Auth in HTTP mode is allowed
+  there. localStorage demo mode remains unauthenticated and does not require
+  the backend to run.
+- Storage mode is selected at build time by `NEXT_PUBLIC_STORAGE_MODE`
+  (`local` by default; `http` requires `NEXT_PUBLIC_API_BASE_URL`).
 - Add loading, error and empty states where relevant.
 - Keep components small and readable.
 

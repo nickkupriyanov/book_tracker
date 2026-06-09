@@ -4,16 +4,19 @@ This document captures the **non-negotiable principles** of the Book Tracker pro
 Every spec, plan, and task must respect these principles. If a decision conflicts with
 the constitution, either change the decision or amend the constitution first.
 
-Last amended: 2026-06-02 (amended 2026-06-02: added strict types principle §3.1)
+Last amended: 2026-06-09 (amended 2026-06-09: post-MVP amendment — see §7)
 
 ---
 
 ## 1. Product principles
 
 - **Cozy over clever.** Calm, warm, book-inspired. No dashboards, no cold metrics walls.
-- **Local-first for MVP.** Books live in the browser (localStorage). No backend unless
-  explicitly introduced by a future spec.
-- **No auth in MVP.** The app is single-user, on a single device.
+- **Local-first demo mode.** Books live in the browser (localStorage) for public demo
+  and local testing. This is the default mode.
+- **Post-MVP HTTP mode.** A spec may introduce a backend persistence mode alongside
+  the localStorage demo mode. While the demo mode is the default, approved post-MVP
+  specs (starting with spec 023) may add authenticated, user-scoped HTTP persistence
+  for VPS deployments. Demo/public testers continue to use localStorage.
 - **Empty / loading / error states are first-class.** Every list, every async call.
 
 ## 2. UI principles
@@ -62,13 +65,43 @@ Last amended: 2026-06-02 (amended 2026-06-02: added strict types principle §3.1
 
 ## 5. Out of scope (for MVP)
 
-- Backend, server-side persistence, sync between devices.
-- User accounts, authentication, multi-tenant anything.
+- Public-facing auth, public registration, social login.
 - Social features (sharing, friends, feeds).
 - Analytics, telemetry, third-party scripts.
 - E-commerce, affiliate links, ads.
+
+### 5.1 Post-MVP scope (introduced by spec 023)
+
+Approved post-MVP specs may add:
+
+- An optional Python backend (`backend/`) for HTTP persistence behind a
+  `NEXT_PUBLIC_STORAGE_MODE=http` flag. The default is still localStorage.
+- Authenticated HTTP mode with user accounts created via a backend CLI
+  (no public registration in v1). Data is scoped by `user_id` from v1.
+- Short-lived JWT access tokens held in memory only (no refresh tokens,
+  no `localStorage`/`sessionStorage`/cookie persistence in v1).
 
 ## 6. Amending the constitution
 
 Constitution changes are themselves spec-driven: open a discussion, update the
 file, bump the date above. Don't sneak principle changes into a feature PR.
+
+## 7. Post-MVP amendment (2026-06-09, spec 023)
+
+This amendment explicitly opens the door to a Python backend and authenticated
+HTTP mode while preserving the localStorage/no-auth demo path:
+
+- §1, §3, §5, and the AGENTS guide are updated together as part of T0 of
+  spec 023.
+- The localStorage demo mode remains the default and does not require any
+  backend or login.
+- The HTTP mode is opt-in via `NEXT_PUBLIC_STORAGE_MODE=http` and requires
+  the documented frontend and backend environment variables. It is a
+  deployment concern, not a runtime user setting.
+- Auth tokens in HTTP mode are in-memory only. Reloading the page logs the
+  user out by design.
+- Storage remains abstracted behind `StorageAdapter`. New code may not
+  introduce direct dependencies on PostgreSQL, FastAPI, JWT, or localStorage
+  from the Zustand store or from feature components.
+- No public registration endpoint, refresh tokens, or persistent token
+  storage are added in v1. Future specs may extend this.
