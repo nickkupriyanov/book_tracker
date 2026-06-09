@@ -6,14 +6,14 @@
  *
  * - `local` — `LocalStorageAdapter`, the default. No backend required.
  * - `http` — `HttpStorageAdapter`, available only after a successful
- *   login. The HTTP adapter itself lands in T7; this module only knows
- *   how to *resolve* the mode and validate the environment.
+ *   login.
  *
  * The switch is a build-time / deployment concern, not a runtime user
  * setting. The mode is read from `NEXT_PUBLIC_STORAGE_MODE` and the
  * base URL from `NEXT_PUBLIC_API_BASE_URL`.
  */
 
+import { HttpStorageAdapter } from "./http-storage-adapter";
 import { LocalStorageAdapter } from "./local-storage-adapter";
 import type { StorageAdapter } from "./storage-adapter";
 
@@ -95,16 +95,18 @@ export interface CreateStorageAdapterOptions {
    * authenticated. Required when `mode === "http"`.
    */
   getToken?: () => string | null;
+  /**
+   * Optional fetch override passed through to the HTTP adapter.
+   */
+  fetchImpl?: typeof fetch;
 }
 
 /**
  * Build a {@link StorageAdapter} for the requested mode.
  *
  * In local mode this returns a {@link LocalStorageAdapter}. In HTTP
- * mode it throws — the HTTP adapter depends on an authenticated
- * token, which is only available after the user logs in. Wire the
- * HTTP adapter from T7's `createHttpStorageAdapter` here once the
- * token is in hand.
+ * mode the caller must supply an authenticated `getToken`; the
+ * factory will throw otherwise.
  */
 export function createStorageAdapter(
   options: CreateStorageAdapterOptions,
@@ -112,10 +114,20 @@ export function createStorageAdapter(
   if (options.mode === "local") {
     return new LocalStorageAdapter();
   }
-  // Lazy import avoids pulling fetch/network code into the local-mode
-  // bundle path; in tests we can pre-inject `getToken` if needed.
-  throw new StorageModeError(
-    "HttpStorageAdapter is wired by T7. Pass the authenticated token " +
-      "via `getToken` and import the HTTP factory directly.",
-  );
+  if (!options.apiBaseUrl) {
+    throw new StorageModeError(
+      "HTTP mode requires a non-empty apiBaseUrl.",
+    );
+  }
+  if (typeof options.getToken !== "function") {
+    throw new StorageModeError(
+      "HTTP mode requires a getToken() function that returns the " +
+        "current access token.",
+    );
+  }
+  return new HttpStorageAdapter({
+    baseUrl: options.apiBaseUrl,
+    getToken: options.getToken,
+    fetchImpl: options.fetchImpl,
+  });
 }

@@ -79,7 +79,26 @@ describe("createStorageAdapter", () => {
     expect(adapter.constructor.name).toBe("LocalStorageAdapter");
   });
 
-  it("throws in HTTP mode until T7 wires the factory", () => {
+  it("returns an HttpStorageAdapter in HTTP mode with a token provider", () => {
+    const adapter = createStorageAdapter({
+      mode: "http",
+      apiBaseUrl: "http://127.0.0.1:8000",
+      getToken: () => "token",
+    });
+    expect(adapter.constructor.name).toBe("HttpStorageAdapter");
+  });
+
+  it("throws when HTTP mode has no apiBaseUrl", () => {
+    expect(() =>
+      createStorageAdapter({
+        mode: "http",
+        apiBaseUrl: null,
+        getToken: () => "token",
+      }),
+    ).toThrow(StorageModeError);
+  });
+
+  it("throws when HTTP mode has no getToken", () => {
     expect(() =>
       createStorageAdapter({
         mode: "http",
