@@ -197,6 +197,28 @@ def test_payload_supports_arbitrary_nested_frontend_shapes(db) -> None:
     db.commit()
 
     fetched = db.execute(select(Book).where(Book.id == "s1")).scalar_one()
+    # JSONB normalises key order, so the dict equality above is the
+    # right check — the round-trip preserves value, type, and key set
+    # but not necessarily key order.
     assert fetched.payload == payload
-    # JSON round-trip preserves unicode/strings
-    assert json.dumps(fetched.payload) == json.dumps(payload)
+    assert set(fetched.payload.keys()) == set(payload.keys())
+    assert json.dumps(fetched.payload, sort_keys=True) == json.dumps(
+        payload, sort_keys=True
+    )
+
+
+def test_payload_column_is_postgres_jsonb(db) -> None:
+    """Spec 023 §7: book payload must be JSONB, not plain JSON.
+
+    Confirms by reading the actual column type from PostgreSQL.
+    """
+
+    from sqlalchemy import text
+
+    type_name = db.execute(
+        text(
+            "SELECT data_type FROM information_schema.columns "
+            "WHERE table_name = 'books' AND column_name = 'payload'"
+        )
+    ).scalar_one()
+    assert type_name == "jsonb"

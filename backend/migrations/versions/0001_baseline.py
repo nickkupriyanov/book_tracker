@@ -10,6 +10,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 
 revision: str = "0001_baseline"
@@ -42,7 +43,7 @@ def upgrade() -> None:
             sa.ForeignKey("users.id", ondelete="CASCADE"),
             nullable=False,
         ),
-        sa.Column("payload", sa.JSON(), nullable=False),
+        sa.Column("payload", postgresql.JSONB(), nullable=False),
         sa.Column(
             "book_created_at",
             sa.DateTime(),

@@ -11,7 +11,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import JSON, ForeignKey, Index, String, func
+from sqlalchemy import ForeignKey, Index, String, func
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin
@@ -29,7 +30,7 @@ class Book(Base, TimestampMixin):
         nullable=False,
         index=True,
     )
-    payload: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     book_created_at: Mapped[datetime] = mapped_column(
         nullable=False,
         server_default=func.now(),
