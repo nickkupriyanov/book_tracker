@@ -92,16 +92,6 @@ export interface Book {
    */
   finishedAt?: string;
   /**
-   * Local calendar dates (`YYYY-MM-DD`) when this book was
-   * read. Optional for legacy records and books with no
-   * logged reading days. Each value must be a valid
-   * `YYYY-MM-DD` date; duplicates are normalized to one
-   * entry. Used by the home Reading Calendar (spec 013
-   * §8.1, D3, D4). Independent of `status`, `startedAt`,
-   * and `finishedAt` — marking a day does not change them.
-   */
-  readingDays?: string[];
-  /**
    * Optional hex color used by the Reading Calendar. The
    * UI typically suggests this from the cover image and
    * the user can pick it manually. Format: `#RGB` or

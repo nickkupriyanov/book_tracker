@@ -225,11 +225,11 @@ function validateOptionalDate(
 
 /**
  * Validates a single `YYYY-MM-DD` date string for use inside
- * `readingDays`. Returns the date string on success, or
- * pushes a contextual error to `errors[field]` and returns
- * `undefined` on failure. Spec 013 §8.2 — same shape and
- * calendar-validity rules as `validateOptionalDate`, but
- * re-usable from the per-entry validator.
+ * a `ReadingLog.date` field. Returns the date string on
+ * success, or pushes a contextual error to `errors[field]`
+ * and returns `undefined` on failure. Spec 022 — same shape
+ * and calendar-validity rules as `validateOptionalDate`,
+ * but re-usable from the per-entry validator.
  */
 function validateReadingDayString(
   raw: unknown,
@@ -254,61 +254,6 @@ function validateReadingDayString(
     return undefined;
   }
   return raw;
-}
-
-/**
- * Validates `readingDays`. Returns the normalised
- * sorted-unique array on success, `undefined` on failure.
- *
- * - `undefined` / `null` → `undefined` (no logged days, no
- *   error). The spec also normalises an empty array to
- *   `undefined` so the persisted shape is canonical.
- * - Non-array → error on `readingDays`.
- * - Each entry must be a valid `YYYY-MM-DD` date; failures
- *   are reported under `readingDays.<index>` so the UI can
- *   point at the right row.
- * - On success: sort ascending (chronological because
- *   YYYY-MM-DD sorts lexicographically) and deduplicate.
- *
- * Spec 013 §5.1 (D3, D4), §7 (FR-1, FR-2), §8.2.
- */
-function validateReadingDays(
-  raw: unknown,
-  errors: Record<string, string>
-): string[] | undefined {
-  if (raw === undefined || raw === null) {
-    return undefined;
-  }
-  if (!Array.isArray(raw)) {
-    errors.readingDays = "Reading days must be an array of YYYY-MM-DD dates.";
-    return undefined;
-  }
-  // Empty array normalises to absent — keeps the persisted
-  // shape canonical (FR-2 / §8.2).
-  if (raw.length === 0) {
-    return undefined;
-  }
-  const out: string[] = [];
-  for (let i = 0; i < raw.length; i++) {
-    const entryField = `readingDays.${i}`;
-    const value = validateReadingDayString(raw[i], errors, entryField);
-    if (value === undefined) {
-      return undefined;
-    }
-    out.push(value);
-  }
-  // Sort + dedupe. YYYY-MM-DD sorts lexicographically the
-  // same as chronologically, so a single comparison works.
-  out.sort();
-  const seen = new Set<string>();
-  const deduped: string[] = [];
-  for (const date of out) {
-    if (!seen.has(date)) {
-      seen.add(date);
-      deduped.push(date);
-    }
-  }
-  return deduped;
 }
 
 const LOG_PAGE_MIN = 1;
@@ -757,7 +702,6 @@ export function validateBookInput(input: unknown): ValidationResult<BookInput> {
     errors,
     "finishedAt"
   );
-  const readingDays = validateReadingDays(input["readingDays"], errors);
   const readingLogs = validateReadingLogs(input["readingLogs"], errors);
   const coverColor = validateCoverColor(input["coverColor"], errors);
   const currentPage = validateOptionalPage(
@@ -825,7 +769,6 @@ export function validateBookInput(input: unknown): ValidationResult<BookInput> {
     ...(quotes !== undefined ? { quotes } : {}),
     ...(startedAt !== undefined ? { startedAt } : {}),
     ...(finishedAt !== undefined ? { finishedAt } : {}),
-    ...(readingDays !== undefined ? { readingDays } : {}),
     ...(readingLogs !== undefined ? { readingLogs } : {}),
     ...(coverColor !== undefined ? { coverColor } : {}),
     ...(currentPage !== undefined ? { currentPage } : {}),
