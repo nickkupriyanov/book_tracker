@@ -59,8 +59,10 @@ def create_app(*, cors_allow_origins: Iterable[str] | None = None) -> FastAPI:
         return HealthResponse(status="ok", app_env=settings.app_env).model_dump()
 
     from app.api.routes import auth as auth_routes
+    from app.api.routes import books as books_routes
 
     app.include_router(auth_routes.router)
+    app.include_router(books_routes.router)
 
     return app
 
