@@ -1,6 +1,6 @@
 # Tasks: Post-MVP Python Backend With Switchable Storage
 
-> **Status:** Draft
+> **Status:** Complete
 > **Spec:** `./spec.md`
 > **Plan:** `./plan.md`
 

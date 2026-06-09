@@ -277,36 +277,36 @@ user and year.
 
 ## 10. Acceptance criteria
 
-- [ ] `backend/` contains a FastAPI project scaffold.
-- [ ] Constitution and AGENTS instructions are amended to allow post-MVP
+- [x] `backend/` contains a FastAPI project scaffold.
+- [x] Constitution and AGENTS instructions are amended to allow post-MVP
   authenticated HTTP mode while preserving localStorage demo mode.
-- [ ] Backend configuration documents PostgreSQL connection requirements.
-- [ ] Backend configuration documents `DATABASE_URL`, `JWT_SECRET`,
+- [x] Backend configuration documents PostgreSQL connection requirements.
+- [x] Backend configuration documents `DATABASE_URL`, `JWT_SECRET`,
   `ACCESS_TOKEN_TTL_MINUTES`, `CORS_ALLOW_ORIGINS`, and `APP_ENV`.
-- [ ] Backend exposes a CLI command to create the first user.
-- [ ] Backend has user persistence with password hashing.
-- [ ] Backend exposes login and current-user endpoints.
-- [ ] Authenticated books CRUD works through the backend API.
-- [ ] Authenticated annual challenge load/save works through the backend API.
-- [ ] Books and challenges are scoped by `user_id`.
-- [ ] `HttpStorageAdapter` is implemented and conforms to `StorageAdapter`.
-- [ ] `NEXT_PUBLIC_STORAGE_MODE=local` keeps current localStorage behavior.
-- [ ] Missing/empty `NEXT_PUBLIC_STORAGE_MODE` defaults to local mode.
-- [ ] Unknown `NEXT_PUBLIC_STORAGE_MODE` fails loudly.
-- [ ] `NEXT_PUBLIC_STORAGE_MODE=http` uses backend persistence.
-- [ ] localStorage mode does not render or require login.
-- [ ] HTTP mode handles login before loading the library.
-- [ ] Reloading in HTTP mode clears the token and shows login again.
-- [ ] HTTP mode stores no token in localStorage.
-- [ ] HTTP mode handles backend/API errors cleanly.
-- [ ] Existing localStorage tests still pass.
-- [ ] New `HttpStorageAdapter` tests cover successful reads/writes and common
+- [x] Backend exposes a CLI command to create the first user.
+- [x] Backend has user persistence with password hashing.
+- [x] Backend exposes login and current-user endpoints.
+- [x] Authenticated books CRUD works through the backend API.
+- [x] Authenticated annual challenge load/save works through the backend API.
+- [x] Books and challenges are scoped by `user_id`.
+- [x] `HttpStorageAdapter` is implemented and conforms to `StorageAdapter`.
+- [x] `NEXT_PUBLIC_STORAGE_MODE=local` keeps current localStorage behavior.
+- [x] Missing/empty `NEXT_PUBLIC_STORAGE_MODE` defaults to local mode.
+- [x] Unknown `NEXT_PUBLIC_STORAGE_MODE` fails loudly.
+- [x] `NEXT_PUBLIC_STORAGE_MODE=http` uses backend persistence.
+- [x] localStorage mode does not render or require login.
+- [x] HTTP mode handles login before loading the library.
+- [x] Reloading in HTTP mode clears the token and shows login again.
+- [x] HTTP mode stores no token in localStorage.
+- [x] HTTP mode handles backend/API errors cleanly.
+- [x] Existing localStorage tests still pass.
+- [x] New `HttpStorageAdapter` tests cover successful reads/writes and common
   failures.
-- [ ] Backend tests cover auth, book CRUD, challenge save/load, validation, and
+- [x] Backend tests cover auth, book CRUD, challenge save/load, validation, and
   user scoping.
-- [ ] Frontend `npm run lint` passes.
-- [ ] Frontend `npm run test` passes.
-- [ ] Backend test command passes.
+- [x] Frontend `npm run lint` passes.
+- [x] Frontend `npm run test` passes.
+- [x] Backend test command passes.
 
 ## 11. Out of scope (for this spec)
 
