@@ -152,7 +152,9 @@ describe("PageProgressQuickUpdate", () => {
     const book = useBookLibrary.getState().books[0];
     if (book === undefined) throw new Error("missing seeded book");
     render(<PageProgressQuickUpdate book={book} />);
-    await user.click(screen.getByTestId("page-progress-finished"));
+    // When total pages are reached, the dedicated "Mark as read"
+    // action replaces the generic Finished button.
+    await user.click(screen.getByTestId("page-progress-mark-read"));
 
     await waitFor(() => {
       const book = useBookLibrary
@@ -326,7 +328,7 @@ describe("PageProgressQuickUpdate", () => {
       );
     });
 
-    it("'+10 pages' saves currentPage + 10 and adds a positive reading log delta", async () => {
+    it("'+10 pages' saves the new currentPage and a positive pagesRead", async () => {
       const user = userEvent.setup();
       await seed([
         makeReadingBook({ id: "a", currentPage: 50, totalPages: 400 }),
@@ -342,12 +344,14 @@ describe("PageProgressQuickUpdate", () => {
           .books.find((b) => b.id === "a");
         expect(updated?.currentPage).toBe(60);
         expect(updated?.readingLogs).toHaveLength(1);
-        expect(updated?.readingLogs![0]!.pagesRead).toBe(10);
+        // Spec 022: target = absolute, pagesRead = target - pagesBefore.
+        // No prior log today or earlier → pagesRead = 60.
+        expect(updated?.readingLogs![0]!.pagesRead).toBe(60);
         expect(updated?.readingLogs![0]!.currentPageAfter).toBe(60);
       });
     });
 
-    it("'+25 pages' saves currentPage + 25 and adds a positive reading log delta", async () => {
+    it("'+25 pages' saves the new currentPage and a positive pagesRead", async () => {
       const user = userEvent.setup();
       await seed([
         makeReadingBook({ id: "a", currentPage: 100, totalPages: 400 }),
@@ -363,7 +367,7 @@ describe("PageProgressQuickUpdate", () => {
           .books.find((b) => b.id === "a");
         expect(updated?.currentPage).toBe(125);
         expect(updated?.readingLogs).toHaveLength(1);
-        expect(updated?.readingLogs![0]!.pagesRead).toBe(25);
+        expect(updated?.readingLogs![0]!.pagesRead).toBe(125);
       });
     });
 
@@ -399,10 +403,12 @@ describe("PageProgressQuickUpdate", () => {
         const updated = useBookLibrary
           .getState()
           .books.find((b) => b.id === "a");
-        // 410 + 25 = 435, capped at totalPages = 420; delta = 10
+        // 410 + 25 = 435, capped at totalPages = 420.
         expect(updated?.currentPage).toBe(420);
         expect(updated?.readingLogs).toHaveLength(1);
-        expect(updated?.readingLogs![0]!.pagesRead).toBe(10);
+        // pagesRead = 420 (target) - 0 (pagesBefore today) = 420.
+        expect(updated?.readingLogs![0]!.pagesRead).toBe(420);
+        expect(updated?.readingLogs![0]!.currentPageAfter).toBe(420);
       });
     });
   });
@@ -447,7 +453,7 @@ describe("PageProgressQuickUpdate", () => {
     });
   });
 
-  describe("reading log creation (spec 016 FR-14–FR-17)", () => {
+  describe("reading log creation (spec 016 FR-14–FR-17 / spec 022 §3)", () => {
     it("creates a reading log with pagesRead = newCurrentPage when there was no previous currentPage", async () => {
       const user = userEvent.setup();
       await seed([makeReadingBook({ id: "a" })]);
@@ -472,9 +478,26 @@ describe("PageProgressQuickUpdate", () => {
       });
     });
 
-    it("creates a reading log with positive delta when currentPage increases", async () => {
+    it("sets pagesRead to the new target minus pages already logged before today", async () => {
+      // Earlier date has 30 pages logged. Target 80 today = 80 - 30 = 50
+      // pages on today's log entry, currentPageAfter 80.
       const user = userEvent.setup();
-      await seed([makeReadingBook({ id: "a", currentPage: 50 })]);
+      await seed([
+        makeReadingBook({
+          id: "a",
+          currentPage: 30,
+          readingLogs: [
+            {
+              id: "old",
+              date: "2026-06-01",
+              pagesRead: 30,
+              currentPageAfter: 30,
+              createdAt: "2026-06-01T10:00:00.000Z",
+              updatedAt: "2026-06-01T10:00:00.000Z",
+            },
+          ],
+        }),
+      ]);
       const book = useBookLibrary.getState().books[0];
       if (book === undefined) throw new Error("missing seeded book");
       render(<PageProgressQuickUpdate book={book} />);
@@ -487,52 +510,132 @@ describe("PageProgressQuickUpdate", () => {
         const updated = useBookLibrary
           .getState()
           .books.find((b) => b.id === "a");
-        expect(updated?.readingLogs).toHaveLength(1);
-        expect(updated?.readingLogs![0]!.pagesRead).toBe(30);
+        expect(updated?.currentPage).toBe(80);
+        const todayLog = updated?.readingLogs?.find(
+          (l) => l.date === new Date().toISOString().slice(0, 10)
+        );
+        expect(todayLog?.pagesRead).toBe(50);
+        expect(todayLog?.currentPageAfter).toBe(80);
       });
     });
 
-    it("does not add log pages when currentPage stays the same", async () => {
+    it("replaces today's pagesRead when the target is corrected lower (e.g. 30 -> 10 -> 30 totals 30 pages)", async () => {
+      // Start at 0, target 30, then correct to 10 (aggregate should
+      // become 10, NOT 30+10=40), then return to 30 (aggregate 30).
       const user = userEvent.setup();
-      await seed([makeReadingBook({ id: "a", currentPage: 50 })]);
+      await seed([makeReadingBook({ id: "a" })]);
+      const book = useBookLibrary.getState().books[0];
+      if (book === undefined) throw new Error("missing seeded book");
+      render(<PageProgressQuickUpdate book={book} />);
+      const input = screen.getByTestId("page-progress-page-input");
+
+      fireEvent.change(input, { target: { value: "30" } });
+      await user.click(screen.getByTestId("page-progress-save"));
+      await waitFor(() => {
+        const updated = useBookLibrary
+          .getState()
+          .books.find((b) => b.id === "a");
+        expect(updated?.currentPage).toBe(30);
+      });
+
+      fireEvent.change(input, { target: { value: "10" } });
+      await user.click(screen.getByTestId("page-progress-save"));
+      await waitFor(() => {
+        const updated = useBookLibrary
+          .getState()
+          .books.find((b) => b.id === "a");
+        expect(updated?.currentPage).toBe(10);
+        const todayLog = updated?.readingLogs?.find(
+          (l) => l.date === new Date().toISOString().slice(0, 10)
+        );
+        expect(todayLog?.pagesRead).toBe(10);
+      });
+
+      fireEvent.change(input, { target: { value: "30" } });
+      await user.click(screen.getByTestId("page-progress-save"));
+      await waitFor(() => {
+        const updated = useBookLibrary
+          .getState()
+          .books.find((b) => b.id === "a");
+        expect(updated?.currentPage).toBe(30);
+        const todayLog = updated?.readingLogs?.find(
+          (l) => l.date === new Date().toISOString().slice(0, 10)
+        );
+        expect(todayLog?.pagesRead).toBe(30);
+      });
+    });
+
+    it("removes today's log when the target is below pages already logged before today", async () => {
+      // 30 logged on 2026-06-01. Typing 10 today is below 30 → blocked.
+      const user = userEvent.setup();
+      await seed([
+        makeReadingBook({
+          id: "a",
+          currentPage: 30,
+          readingLogs: [
+            {
+              id: "old",
+              date: "2026-06-01",
+              pagesRead: 30,
+              currentPageAfter: 30,
+              createdAt: "2026-06-01T10:00:00.000Z",
+              updatedAt: "2026-06-01T10:00:00.000Z",
+            },
+          ],
+        }),
+      ]);
       const book = useBookLibrary.getState().books[0];
       if (book === undefined) throw new Error("missing seeded book");
       render(<PageProgressQuickUpdate book={book} />);
 
       const input = screen.getByTestId("page-progress-page-input");
-      fireEvent.change(input, { target: { value: "50" } });
+      fireEvent.change(input, { target: { value: "10" } });
+      await user.click(screen.getByTestId("page-progress-save"));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("page-progress-error")).toBeInTheDocument();
+      });
+    });
+
+    it("removes today's log when the target equals pages already logged before today", async () => {
+      const user = userEvent.setup();
+      await seed([
+        makeReadingBook({
+          id: "a",
+          currentPage: 30,
+          readingLogs: [
+            {
+              id: "old",
+              date: "2026-06-01",
+              pagesRead: 30,
+              currentPageAfter: 30,
+              createdAt: "2026-06-01T10:00:00.000Z",
+              updatedAt: "2026-06-01T10:00:00.000Z",
+            },
+          ],
+        }),
+      ]);
+      const book = useBookLibrary.getState().books[0];
+      if (book === undefined) throw new Error("missing seeded book");
+      render(<PageProgressQuickUpdate book={book} />);
+
+      const input = screen.getByTestId("page-progress-page-input");
+      fireEvent.change(input, { target: { value: "30" } });
       await user.click(screen.getByTestId("page-progress-save"));
 
       await waitFor(() => {
         const updated = useBookLibrary
           .getState()
           .books.find((b) => b.id === "a");
-        expect(updated?.currentPage).toBe(50);
-        expect(updated?.readingLogs).toBeUndefined();
+        expect(updated?.currentPage).toBe(30);
+        const todayLog = updated?.readingLogs?.find(
+          (l) => l.date === new Date().toISOString().slice(0, 10)
+        );
+        expect(todayLog).toBeUndefined();
       });
     });
 
-    it("does not add log pages when currentPage decreases", async () => {
-      const user = userEvent.setup();
-      await seed([makeReadingBook({ id: "a", currentPage: 100 })]);
-      const book = useBookLibrary.getState().books[0];
-      if (book === undefined) throw new Error("missing seeded book");
-      render(<PageProgressQuickUpdate book={book} />);
-
-      const input = screen.getByTestId("page-progress-page-input");
-      fireEvent.change(input, { target: { value: "70" } });
-      await user.click(screen.getByTestId("page-progress-save"));
-
-      await waitFor(() => {
-        const updated = useBookLibrary
-          .getState()
-          .books.find((b) => b.id === "a");
-        expect(updated?.currentPage).toBe(70);
-        expect(updated?.readingLogs).toBeUndefined();
-      });
-    });
-
-    it("does not create a reading log when currentPage is cleared", async () => {
+    it("clears currentPage and today's log when the input is emptied", async () => {
       const user = userEvent.setup();
       await seed([makeReadingBook({ id: "a", currentPage: 100 })]);
       const book = useBookLibrary.getState().books[0];
@@ -552,38 +655,27 @@ describe("PageProgressQuickUpdate", () => {
       });
     });
 
-    it("aggregates multiple saves on the same day into one log entry", async () => {
+    it("shows the completion prompt when target reaches total pages (FR-11)", async () => {
       const user = userEvent.setup();
-      await seed([makeReadingBook({ id: "a", currentPage: 10 })]);
+      await seed([
+        makeReadingBook({ id: "a", currentPage: 100, totalPages: 200 }),
+      ]);
       const book = useBookLibrary.getState().books[0];
       if (book === undefined) throw new Error("missing seeded book");
       render(<PageProgressQuickUpdate book={book} />);
 
-      // First save: 10 → 40 (+30)
       const input = screen.getByTestId("page-progress-page-input");
-      fireEvent.change(input, { target: { value: "40" } });
+      fireEvent.change(input, { target: { value: "200" } });
       await user.click(screen.getByTestId("page-progress-save"));
 
       await waitFor(() => {
-        const updated = useBookLibrary
-          .getState()
-          .books.find((b) => b.id === "a");
-        expect(updated?.readingLogs).toHaveLength(1);
-        expect(updated?.readingLogs![0]!.pagesRead).toBe(30);
+        expect(
+          screen.getByTestId("page-progress-completion")
+        ).toBeInTheDocument();
       });
-
-      // Second save: 40 → 100 (+60, aggregate = 90)
-      fireEvent.change(input, { target: { value: "100" } });
-      await user.click(screen.getByTestId("page-progress-save"));
-
-      await waitFor(() => {
-        const updated = useBookLibrary
-          .getState()
-          .books.find((b) => b.id === "a");
-        expect(updated?.readingLogs).toHaveLength(1);
-        expect(updated?.readingLogs![0]!.pagesRead).toBe(90);
-        expect(updated?.readingLogs![0]!.currentPageAfter).toBe(100);
-      });
+      expect(
+        screen.getByTestId("page-progress-mark-read")
+      ).toBeInTheDocument();
     });
   });
 });

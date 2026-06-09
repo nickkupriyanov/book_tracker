@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BookOpen, Check } from "lucide-react";
+import { ArrowRight, BookOpen, Check, Star, PencilLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { validateBookInput } from "@/lib/validation/book";
 import { useBookLibrary } from "@/state/book-library";
+import { applyTargetCurrentPage } from "@/lib/page-progress";
 import type { Book, ReadingLog } from "@/types/book";
 
 export interface PageProgressQuickUpdateProps {
@@ -32,12 +33,10 @@ function todayLocalDate(): string {
  * `currentPage` is missing. Spec 019 §5.2 / FR-4.
  */
 function calculatePercent(book: Book): number | null {
-  if (book.currentPage === undefined) return null;
+  const current = resolveCurrentPage(book);
+  if (current === null) return null;
   if (book.totalPages === undefined || book.totalPages === 0) return null;
-  return Math.min(
-    100,
-    Math.round((book.currentPage / book.totalPages) * 100)
-  );
+  return Math.min(100, Math.round((current / book.totalPages) * 100));
 }
 
 /**
@@ -47,7 +46,7 @@ function calculatePercent(book: Book): number | null {
  * (spec 019 FR-10, FR-11, FR-12).
  */
 function calculateQuickActionTarget(book: Book, delta: number): number {
-  const current = book.currentPage ?? 0;
+  const current = resolveCurrentPage(book) ?? 0;
   const next = current + delta;
   if (book.totalPages === undefined) return next;
   return Math.min(next, book.totalPages);
@@ -58,9 +57,10 @@ function calculateQuickActionTarget(book: Book, delta: number): number {
  * `totalPages` is missing. Never below `0` (spec 019 FR-5).
  */
 function calculatePagesLeft(book: Book): number | null {
-  if (book.currentPage === undefined) return null;
+  const current = resolveCurrentPage(book);
+  if (current === null) return null;
   if (book.totalPages === undefined) return null;
-  return Math.max(0, book.totalPages - book.currentPage);
+  return Math.max(0, book.totalPages - current);
 }
 
 /**
@@ -77,59 +77,27 @@ function calculateTodayPagesRead(book: Book): number {
 }
 
 /**
- * Builds the next `readingLogs` array after a positive page delta,
- * or returns `undefined` when no log update is needed.
- *
- * Rules (spec 016 §5.6):
- * - No previous currentPage → pagesRead = newCurrentPage.
- * - newCurrentPage > oldCurrentPage → pagesRead = positive delta.
- * - newCurrentPage <= oldCurrentPage → no log update.
- * - Clearing currentPage → no log update.
+ * Resolves the current page for display. Prefers the
+ * synchronised `Book.currentPage` when present and falls
+ * back to the sum of `readingLogs.pagesRead` so old records
+ * with stale snapshots still render accurate progress
+ * (spec 022 §7).
  */
-function buildNextReadingLogs(
-  book: Book,
-  nextCurrentPage: number | undefined,
-): ReadingLog[] | undefined {
-  if (nextCurrentPage === undefined) return undefined;
-
-  const oldCurrentPage = book.currentPage;
-  const delta =
-    oldCurrentPage !== undefined
-      ? nextCurrentPage - oldCurrentPage
-      : nextCurrentPage;
-
-  if (delta <= 0) return undefined;
-
-  const existingLogs = book.readingLogs ?? [];
-  const today = todayLocalDate();
-  const now = new Date().toISOString();
-  const existingIndex = existingLogs.findIndex((l) => l.date === today);
-
-  const newLog: ReadingLog = {
-    id:
-      existingIndex >= 0
-        ? existingLogs[existingIndex]!.id
-        : crypto.randomUUID(),
-    date: today,
-    pagesRead:
-      (existingIndex >= 0 ? existingLogs[existingIndex]!.pagesRead : 0) + delta,
-    currentPageAfter: nextCurrentPage,
-    createdAt:
-      existingIndex >= 0 ? existingLogs[existingIndex]!.createdAt : now,
-    updatedAt: now,
-  };
-
-  if (existingIndex >= 0) {
-    const next = [...existingLogs];
-    next[existingIndex] = newLog;
-    return next;
+function resolveCurrentPage(book: Book): number | null {
+  if (book.currentPage !== undefined) return book.currentPage;
+  if (!Array.isArray(book.readingLogs)) return null;
+  let total = 0;
+  let any = false;
+  for (const log of book.readingLogs) {
+    if (typeof log.pagesRead !== "number") continue;
+    total += log.pagesRead;
+    any = true;
   }
-
-  return [...existingLogs, newLog];
+  return any ? total : null;
 }
 
 /**
- * The focused home page progress block (spec 015 §5.1 → spec 016 §5.6). Lets the
+ * The focused home page progress block (spec 015 §5.1 → spec 016 §5.6 → spec 022 §5.1). Lets the
  * user type a current page for the active reading book and save —
  * without opening a book detail page. The parent owns active-book
  * selection through the compact reading lane.
@@ -143,9 +111,8 @@ function buildNextReadingLogs(
  *   is set; a non-blocking prompt to add `totalPages` when
  *   the selected book has none.
  * - When `currentPage === totalPages` it surfaces a soft
- *   **Mark as read** action that flips the status to `"read"`
- *   through the existing update path, preserving the saved
- *   page fields.
+ *   completion prompt with rating, review, and mark-as-read
+ *   next steps (spec 022 §5.1 / FR-11).
  * - On storage failure, the inline error appears and the
  *   user's typed value is kept so they can retry.
  *
@@ -156,6 +123,12 @@ function buildNextReadingLogs(
  */
 export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) {
   const updateBook = useBookLibrary((s) => s.updateBook);
+  // The component reads its own book from the store so the
+  // panel re-renders the moment a save lands (spec 022 §5.1
+  // / FR-13). The `book` prop is the initial seed; the
+  // store copy is the live, derived source of truth.
+  const liveBook =
+    useBookLibrary((s) => s.books.find((b) => b.id === book.id)) ?? book;
 
   const [pageDraft, setPageDraft] = useState<string>(
     book.currentPage?.toString() ?? ""
@@ -165,27 +138,37 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
   const [isSaving, setIsSaving] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
 
+  const today = todayLocalDate();
+
+  const currentPage = resolveCurrentPage(liveBook);
+
   useEffect(() => {
-    setPageDraft(book.currentPage?.toString() ?? "");
+    setPageDraft(liveBook.currentPage?.toString() ?? "");
     setError(null);
     setInfo(null);
-  }, [book.id, book.currentPage]);
+  }, [liveBook.id, liveBook.currentPage]);
 
   /**
-   * Persists a new `currentPage` value through the same
-   * validation + reading-log delta path used by the typed
-   * save. Used by both the typed form and the instant
-   * `+10` / `+25` quick actions so the rules (positive
+   * Persists a new `currentPage` value through the shared
+   * `applyTargetCurrentPage` helper so the rules (positive
    * deltas only, `currentPage <= totalPages`, log
-   * aggregation) stay consistent. Spec 019 FR-9, FR-13.
+   * aggregation, same-day corrections) stay consistent
+   * for the typed form and the instant `+10` / `+25` quick
+   * actions. Spec 022 §3 / FR-6..FR-10.
    */
   async function persistCurrentPage(
-    nextCurrentPage: number | undefined,
+    nextCurrentPage: number | undefined
   ): Promise<void> {
-    const nextReadingLogs = buildNextReadingLogs(book, nextCurrentPage);
+    const applied = applyTargetCurrentPage(liveBook, today, nextCurrentPage);
+    if (!applied.ok) {
+      setError(applied.message);
+      return;
+    }
+
+    const nextReadingLogs: ReadingLog[] | undefined = applied.readingLogs;
     const candidate = {
-      ...book,
-      currentPage: nextCurrentPage,
+      ...liveBook,
+      currentPage: applied.currentPage,
       ...(nextReadingLogs !== undefined ? { readingLogs: nextReadingLogs } : {}),
     };
     const result = validateBookInput(candidate);
@@ -197,7 +180,7 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
 
     setIsSaving(true);
     try {
-      await updateBook(book.id, result.value);
+      await updateBook(liveBook.id, result.value);
     } catch {
       // Spec 015 §5.3: storage failure keeps the user's
       // typed value visible and leaves the quick update
@@ -227,7 +210,7 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
   async function handleQuickAdd(delta: 10 | 25): Promise<void> {
     setError(null);
     setInfo(null);
-    await persistCurrentPage(calculateQuickActionTarget(book, delta));
+    await persistCurrentPage(calculateQuickActionTarget(liveBook, delta));
   }
 
   async function handleFinished(): Promise<void> {
@@ -242,15 +225,18 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
       // (spec 019 FR-17). Either way the saved book leaves the
       // reading list, so the parent re-derives the active book.
       const nextCurrentPage =
-        book.totalPages !== undefined ? book.totalPages : book.currentPage;
-      const nextReadingLogs = buildNextReadingLogs(book, nextCurrentPage);
+        liveBook.totalPages !== undefined ? liveBook.totalPages : currentPage ?? undefined;
+      const applied = applyTargetCurrentPage(liveBook, today, nextCurrentPage);
+      if (!applied.ok) {
+        setError(applied.message);
+        return;
+      }
+      const nextReadingLogs: ReadingLog[] | undefined = applied.readingLogs;
       const candidate = {
-        ...book,
-        status: "read",
-        currentPage: nextCurrentPage,
-        ...(nextReadingLogs !== undefined
-          ? { readingLogs: nextReadingLogs }
-          : {}),
+        ...liveBook,
+        status: "read" as const,
+        currentPage: applied.currentPage,
+        ...(nextReadingLogs !== undefined ? { readingLogs: nextReadingLogs } : {}),
       };
       const result = validateBookInput(candidate);
       if (!result.ok) {
@@ -258,7 +244,7 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
         setError(first ?? "Couldn't mark this book as read.");
         return;
       }
-      await updateBook(book.id, result.value);
+      await updateBook(liveBook.id, result.value);
     } catch {
       setError("Couldn't save. Your browser storage is full or disabled.");
     } finally {
@@ -268,21 +254,23 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
 
   const canSave = !isSaving;
 
-  const hasTotal = book.totalPages !== undefined;
+  const hasTotal = liveBook.totalPages !== undefined;
+  const reachedEnd =
+    hasTotal && currentPage !== null && currentPage >= liveBook.totalPages!;
 
-  const percent = useMemo(() => calculatePercent(book), [book]);
-  const pagesLeft = useMemo(() => calculatePagesLeft(book), [book]);
-  const todayPagesRead = useMemo(() => calculateTodayPagesRead(book), [book]);
+  const percent = useMemo(() => calculatePercent(liveBook), [liveBook]);
+  const pagesLeft = useMemo(() => calculatePagesLeft(liveBook), [liveBook]);
+  const todayPagesRead = useMemo(() => calculateTodayPagesRead(liveBook), [liveBook]);
 
   const progressText = useMemo<string | null>(() => {
-    if (book.currentPage !== undefined && book.totalPages !== undefined) {
-      return `${book.currentPage} / ${book.totalPages} pages`;
+    if (currentPage !== null && liveBook.totalPages !== undefined) {
+      return `${currentPage} / ${liveBook.totalPages} pages`;
     }
-    if (book.currentPage !== undefined) {
-      return `Page ${book.currentPage}`;
+    if (currentPage !== null) {
+      return `Page ${currentPage}`;
     }
     return null;
-  }, [book]);
+  }, [liveBook, currentPage]);
 
   return (
     <section
@@ -297,10 +285,10 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
 
       <div className="mb-5 flex gap-4">
         <div className="bg-muted/80 flex aspect-[2/3] w-20 shrink-0 items-center justify-center overflow-hidden rounded-md">
-          {book.coverUrl !== undefined ? (
+          {liveBook.coverUrl !== undefined ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={book.coverUrl}
+              src={liveBook.coverUrl}
               alt=""
               className="size-full object-cover"
             />
@@ -315,13 +303,13 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
                 data-testid="page-progress-title"
                 className="font-serif text-2xl text-foreground"
               >
-                {book.title}
+                {liveBook.title}
               </p>
               <p
                 data-testid="page-progress-author"
                 className="text-muted-foreground text-sm"
               >
-                {book.author}
+                {liveBook.author}
               </p>
             </div>
             <Button
@@ -330,7 +318,7 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
               size="sm"
               className="self-start sm:shrink-0"
             >
-              <Link href={`/book/${book.id}`}>
+              <Link href={`/book/${liveBook.id}`}>
                 Open book
                 <ArrowRight className="size-3.5" />
               </Link>
@@ -339,7 +327,7 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
         </div>
       </div>
 
-      {hasTotal && book.currentPage !== undefined ? (
+      {hasTotal && currentPage !== null ? (
         <div
           data-testid="page-progress-summary"
           className="mb-5 space-y-2"
@@ -406,13 +394,51 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
         >
           Add the total page count through{" "}
           <Link
-            href={`/book/${book.id}`}
+            href={`/book/${liveBook.id}`}
             className="text-foreground underline underline-offset-2 hover:no-underline"
           >
             the book&apos;s edit page
           </Link>{" "}
           to see progress here.
         </p>
+      )}
+
+      {reachedEnd && (
+        <div
+          data-testid="page-progress-completion"
+          className="bg-muted/40 border-border mb-5 rounded-md border px-4 py-3"
+        >
+          <p className="font-serif text-foreground text-base">
+            You reached the last page.
+          </p>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Take a moment to close the chapter.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Button asChild size="sm" variant="outline">
+              <Link href={`/book/${liveBook.id}#rate`}>
+                <Star className="size-3.5" />
+                Rate
+              </Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link href={`/book/${liveBook.id}#review`}>
+                <PencilLine className="size-3.5" />
+                Write review
+              </Link>
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => void handleFinished()}
+              disabled={isSaving || isFinishing}
+              data-testid="page-progress-mark-read"
+            >
+              <Check className="size-3.5" />
+              {isFinishing ? "Marking…" : "Mark as read"}
+            </Button>
+          </div>
+        </div>
       )}
 
       <form
@@ -469,17 +495,19 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
             >
               +25 pages
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => void handleFinished()}
-              disabled={isSaving || isFinishing}
-              data-testid="page-progress-finished"
-            >
-              <Check className="size-3.5" />
-              {isFinishing ? "Finishing…" : "Finished"}
-            </Button>
+            {!reachedEnd && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void handleFinished()}
+                disabled={isSaving || isFinishing}
+                data-testid="page-progress-finished"
+              >
+                <Check className="size-3.5" />
+                {isFinishing ? "Finishing…" : "Finished"}
+              </Button>
+            )}
           </div>
         </div>
 
