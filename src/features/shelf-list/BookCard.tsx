@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StatusPill } from "./StatusPill";
+import { deriveCurrentPageFromLogs } from "@/lib/page-progress";
 import type { Book } from "@/types/book";
 
 const MAX_VISIBLE_TAGS = 3;
@@ -47,11 +48,12 @@ export function BookCard({ book, onEdit, onDelete }: BookCardProps) {
   // Shown on every surface that renders the card. The bar
   // lives on the home quick-update block; the card stays
   // text-only to remain warm and book-centered.
+  const currentPage = deriveCurrentPageFromLogs(book);
   const progressText: string | null =
-    book.currentPage !== undefined && book.totalPages !== undefined
-      ? `${book.currentPage} / ${book.totalPages} pages`
-      : book.currentPage !== undefined
-        ? `Page ${book.currentPage}`
+    currentPage !== null && book.totalPages !== undefined
+      ? `${currentPage} / ${book.totalPages} pages`
+      : currentPage !== null
+        ? `Page ${currentPage}`
         : null;
 
   return (

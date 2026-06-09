@@ -195,7 +195,7 @@ describe("EditBookDialog", () => {
     });
   });
 
-  it("preserves readingLogs when editing other book fields", async () => {
+  it("preserves readingLogs and resyncs currentPageAfter when editing other book fields", async () => {
     __resetBookLibrary();
     localStorage.clear();
     await useBookLibrary.getState().init(new LocalStorageAdapter());
@@ -236,7 +236,16 @@ describe("EditBookDialog", () => {
         .getState()
         .books.find((b) => b.id === bookWithLogs.id);
       expect(book?.title).toBe("Logged Book Updated");
-      expect(book?.readingLogs).toEqual(bookWithLogs.readingLogs);
+      expect(book?.readingLogs).toEqual([
+        {
+          id: "log-1",
+          date: "2026-06-08",
+          pagesRead: 40,
+          currentPageAfter: 40,
+          createdAt: "2026-06-08T10:00:00.000Z",
+          updatedAt: "2026-06-08T10:00:00.000Z",
+        },
+      ]);
     });
   });
 

@@ -171,7 +171,7 @@ describe("validateBookInput — readingLogs (spec 016)", () => {
     if (result.ok) {
       expect(result.value.readingLogs).toHaveLength(1);
       expect(result.value.readingLogs![0]!.pagesRead).toBe(45);
-      expect(result.value.readingLogs![0]!.currentPageAfter).toBe(135);
+      expect(result.value.readingLogs![0]!.currentPageAfter).toBe(45);
       expect(result.value.readingLogs![0]!.updatedAt).toBe(
         "2026-06-07T12:00:00.000Z"
       );
@@ -334,6 +334,52 @@ describe("validateBookInput — readingLogs (spec 016)", () => {
     if (result.ok) {
       expect(result.value.readingLogs).toBeUndefined();
     }
+  });
+
+  it("resynchronizes currentPageAfter after merging duplicate log dates", () => {
+    const result = validateBookInput({
+      ...VALID_BOOK,
+      readingLogs: [
+        {
+          id: "a",
+          date: "2026-06-01",
+          pagesRead: 10,
+          currentPageAfter: 999,
+          createdAt: "2026-06-01T10:00:00.000Z",
+          updatedAt: "2026-06-01T10:00:00.000Z",
+        },
+        {
+          id: "b",
+          date: "2026-06-01",
+          pagesRead: 5,
+          currentPageAfter: 5,
+          createdAt: "2026-06-01T11:00:00.000Z",
+          updatedAt: "2026-06-01T11:00:00.000Z",
+        },
+        {
+          id: "c",
+          date: "2026-06-02",
+          pagesRead: 20,
+          currentPageAfter: 20,
+          createdAt: "2026-06-02T10:00:00.000Z",
+          updatedAt: "2026-06-02T10:00:00.000Z",
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.readingLogs).toHaveLength(2);
+    expect(result.value.readingLogs?.[0]).toMatchObject({
+      date: "2026-06-01",
+      pagesRead: 15,
+      currentPageAfter: 15,
+    });
+    expect(result.value.readingLogs?.[1]).toMatchObject({
+      date: "2026-06-02",
+      pagesRead: 20,
+      currentPageAfter: 35,
+    });
   });
 
   it("accepts legacy books without readingLogs", () => {

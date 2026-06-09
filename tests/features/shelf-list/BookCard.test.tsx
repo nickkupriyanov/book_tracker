@@ -13,6 +13,17 @@ const baseBook: Book = {
   createdAt: "2026-06-02T00:00:00.000Z",
 };
 
+function logFor(pagesRead: number) {
+  return {
+    id: `log-${pagesRead}`,
+    date: "2026-06-01",
+    pagesRead,
+    currentPageAfter: pagesRead,
+    createdAt: "2026-06-01T10:00:00.000Z",
+    updatedAt: "2026-06-01T10:00:00.000Z",
+  };
+}
+
 describe("BookCard", () => {
   describe("cover", () => {
     it("renders <img> when coverUrl is set", () => {
@@ -222,21 +233,37 @@ describe("BookCard", () => {
       ).not.toBeInTheDocument();
     });
 
-    it("renders 'Page N' when only currentPage is set", () => {
-      render(<BookCard book={{ ...baseBook, currentPage: 42 }} />);
+    it("renders 'Page N' from reading logs", () => {
+      render(<BookCard book={{ ...baseBook, readingLogs: [logFor(42)] }} />);
       expect(screen.getByTestId("book-card-progress")).toHaveTextContent(
         "Page 42"
       );
     });
 
-    it("renders 'N / M pages' when both currentPage and totalPages are set", () => {
+    it("renders 'N / M pages' from reading logs and totalPages", () => {
       render(
         <BookCard
-          book={{ ...baseBook, currentPage: 123, totalPages: 420 }}
+          book={{ ...baseBook, readingLogs: [logFor(123)], totalPages: 420 }}
         />
       );
       expect(screen.getByTestId("book-card-progress")).toHaveTextContent(
         "123 / 420 pages"
+      );
+    });
+
+    it("ignores stale currentPage when reading logs disagree", () => {
+      render(
+        <BookCard
+          book={{
+            ...baseBook,
+            currentPage: 999,
+            readingLogs: [logFor(42)],
+            totalPages: 420,
+          }}
+        />
+      );
+      expect(screen.getByTestId("book-card-progress")).toHaveTextContent(
+        "42 / 420 pages"
       );
     });
 

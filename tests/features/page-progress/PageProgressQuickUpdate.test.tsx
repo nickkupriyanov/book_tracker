@@ -6,7 +6,28 @@ import { LocalStorageAdapter } from "@/storage/local-storage-adapter";
 import { useBookLibrary, __resetBookLibrary } from "@/state/book-library";
 import type { Book } from "@/types/book";
 
+function todayLocalDate(): string {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
 function makeReadingBook(overrides: Partial<Book> = {}): Book {
+  const today = todayLocalDate();
+  const inferredLogs =
+    overrides.readingLogs === undefined && overrides.currentPage !== undefined
+      ? [
+          {
+            id: `${overrides.id ?? "book"}-initial-log`,
+            date: today,
+            pagesRead: overrides.currentPage,
+            currentPageAfter: overrides.currentPage,
+            createdAt: `${today}T10:00:00.000Z`,
+            updatedAt: `${today}T10:00:00.000Z`,
+          },
+        ]
+      : undefined;
   return {
     id: overrides.id ?? crypto.randomUUID(),
     title: overrides.title ?? "Piranesi",
@@ -22,6 +43,8 @@ function makeReadingBook(overrides: Partial<Book> = {}): Book {
       : {}),
     ...(overrides.readingLogs !== undefined
       ? { readingLogs: overrides.readingLogs }
+      : inferredLogs !== undefined
+        ? { readingLogs: inferredLogs }
       : {}),
   };
 }
@@ -75,6 +98,32 @@ describe("PageProgressQuickUpdate", () => {
   it("shows progress text 'N / M pages' when totalPages is set", async () => {
     await seed([
       makeReadingBook({ id: "a", currentPage: 100, totalPages: 420 }),
+    ]);
+    const book = useBookLibrary.getState().books[0];
+    if (book === undefined) throw new Error("missing seeded book");
+    render(<PageProgressQuickUpdate book={book} />);
+    expect(screen.getByTestId("page-progress-text")).toHaveTextContent(
+      "100 / 420 pages"
+    );
+  });
+
+  it("derives progress from logs instead of stale currentPage", async () => {
+    await seed([
+      makeReadingBook({
+        id: "a",
+        currentPage: 999,
+        totalPages: 420,
+        readingLogs: [
+          {
+            id: "log",
+            date: "2026-06-01",
+            pagesRead: 100,
+            currentPageAfter: 100,
+            createdAt: "2026-06-01T10:00:00.000Z",
+            updatedAt: "2026-06-01T10:00:00.000Z",
+          },
+        ],
+      }),
     ]);
     const book = useBookLibrary.getState().books[0];
     if (book === undefined) throw new Error("missing seeded book");
@@ -291,7 +340,21 @@ describe("PageProgressQuickUpdate", () => {
 
     it("hides the 'You read N pages today' line when no log exists for today", async () => {
       await seed([
-        makeReadingBook({ id: "a", currentPage: 50, totalPages: 200 }),
+        makeReadingBook({
+          id: "a",
+          currentPage: 50,
+          totalPages: 200,
+          readingLogs: [
+            {
+              id: "past",
+              date: "2026-06-01",
+              pagesRead: 50,
+              currentPageAfter: 50,
+              createdAt: "2026-06-01T10:00:00.000Z",
+              updatedAt: "2026-06-01T10:00:00.000Z",
+            },
+          ],
+        }),
       ]);
       const book = useBookLibrary.getState().books[0];
       if (book === undefined) throw new Error("missing seeded book");
@@ -344,8 +407,7 @@ describe("PageProgressQuickUpdate", () => {
           .books.find((b) => b.id === "a");
         expect(updated?.currentPage).toBe(60);
         expect(updated?.readingLogs).toHaveLength(1);
-        // Spec 022: target = absolute, pagesRead = target - pagesBefore.
-        // No prior log today or earlier → pagesRead = 60.
+        // Spec 022: target = absolute; same-day aggregate is updated.
         expect(updated?.readingLogs![0]!.pagesRead).toBe(60);
         expect(updated?.readingLogs![0]!.currentPageAfter).toBe(60);
       });
@@ -406,7 +468,6 @@ describe("PageProgressQuickUpdate", () => {
         // 410 + 25 = 435, capped at totalPages = 420.
         expect(updated?.currentPage).toBe(420);
         expect(updated?.readingLogs).toHaveLength(1);
-        // pagesRead = 420 (target) - 0 (pagesBefore today) = 420.
         expect(updated?.readingLogs![0]!.pagesRead).toBe(420);
         expect(updated?.readingLogs![0]!.currentPageAfter).toBe(420);
       });
@@ -644,6 +705,43 @@ describe("PageProgressQuickUpdate", () => {
 
       const input = screen.getByTestId("page-progress-page-input");
       fireEvent.change(input, { target: { value: "" } });
+      await user.click(screen.getByTestId("page-progress-save"));
+
+      await waitFor(() => {
+        const updated = useBookLibrary
+          .getState()
+          .books.find((b) => b.id === "a");
+        expect(updated?.currentPage).toBeUndefined();
+        expect(updated?.readingLogs).toBeUndefined();
+      });
+    });
+
+    it("removes readingLogs when clearing the only log", async () => {
+      const user = userEvent.setup();
+      const today = new Date().toISOString().slice(0, 10);
+      await seed([
+        makeReadingBook({
+          id: "a",
+          currentPage: 100,
+          readingLogs: [
+            {
+              id: "today",
+              date: today,
+              pagesRead: 100,
+              currentPageAfter: 100,
+              createdAt: `${today}T10:00:00.000Z`,
+              updatedAt: `${today}T10:00:00.000Z`,
+            },
+          ],
+        }),
+      ]);
+      const book = useBookLibrary.getState().books[0];
+      if (book === undefined) throw new Error("missing seeded book");
+      render(<PageProgressQuickUpdate book={book} />);
+
+      fireEvent.change(screen.getByTestId("page-progress-page-input"), {
+        target: { value: "" },
+      });
       await user.click(screen.getByTestId("page-progress-save"));
 
       await waitFor(() => {

@@ -8,7 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { validateBookInput } from "@/lib/validation/book";
 import { useBookLibrary } from "@/state/book-library";
-import { applyTargetCurrentPage } from "@/lib/page-progress";
+import {
+  applyTargetCurrentPage,
+  deriveCurrentPageFromLogs,
+} from "@/lib/page-progress";
 import type { Book, ReadingLog } from "@/types/book";
 
 export interface PageProgressQuickUpdateProps {
@@ -84,16 +87,7 @@ function calculateTodayPagesRead(book: Book): number {
  * (spec 022 §7).
  */
 function resolveCurrentPage(book: Book): number | null {
-  if (book.currentPage !== undefined) return book.currentPage;
-  if (!Array.isArray(book.readingLogs)) return null;
-  let total = 0;
-  let any = false;
-  for (const log of book.readingLogs) {
-    if (typeof log.pagesRead !== "number") continue;
-    total += log.pagesRead;
-    any = true;
-  }
-  return any ? total : null;
+  return deriveCurrentPageFromLogs(book);
 }
 
 /**
@@ -131,7 +125,7 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
     useBookLibrary((s) => s.books.find((b) => b.id === book.id)) ?? book;
 
   const [pageDraft, setPageDraft] = useState<string>(
-    book.currentPage?.toString() ?? ""
+    resolveCurrentPage(book)?.toString() ?? ""
   );
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -143,10 +137,10 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
   const currentPage = resolveCurrentPage(liveBook);
 
   useEffect(() => {
-    setPageDraft(liveBook.currentPage?.toString() ?? "");
+    setPageDraft(currentPage?.toString() ?? "");
     setError(null);
     setInfo(null);
-  }, [liveBook.id, liveBook.currentPage]);
+  }, [liveBook.id, currentPage]);
 
   /**
    * Persists a new `currentPage` value through the shared
@@ -169,7 +163,7 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
     const candidate = {
       ...liveBook,
       currentPage: applied.currentPage,
-      ...(nextReadingLogs !== undefined ? { readingLogs: nextReadingLogs } : {}),
+      readingLogs: nextReadingLogs,
     };
     const result = validateBookInput(candidate);
     if (!result.ok) {
@@ -236,7 +230,7 @@ export function PageProgressQuickUpdate({ book }: PageProgressQuickUpdateProps) 
         ...liveBook,
         status: "read" as const,
         currentPage: applied.currentPage,
-        ...(nextReadingLogs !== undefined ? { readingLogs: nextReadingLogs } : {}),
+        readingLogs: nextReadingLogs,
       };
       const result = validateBookInput(candidate);
       if (!result.ok) {

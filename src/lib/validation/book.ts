@@ -384,8 +384,18 @@ function validateReadingLogs(
     });
   }
 
-  // Sort chronologically by date.
+  // Sort chronologically by date and rebuild currentPageAfter
+  // from the running sum so duplicate merges cannot preserve a
+  // stale snapshot. Spec 022 treats this field as synchronized
+  // derived data, not an independent source of truth.
   merged.sort((a, b) => a.date.localeCompare(b.date));
+  let running = 0;
+  for (let i = 0; i < merged.length; i++) {
+    const log = merged[i];
+    if (log === undefined) continue;
+    running += log.pagesRead;
+    merged[i] = { ...log, currentPageAfter: running };
+  }
 
   return merged;
 }

@@ -175,16 +175,16 @@ The feature continues to persist whole-book updates through the existing
 
 ## 10. Acceptance criteria
 
-- [ ] The detail page no longer shows Reading days.
-- [ ] The detail page shows Page history for page logs.
-- [ ] Calendar activity is built only from page logs.
-- [ ] Statistics rhythm and logged-page facts are built only from page logs.
-- [ ] Home accepts current-page input and saves one aggregate log for today.
-- [ ] The correction sequence 30 -> 10 -> 30 totals 30 logged pages.
-- [ ] Reaching total pages shows rating, review, and mark-as-read actions.
-- [ ] Editing Page history recalculates progress and downstream displays.
-- [ ] `npm run lint` passes.
-- [ ] `npm run test` passes.
+- [x] The detail page no longer shows Reading days.
+- [x] The detail page shows Page history for page logs.
+- [x] Calendar activity is built only from page logs.
+- [x] Statistics rhythm and logged-page facts are built only from page logs.
+- [x] Home accepts current-page input and saves one aggregate log for today.
+- [x] The correction sequence 30 -> 10 -> 30 totals 30 logged pages.
+- [x] Reaching total pages shows rating, review, and mark-as-read actions.
+- [x] Editing Page history recalculates progress and downstream displays.
+- [x] `npm run lint` passes.
+- [x] `npm run test` passes.
 
 ## 11. Out of scope (for this spec)
 

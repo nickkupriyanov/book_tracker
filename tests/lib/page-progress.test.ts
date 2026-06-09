@@ -185,7 +185,7 @@ describe("applyTargetCurrentPage", () => {
       pagesRead: 30,
       currentPageAfter: 30,
     });
-    expect(result.currentPage).toBeUndefined();
+    expect(result.currentPage).toBe(30);
   });
 
   it("returns readingLogs = undefined when clearing the last entry", () => {

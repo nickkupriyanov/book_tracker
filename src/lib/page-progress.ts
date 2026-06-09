@@ -76,6 +76,27 @@ export function deriveCurrentPageFromLogs(book: Book): number | null {
 }
 
 /**
+ * Returns the derived current page for a next `readingLogs`
+ * array. Kept separate from {@link deriveCurrentPageFromLogs}
+ * for update paths that already computed the next logs and
+ * need to explicitly clear `Book.currentPage` when no logs
+ * remain.
+ */
+export function deriveCurrentPageFromReadingLogs(
+  readingLogs: ReadingLog[] | undefined
+): number | undefined {
+  if (readingLogs === undefined || readingLogs.length === 0) return undefined;
+  let total = 0;
+  let any = false;
+  for (const log of readingLogs) {
+    if (!isWellFormedLog(log)) continue;
+    total += log.pagesRead;
+    any = true;
+  }
+  return any ? total : undefined;
+}
+
+/**
  * Computes the pages already logged strictly before `targetDate`
  * for `book`. Used to figure out how many pages the user must
  * add on the target date so the total reaches the desired
@@ -136,10 +157,11 @@ export function applyTargetCurrentPage(
 
   if (targetCurrentPage === undefined) {
     const next = book.readingLogs?.filter((l) => l.date !== targetDate) ?? [];
+    const readingLogs = next.length > 0 ? sortAndSyncLogs(next) : undefined;
     return {
       ok: true,
-      currentPage: undefined,
-      readingLogs: next.length > 0 ? sortAndSyncLogs(next) : undefined,
+      currentPage: deriveCurrentPageFromReadingLogs(readingLogs),
+      readingLogs,
     };
   }
 

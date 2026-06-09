@@ -11,6 +11,7 @@ import { validateBookInput } from "@/lib/validation/book";
 import {
   applyPagesRead,
   deriveCurrentPageFromLogs,
+  deriveCurrentPageFromReadingLogs,
   removeReadingLogForDate,
   sortedReadingLogs,
 } from "@/lib/page-progress";
@@ -86,14 +87,8 @@ export function PageHistorySection({ book }: PageHistorySectionProps) {
   ): Promise<{ ok: true } | { ok: false; message: string }> {
     const candidate = {
       ...liveBook,
-      currentPage:
-        next === undefined
-          ? undefined
-          : deriveCurrentPageFromLogs({
-              ...liveBook,
-              readingLogs: next,
-            }) ?? undefined,
-      ...(next !== undefined ? { readingLogs: next } : {}),
+      currentPage: deriveCurrentPageFromReadingLogs(next),
+      readingLogs: next,
     };
     const result = validateBookInput(candidate);
     if (!result.ok) {

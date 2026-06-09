@@ -1,6 +1,7 @@
 "use client";
 
 import { BookOpen } from "lucide-react";
+import { deriveCurrentPageFromLogs } from "@/lib/page-progress";
 import { cn } from "@/lib/utils";
 import type { Book } from "@/types/book";
 
@@ -23,11 +24,12 @@ export function ReadingBookCard({
   active,
   onSelect,
 }: ReadingBookCardProps) {
+  const currentPage = deriveCurrentPageFromLogs(book);
   const progressText =
-    book.currentPage !== undefined && book.totalPages !== undefined
-      ? `${book.currentPage} / ${book.totalPages}`
-      : book.currentPage !== undefined
-        ? `Page ${book.currentPage}`
+    currentPage !== null && book.totalPages !== undefined
+      ? `${currentPage} / ${book.totalPages}`
+      : currentPage !== null
+        ? `Page ${currentPage}`
         : "No page yet";
 
   return (

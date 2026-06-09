@@ -197,6 +197,29 @@ describe("PageHistorySection (spec 022 §5.2)", () => {
     });
   });
 
+  it("removes readingLogs when deleting the only entry", async () => {
+    const user = userEvent.setup();
+    render(<PageHistorySection book={sampleBook} />);
+    fireEvent.change(screen.getByTestId("page-history-date-input"), {
+      target: { value: "2026-05-01" },
+    });
+    fireEvent.change(screen.getByTestId("page-history-pages-input"), {
+      target: { value: "20" },
+    });
+    await user.click(screen.getByTestId("page-history-add-button"));
+    await waitFor(() =>
+      expect(useBookLibrary.getState().books[0]?.readingLogs).toHaveLength(1)
+    );
+
+    await user.click(screen.getByTestId("page-history-remove-button"));
+
+    await waitFor(() => {
+      const stored = useBookLibrary.getState().books[0];
+      expect(stored?.currentPage).toBeUndefined();
+      expect(stored?.readingLogs).toBeUndefined();
+    });
+  });
+
   it("rejects non-integer pages read with an inline error", async () => {
     render(<PageHistorySection book={sampleBook} />);
     fireEvent.change(screen.getByTestId("page-history-date-input"), {
