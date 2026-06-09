@@ -1,36 +1,84 @@
-"""Pytest fixtures shared by the test suite."""
+"""Database fixtures for the backend test suite.
+
+Tests run against a real PostgreSQL test database. We use a per-test
+transactional rollback fixture so each test starts with a clean
+schema, and we only create the schema once per session.
+"""
 
 from __future__ import annotations
 
 import os
+from collections.abc import Generator
 
 import pytest
+from sqlalchemy import create_engine, text
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session, sessionmaker
+
+from app.core.config import reset_settings_cache
+from app.db import session as db_session
+from app.db.base import Base
 
 
-@pytest.fixture(autouse=True)
-def _clear_settings_cache() -> None:
-    """Reset the settings cache around every test.
+def _resolve_test_url() -> str:
+    url = os.environ.get("TEST_DATABASE_URL")
+    if url:
+        return url
+    return "postgresql+psycopg://book:book@127.0.0.1:5432/book_test"
 
-    Tests that override environment variables should mutate `os.environ`
-    inside the test; the cache is cleared here so each test reads the
-    current environment.
+
+@pytest.fixture(scope="session")
+def engine() -> Generator[Engine, None, None]:
+    """Session-scoped engine for the test database.
+
+    We create the schema once per session and drop it at the end.
     """
 
-    from app.core.config import reset_settings_cache
+    reset_settings_cache()
+    test_url = _resolve_test_url()
+    eng = create_engine(test_url, future=True, pool_pre_ping=True)
 
-    reset_settings_cache()
-    yield
-    reset_settings_cache()
+    # Ensure schema is clean.
+    Base.metadata.drop_all(bind=eng)
+    Base.metadata.create_all(bind=eng)
+    try:
+        yield eng
+    finally:
+        Base.metadata.drop_all(bind=eng)
+        eng.dispose()
 
 
 @pytest.fixture
-def app_env() -> str:
-    """Default to a development environment for tests that need one."""
+def db(engine: Engine) -> Generator[Session, None, None]:
+    """Per-test session wrapped in a transaction that rolls back.
 
-    previous = os.environ.get("APP_ENV")
-    os.environ["APP_ENV"] = "test"
-    yield "test"
-    if previous is None:
-        os.environ.pop("APP_ENV", None)
-    else:
-        os.environ["APP_ENV"] = previous
+    The application code is pointed at this session via `set_engine`
+    so unit-of-work boundaries match production behavior.
+    """
+
+    connection = engine.connect()
+    transaction = connection.begin()
+    SessionLocal = sessionmaker(
+        bind=connection,
+        autoflush=False,
+        autocommit=False,
+        expire_on_commit=False,
+        future=True,
+    )
+    session = SessionLocal()
+
+    # Inject this session into the app via a connection-bound engine.
+    bind_engine = create_engine(
+        "postgresql+psycopg://",
+        creator=lambda: connection,
+        future=True,
+    )
+    db_session.set_engine(bind_engine)
+
+    try:
+        yield session
+    finally:
+        session.close()
+        transaction.rollback()
+        connection.close()
+        db_session.reset_engine_cache()
