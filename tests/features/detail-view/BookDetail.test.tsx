@@ -295,29 +295,29 @@ describe("BookDetail", () => {
     });
   });
 
-  describe("reading days section (spec 013)", () => {
-    it("renders the Reading days section below the Quotes section", () => {
+  describe("page history section (spec 022)", () => {
+    it("renders the Page history section below the Quotes section", () => {
       render(<BookDetail bookId={sampleBook.id} />);
       const quotes = screen.getByRole("heading", {
         level: 2,
         name: "Quotes",
       });
-      const readingDays = screen.getByRole("heading", {
+      const history = screen.getByRole("heading", {
         level: 2,
-        name: "Reading days",
+        name: "Page history",
       });
       expect(quotes).toBeInTheDocument();
-      expect(readingDays).toBeInTheDocument();
+      expect(history).toBeInTheDocument();
       expect(
-        quotes.compareDocumentPosition(readingDays) &
+        quotes.compareDocumentPosition(history) &
           Node.DOCUMENT_POSITION_FOLLOWING
       ).toBeTruthy();
     });
 
-    it("renders the empty state when the book has no reading days", () => {
+    it("renders the empty state when the book has no page logs", () => {
       render(<BookDetail bookId={sampleBook.id} />);
-      expect(screen.getByTestId("reading-days-empty")).toHaveTextContent(
-        /no reading days logged yet/i
+      expect(screen.getByTestId("page-history-empty")).toHaveTextContent(
+        /no page logs yet/i
       );
     });
   });
