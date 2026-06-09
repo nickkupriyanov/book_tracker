@@ -1,8 +1,8 @@
 """FastAPI application factory.
 
-The factory wires CORS, the `/health` endpoint, and a placeholder for the
-authenticated routers that land in later tasks. Database engine creation
-is deferred — `/health` must work without a running PostgreSQL instance.
+The factory wires CORS, the `/health` endpoint, and the authenticated
+routers. Database engine creation is lazy — `/health` must work
+without a running PostgreSQL instance.
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ def _resolve_cors_origins(origins: Iterable[str]) -> list[str]:
 
 
 def create_app(*, cors_allow_origins: Iterable[str] | None = None) -> FastAPI:
-    """Build a FastAPI app with CORS and the health endpoint wired in.
+    """Build a FastAPI app with CORS and the routers wired in.
 
     Args:
         cors_allow_origins: explicit origin allowlist. When `None`, the
@@ -57,6 +57,10 @@ def create_app(*, cors_allow_origins: Iterable[str] | None = None) -> FastAPI:
     @app.get("/health", response_model=HealthResponse)
     def health() -> dict[str, Any]:
         return HealthResponse(status="ok", app_env=settings.app_env).model_dump()
+
+    from app.api.routes import auth as auth_routes
+
+    app.include_router(auth_routes.router)
 
     return app
 

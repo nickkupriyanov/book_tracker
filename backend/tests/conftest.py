@@ -1,8 +1,9 @@
 """Database fixtures for the backend test suite.
 
-Tests run against a real PostgreSQL test database. We use a per-test
-transactional rollback fixture so each test starts with a clean
-schema, and we only create the schema once per session.
+Tests run against a real PostgreSQL test database. The session-scoped
+`engine` fixture creates the schema once per session. The `db`
+fixture truncates the tables between tests so each test starts clean
+and is fully isolated.
 """
 
 from __future__ import annotations
@@ -29,16 +30,12 @@ def _resolve_test_url() -> str:
 
 @pytest.fixture(scope="session")
 def engine() -> Generator[Engine, None, None]:
-    """Session-scoped engine for the test database.
-
-    We create the schema once per session and drop it at the end.
-    """
+    """Session-scoped engine for the test database."""
 
     reset_settings_cache()
     test_url = _resolve_test_url()
     eng = create_engine(test_url, future=True, pool_pre_ping=True)
 
-    # Ensure schema is clean.
     Base.metadata.drop_all(bind=eng)
     Base.metadata.create_all(bind=eng)
     try:
@@ -50,35 +47,33 @@ def engine() -> Generator[Engine, None, None]:
 
 @pytest.fixture
 def db(engine: Engine) -> Generator[Session, None, None]:
-    """Per-test session wrapped in a transaction that rolls back.
+    """Per-test session with truncated tables.
 
-    The application code is pointed at this session via `set_engine`
-    so unit-of-work boundaries match production behavior.
+    We point the application's session factory at the test engine for
+    the duration of the test, then reset the cache so subsequent tests
+    can reconfigure.
     """
 
-    connection = engine.connect()
-    transaction = connection.begin()
+    # Clear any pre-existing rows so tests are isolated.
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "TRUNCATE TABLE books, annual_reading_challenges, "
+                "users RESTART IDENTITY CASCADE"
+            )
+        )
+
+    db_session.set_engine(engine)
     SessionLocal = sessionmaker(
-        bind=connection,
+        bind=engine,
         autoflush=False,
         autocommit=False,
         expire_on_commit=False,
         future=True,
     )
     session = SessionLocal()
-
-    # Inject this session into the app via a connection-bound engine.
-    bind_engine = create_engine(
-        "postgresql+psycopg://",
-        creator=lambda: connection,
-        future=True,
-    )
-    db_session.set_engine(bind_engine)
-
     try:
         yield session
     finally:
         session.close()
-        transaction.rollback()
-        connection.close()
         db_session.reset_engine_cache()
