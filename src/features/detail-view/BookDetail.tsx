@@ -19,7 +19,7 @@ import { DetailHeader } from "./DetailHeader";
 import { DetailMeta } from "./DetailMeta";
 import { DetailNotFound } from "./DetailNotFound";
 import { DetailLoading } from "./DetailLoading";
-import { ReadingDaysSection } from "./ReadingDaysSection";
+import { PageHistorySection } from "./PageHistorySection";
 import type { Book } from "@/types/book";
 import type { Quote, QuoteInput } from "@/types/quote";
 
@@ -182,7 +182,7 @@ export function BookDetail({ bookId }: BookDetailProps) {
             onEdit={handleEditQuote}
             onDelete={handleDeleteQuote}
           />
-          <ReadingDaysSection book={book} />
+          <PageHistorySection book={book} />
         </div>
       </PageContainer>
       <EditBookDialog
