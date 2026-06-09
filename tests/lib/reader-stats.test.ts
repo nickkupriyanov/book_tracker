@@ -43,7 +43,6 @@ describe("buildReaderStats — empty / sparse", () => {
     expect(stats.rhythm.activeDays).toBe(0);
     expect(stats.rhythm.loggedPages).toBe(0);
     expect(stats.rhythm.bestDay).toBeNull();
-    expect(stats.rhythm.hasLegacyDaysOnly).toBe(false);
     expect(stats.shelf).toEqual({ want: 0, reading: 0, read: 0, total: 0 });
   });
 
@@ -288,18 +287,6 @@ describe("buildReaderStats — reading rhythm", () => {
     expect(stats.rhythm.streakDays).toBe(3);
   });
 
-  it("combines readingLogs and legacy readingDays for the streak (FR-7)", () => {
-    const books = [
-      makeBook({
-        id: "a",
-        readingDays: ["2026-06-13", "2026-06-14"],
-        readingLogs: [makeLog({ id: "a1", date: "2026-06-15" })],
-      }),
-    ];
-    const stats = buildReaderStats(books, { now: NOW });
-    expect(stats.rhythm.streakDays).toBe(3);
-  });
-
   it("uses readingLogs.pagesRead for the best day (FR-8)", () => {
     const books = [
       makeBook({
@@ -339,30 +326,20 @@ describe("buildReaderStats — reading rhythm", () => {
     });
   });
 
-  it("flags hasLegacyDaysOnly when only legacy readingDays exist (FR-9)", () => {
+  it("ignores malformed readingLogs entries when building the streak", () => {
     const books = [
       makeBook({
         id: "a",
-        readingDays: ["2026-06-14", "2026-06-15"],
+        readingLogs: [
+          makeLog({ id: "a1", date: "garbage" }),
+          makeLog({ id: "a2", date: "2026-02-30" }),
+          makeLog({ id: "a3", date: "2026-06-15" }),
+        ],
       }),
     ];
     const stats = buildReaderStats(books, { now: NOW });
-    expect(stats.rhythm.hasLegacyDaysOnly).toBe(true);
-    expect(stats.rhythm.bestDay).toBeNull();
-    expect(stats.rhythm.loggedPages).toBe(0);
-    expect(stats.rhythm.streakDays).toBe(2);
-  });
-
-  it("does not flag hasLegacyDaysOnly when any readingLogs.pagesRead is positive", () => {
-    const books = [
-      makeBook({
-        id: "a",
-        readingDays: ["2026-06-15"],
-        readingLogs: [makeLog({ id: "a1", date: "2026-06-15", pagesRead: 5 })],
-      }),
-    ];
-    const stats = buildReaderStats(books, { now: NOW });
-    expect(stats.rhythm.hasLegacyDaysOnly).toBe(false);
+    expect(stats.rhythm.streakDays).toBe(1);
+    expect(stats.rhythm.activeDays).toBe(1);
   });
 });
 
@@ -403,15 +380,4 @@ describe("buildReaderStats — defensive parsing", () => {
     expect(stats.rhythm.bestDay?.pagesRead).toBe(10);
   });
 
-  it("ignores malformed legacy readingDays entries", () => {
-    const books = [
-      makeBook({
-        id: "a",
-        readingDays: ["2026-06-15", "garbage", "2026/06/14"],
-      }),
-    ];
-    const stats = buildReaderStats(books, { now: NOW });
-    expect(stats.rhythm.streakDays).toBe(1);
-    expect(stats.rhythm.activeDays).toBe(1);
-  });
 });

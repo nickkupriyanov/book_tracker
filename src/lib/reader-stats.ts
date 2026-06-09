@@ -78,12 +78,6 @@ export interface ReaderStatsRhythm {
    * when no `readingLogs` exist (FR-8).
    */
   bestDay: BestDay | null;
-  /**
-   * `true` when the reader has logged legacy `readingDays` but
-   * no `readingLogs.pagesRead` values. The page replaces
-   * page-based facts with gentle empty copy in that case (FR-9).
-   */
-  hasLegacyDaysOnly: boolean;
 }
 
 export interface BestDay {
@@ -114,9 +108,9 @@ const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * Builds the whole-library Reader Portrait display model. Pure:
- * no React, no storage, no DOM. Uses both `readingLogs` and
- * legacy `readingDays` for the streak and active-day set
- * (FR-7, FR-9). Tag and rating tie-breakers are deterministic
+ * no React, no storage, no DOM. After spec 022 only
+ * `readingLogs` contribute to activity, streak, and rhythm
+ * facts. Tag and rating tie-breakers are deterministic
  * (FR-5, FR-6).
  */
 export function buildReaderStats(
@@ -206,14 +200,12 @@ function buildRhythm(books: Book[], now: Date): ReaderStatsRhythm {
   const loggedPages = sumLoggedPages(books);
   const bestDay = pickBestDay(books);
   const streakDays = computeStreak(dates, now);
-  const hasLegacyDaysOnly = hasLegacyDays(books) && !hasAnyPageLog(books);
 
   return {
     streakDays,
     activeDays: dates.size,
     loggedPages,
     bestDay,
-    hasLegacyDaysOnly,
   };
 }
 
@@ -319,44 +311,14 @@ function pickBestDay(books: Book[]): BestDay | null {
   return { date: bestDate, pagesRead: bestPages };
 }
 
-function hasLegacyDays(books: Book[]): boolean {
-  for (const book of books) {
-    if (!Array.isArray(book.readingDays)) continue;
-    for (const raw of book.readingDays) {
-      if (isLocalDateString(raw)) return true;
-    }
-  }
-  return false;
-}
-
-function hasAnyPageLog(books: Book[]): boolean {
+function collectReadingDates(books: Book[]): Set<string> {
+  const dates = new Set<string>();
   for (const book of books) {
     if (!Array.isArray(book.readingLogs)) continue;
     for (const log of book.readingLogs) {
       if (!isReadingLog(log)) continue;
-      if (typeof log.pagesRead !== "number") continue;
-      if (!Number.isFinite(log.pagesRead)) continue;
-      if (log.pagesRead > 0) return true;
-    }
-  }
-  return false;
-}
-
-function collectReadingDates(books: Book[]): Set<string> {
-  const dates = new Set<string>();
-  for (const book of books) {
-    if (Array.isArray(book.readingLogs)) {
-      for (const log of book.readingLogs) {
-        if (!isReadingLog(log)) continue;
-        if (!isLocalDateString(log.date)) continue;
-        dates.add(log.date);
-      }
-    }
-    if (Array.isArray(book.readingDays)) {
-      for (const raw of book.readingDays) {
-        if (!isLocalDateString(raw)) continue;
-        dates.add(raw);
-      }
+      if (!isLocalDateString(log.date)) continue;
+      dates.add(log.date);
     }
   }
   return dates;

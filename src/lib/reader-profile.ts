@@ -88,26 +88,19 @@ function sumLoggedPages(books: Book[]): number {
 
 /**
  * Returns the unique set of local `YYYY-MM-DD` dates on which
- * the reader has any logged activity. Combines `readingLogs`
- * (spec 016) and legacy `readingDays` (spec 013) so older
- * records still feed the streak (spec 017 FR-7).
+ * the reader has any logged activity. After spec 022 only
+ * `readingLogs` (spec 016) feed the streak — legacy
+ * `readingDays` were removed from the domain.
  */
 function collectReadingDates(books: Book[]): Set<string> {
   const dates = new Set<string>();
 
   for (const book of books) {
-    if (Array.isArray(book.readingLogs)) {
-      for (const log of book.readingLogs) {
-        if (!isReadingLog(log)) continue;
-        if (!isLocalDateString(log.date)) continue;
-        dates.add(log.date);
-      }
-    }
-    if (Array.isArray(book.readingDays)) {
-      for (const raw of book.readingDays) {
-        if (!isLocalDateString(raw)) continue;
-        dates.add(raw);
-      }
+    if (!Array.isArray(book.readingLogs)) continue;
+    for (const log of book.readingLogs) {
+      if (!isReadingLog(log)) continue;
+      if (!isLocalDateString(log.date)) continue;
+      dates.add(log.date);
     }
   }
 

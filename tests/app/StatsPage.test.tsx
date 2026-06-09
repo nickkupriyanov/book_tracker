@@ -207,26 +207,6 @@ describe("StatsClient — sparse ready state (FR-11)", () => {
     expect(screen.getByTestId("stats-shelf-bar")).toBeInTheDocument();
   });
 
-  it("replaces page-based facts with legacy-day prompts when only readingDays exist", async () => {
-    await useBookLibrary.getState().init(new LocalStorageAdapter());
-    await useBookLibrary.getState().addBook({
-      title: "Legacy",
-      author: "A",
-      status: "reading",
-      tags: ["essay"],
-      readingDays: ["2026-06-14", "2026-06-15"],
-    });
-
-    render(<StatsClient />);
-    const rhythm = screen.getByTestId("stats-rhythm");
-    expect(
-      within(rhythm).getByTestId("stats-rhythm-pages")
-    ).toHaveTextContent(/page count appears here/i);
-    expect(
-      within(rhythm).getByTestId("stats-rhythm-best-day")
-    ).toHaveTextContent(/page totals are hidden/i);
-  });
-
   it("keeps the favorite-tag list visible when tags exist", async () => {
     await useBookLibrary.getState().init(new LocalStorageAdapter());
     await useBookLibrary.getState().addBook({

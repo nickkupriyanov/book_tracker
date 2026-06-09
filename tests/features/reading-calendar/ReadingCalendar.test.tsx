@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { ReadingCalendar } from "@/features/reading-calendar/ReadingCalendar";
 import { LocalStorageAdapter } from "@/storage/local-storage-adapter";
 import { useBookLibrary, __resetBookLibrary } from "@/state/book-library";
-import type { Book } from "@/types/book";
+import type { Book, ReadingLog } from "@/types/book";
 
 function makeBook(overrides: Partial<Book> = {}): Book {
   return {
@@ -14,6 +14,18 @@ function makeBook(overrides: Partial<Book> = {}): Book {
     status: "reading",
     tags: [],
     createdAt: "2026-06-01T00:00:00.000Z",
+    ...overrides,
+  };
+}
+
+function makeLog(overrides: Partial<ReadingLog> = {}): ReadingLog {
+  return {
+    id: overrides.id ?? "log-1",
+    date: overrides.date ?? "2026-06-10",
+    pagesRead: overrides.pagesRead ?? 20,
+    currentPageAfter: overrides.currentPageAfter ?? 20,
+    createdAt: overrides.createdAt ?? "2026-06-10T10:00:00.000Z",
+    updatedAt: overrides.updatedAt ?? "2026-06-10T10:00:00.000Z",
     ...overrides,
   };
 }
@@ -61,7 +73,18 @@ describe("ReadingCalendar (spec 013)", () => {
   });
 
   it("renders the grid (and no empty note) when at least one day is logged", () => {
-    const book = makeBook({ readingDays: ["2026-06-10"] });
+    const book = makeBook({
+      readingLogs: [
+        {
+          id: "log-1",
+          date: "2026-06-10",
+          pagesRead: 20,
+          currentPageAfter: 20,
+          createdAt: "2026-06-10T10:00:00.000Z",
+          updatedAt: "2026-06-10T10:00:00.000Z",
+        },
+      ],
+    });
     // We don't care which month this resolves to for the test —
     // we just want the calendar to render its logged state. The
     // spec covers both shapes elsewhere.
@@ -106,7 +129,7 @@ describe("ReadingCalendar (spec 013)", () => {
 
   it("renders a one-color day for a single book", () => {
     const book = makeBook({
-      readingDays: ["2026-06-10"],
+      readingLogs: [makeLog({ id: "a", date: "2026-06-10" })],
       coverColor: "#aa0000",
     });
     render(<ReadingCalendar books={[book]} />);
@@ -126,13 +149,13 @@ describe("ReadingCalendar (spec 013)", () => {
     const a = makeBook({
       id: "a",
       title: "Alpha",
-      readingDays: ["2026-06-10"],
+      readingLogs: [makeLog({ id: "a", date: "2026-06-10", pagesRead: 5 })],
       coverColor: "#aa0000",
     });
     const b = makeBook({
       id: "b",
       title: "Beta",
-      readingDays: ["2026-06-10"],
+      readingLogs: [makeLog({ id: "b", date: "2026-06-10", pagesRead: 30 })],
       coverColor: "#00aa00",
     });
     render(<ReadingCalendar books={[a, b]} />);
@@ -150,25 +173,25 @@ describe("ReadingCalendar (spec 013)", () => {
     const a = makeBook({
       id: "a",
       title: "Alpha",
-      readingDays: ["2026-06-10"],
+      readingLogs: [makeLog({ id: "a", date: "2026-06-10", pagesRead: 5 })],
       coverColor: "#aa0000",
     });
     const b = makeBook({
       id: "b",
       title: "Beta",
-      readingDays: ["2026-06-10"],
+      readingLogs: [makeLog({ id: "b", date: "2026-06-10", pagesRead: 30 })],
       coverColor: "#00aa00",
     });
     const c = makeBook({
       id: "c",
       title: "Gamma",
-      readingDays: ["2026-06-10"],
+      readingLogs: [makeLog({ id: "c", date: "2026-06-10", pagesRead: 20 })],
       coverColor: "#0000aa",
     });
     const d = makeBook({
       id: "d",
       title: "Delta",
-      readingDays: ["2026-06-10"],
+      readingLogs: [makeLog({ id: "d", date: "2026-06-10", pagesRead: 10 })],
       coverColor: "#aaaa00",
     });
     render(<ReadingCalendar books={[a, b, c, d]} />);
@@ -188,13 +211,13 @@ describe("ReadingCalendar (spec 013)", () => {
     const inMonth = makeBook({
       id: "in",
       title: "In June",
-      readingDays: ["2026-06-10"],
+      readingLogs: [makeLog({ id: "in", date: "2026-06-10" })],
       coverColor: "#aa0000",
     });
     const outOfMonth = makeBook({
       id: "out",
       title: "In July",
-      readingDays: ["2026-07-10"],
+      readingLogs: [makeLog({ id: "out", date: "2026-07-10" })],
       coverColor: "#00aa00",
     });
     render(<ReadingCalendar books={[inMonth, outOfMonth]} />);
@@ -206,7 +229,7 @@ describe("ReadingCalendar (spec 013)", () => {
 
   it("omits the legend when navigating to a month with no logged days", async () => {
     const book = makeBook({
-      readingDays: ["2026-06-10"],
+      readingLogs: [makeLog({ id: "a", date: "2026-06-10" })],
       coverColor: "#aa0000",
     });
     const user = userEvent.setup();
@@ -223,7 +246,9 @@ describe("ReadingCalendar (spec 013)", () => {
   it("does not store, mutate, or persist the visible month on navigation", async () => {
     // Seed localStorage with a known books payload so the test
     // can detect accidental writes / mutations.
-    const book = makeBook({ readingDays: ["2026-06-10"] });
+    const book = makeBook({
+      readingLogs: [makeLog({ id: "a", date: "2026-06-10" })],
+    });
     localStorage.setItem("book-tracker:books", JSON.stringify([book]));
     const user = userEvent.setup();
     render(<ReadingCalendar books={[book]} />);

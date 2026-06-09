@@ -213,29 +213,6 @@ describe("buildReaderProfile — streak", () => {
     expect(profile.streakDays).toBe(2);
   });
 
-  it("includes legacy readingDays in the streak set", () => {
-    const books = [
-      makeBook({
-        id: "a",
-        readingDays: ["2026-06-13", "2026-06-14"],
-        readingLogs: [makeLog({ id: "a1", date: "2026-06-15" })],
-      }),
-    ];
-    const profile = buildReaderProfile(books, { now: new Date(2026, 5, 15) });
-    expect(profile.streakDays).toBe(3);
-  });
-
-  it("handles a single legacy readingDays-only book with no logs", () => {
-    const books = [
-      makeBook({
-        id: "a",
-        readingDays: ["2026-06-14", "2026-06-15"],
-      }),
-    ];
-    const profile = buildReaderProfile(books, { now: new Date(2026, 5, 15) });
-    expect(profile.streakDays).toBe(2);
-  });
-
   it("crosses month boundaries", () => {
     const books = [
       makeBook({
@@ -281,17 +258,6 @@ describe("buildReaderProfile — defensive parsing", () => {
     const profile = buildReaderProfile(books, { now: new Date(2026, 5, 15) });
     expect(profile.streakDays).toBe(1);
     expect(profile.totalPages).toBe(15);
-  });
-
-  it("ignores malformed legacy readingDays entries", () => {
-    const books = [
-      makeBook({
-        id: "a",
-        readingDays: ["2026-06-15", "garbage", "2026/06/14"],
-      }),
-    ];
-    const profile = buildReaderProfile(books, { now: new Date(2026, 5, 15) });
-    expect(profile.streakDays).toBe(1);
   });
 
   it("returns a calm zero-activity profile for an empty library", () => {

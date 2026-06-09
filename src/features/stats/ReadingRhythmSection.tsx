@@ -10,10 +10,9 @@ export interface ReadingRhythmSectionProps {
 /**
  * The reading-rhythm section of the Reader Portrait. Covers
  * the current streak, the number of active days, the total
- * logged pages, and the best day. When only legacy
- * `readingDays` exist (no `readingLogs.pagesRead`), the
- * page-based facts are replaced with gentle empty copy
- * (FR-7, FR-8, FR-9).
+ * logged pages, and the best day. All values come from
+ * `readingLogs` after spec 022 — legacy `readingDays` no
+ * longer feed any rhythm fact (FR-7, FR-8).
  */
 export function ReadingRhythmSection({ rhythm }: ReadingRhythmSectionProps) {
   return (
@@ -47,22 +46,14 @@ export function ReadingRhythmSection({ rhythm }: ReadingRhythmSectionProps) {
           testId="stats-rhythm-pages"
           primary={String(rhythm.loggedPages)}
           empty={rhythm.loggedPages === 0}
-          emptyHint={
-            rhythm.hasLegacyDaysOnly
-              ? "Log a few pages and the page count appears here."
-              : "Log pages as you read to see this fill in."
-          }
+          emptyHint="Log pages as you read to see this fill in."
         />
         <RhythmFact
           label="Best day"
           testId="stats-rhythm-best-day"
           primary={bestDayLabel(rhythm)}
           empty={rhythm.bestDay === null}
-          emptyHint={
-            rhythm.hasLegacyDaysOnly
-              ? "Page totals are hidden until you log reading sessions."
-              : "Your most-read day will land here."
-          }
+          emptyHint="Your most-read day will land here."
           wide
         />
       </dl>

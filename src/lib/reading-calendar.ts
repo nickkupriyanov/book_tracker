@@ -19,7 +19,7 @@ export interface ReadingCalendarBookRef {
   id: string;
   title: string;
   color: string;
-  /** Pages read on this day (from readingLogs). Undefined for legacy readingDays. */
+  /** Pages read on this day, always present after spec 022. */
   pagesRead?: number;
 }
 
@@ -140,9 +140,10 @@ function formatLabel(year: number, month: number): string {
 
 /**
  * Builds the display model for the visible month. Pure: no DOM,
- * no React. Reads both `readingLogs` (spec 016) and legacy
- * `readingDays` (spec 013). Logs take priority for ordering;
- * legacy days fall back to title/id sort.
+ * no React. Reads only `readingLogs` (spec 016) — page logs
+ * are the only source of reading activity after spec 022. The
+ * legacy `readingDays` field was removed from the domain
+ * (spec 022 §7); old records simply contribute nothing.
  */
 export function buildReadingCalendarMonth(
   books: Book[],
@@ -150,18 +151,12 @@ export function buildReadingCalendarMonth(
 ): ReadingCalendarMonthModel {
   const monthPrefix = `${month.year}-${String(month.month + 1).padStart(2, "0")}`;
   const byDate = new Map<string, ReadingCalendarBookRef[]>();
-  // Track which (date, bookId) pairs already have a log entry,
-  // so legacy readingDays don't override them.
-  const loggedPairs = new Set<string>();
 
-  // First pass: readingLogs (spec 016 FR-14–FR-18).
   for (const book of books) {
     if (!Array.isArray(book.readingLogs)) continue;
     for (const log of book.readingLogs) {
       if (typeof log.date !== "string") continue;
       if (!log.date.startsWith(monthPrefix)) continue;
-      const key = `${log.date}::${book.id}`;
-      loggedPairs.add(key);
       const list = byDate.get(log.date) ?? [];
       list.push({
         id: book.id,
@@ -170,20 +165,6 @@ export function buildReadingCalendarMonth(
         pagesRead: log.pagesRead,
       });
       byDate.set(log.date, list);
-    }
-  }
-
-  // Second pass: legacy readingDays (only where no log exists).
-  for (const book of books) {
-    if (!Array.isArray(book.readingDays)) continue;
-    for (const raw of book.readingDays) {
-      if (typeof raw !== "string") continue;
-      if (!raw.startsWith(monthPrefix)) continue;
-      const key = `${raw}::${book.id}`;
-      if (loggedPairs.has(key)) continue;
-      const list = byDate.get(raw) ?? [];
-      list.push({ id: book.id, title: book.title, color: colorForBook(book) });
-      byDate.set(raw, list);
     }
   }
 
@@ -265,8 +246,9 @@ export function buildReadingCalendarMonth(
 /**
  * Composes the accessible label for a single day cell. Always
  * includes the full book title list — even when {@link ReadingCalendarDayModel.visibleColors}
- * is truncated to three. When a book has `pagesRead`, includes
- * the count in the label (spec 016 FR-19).
+ * is truncated to three. After spec 022 every entry comes
+ * from `readingLogs`, so each book carries a `pagesRead`
+ * count that we include in the label (spec 016 FR-19).
  */
 function buildDayLabel(
   date: string,
@@ -276,11 +258,7 @@ function buildDayLabel(
     return `${date} — No reading logged`;
   }
   const titles = books
-    .map((b) =>
-      b.pagesRead !== undefined
-        ? `${b.title} (${b.pagesRead} pages)`
-        : b.title
-    )
+    .map((b) => `${b.title} (${b.pagesRead ?? 0} pages)`)
     .join(", ");
   return `${date} — ${titles}`;
 }

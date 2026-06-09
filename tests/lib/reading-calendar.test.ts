@@ -5,7 +5,7 @@ import {
   buildReadingCalendarMonth,
 } from "@/lib/reading-calendar";
 import { READING_CALENDAR_FALLBACK_COLOR } from "@/lib/cover-color";
-import type { Book } from "@/types/book";
+import type { Book, ReadingLog } from "@/types/book";
 
 function makeBook(overrides: Partial<Book> = {}): Book {
   return {
@@ -15,6 +15,18 @@ function makeBook(overrides: Partial<Book> = {}): Book {
     status: "reading",
     tags: [],
     createdAt: "2026-06-01T00:00:00.000Z",
+    ...overrides,
+  };
+}
+
+function makeLog(overrides: Partial<ReadingLog> = {}): ReadingLog {
+  return {
+    id: overrides.id ?? "log-1",
+    date: overrides.date ?? "2026-06-10",
+    pagesRead: overrides.pagesRead ?? 20,
+    currentPageAfter: overrides.currentPageAfter ?? 20,
+    createdAt: overrides.createdAt ?? "2026-06-10T10:00:00.000Z",
+    updatedAt: overrides.updatedAt ?? "2026-06-10T10:00:00.000Z",
     ...overrides,
   };
 }
@@ -142,20 +154,30 @@ describe("buildReadingCalendarMonth", () => {
     });
 
     it("is false when no books are logged in the visible month", () => {
-      const book = makeBook({ readingDays: ["2026-07-01"] });
+      const book = makeBook({
+        readingLogs: [makeLog({ id: "a", date: "2026-07-01" })],
+      });
       const result = buildReadingCalendarMonth([book], { year: 2026, month: 5 });
       expect(result.hasLoggedDays).toBe(false);
     });
 
     it("is true when a book is logged in the visible month", () => {
-      const book = makeBook({ readingDays: ["2026-06-10"] });
+      const book = makeBook({
+        readingLogs: [makeLog({ id: "a", date: "2026-06-10" })],
+      });
       const result = buildReadingCalendarMonth([book], { year: 2026, month: 5 });
       expect(result.hasLoggedDays).toBe(true);
     });
 
     it("is true when at least one of several books is logged in the month", () => {
-      const a = makeBook({ id: "a", readingDays: ["2026-07-01"] });
-      const b = makeBook({ id: "b", readingDays: ["2026-06-05"] });
+      const a = makeBook({
+        id: "a",
+        readingLogs: [makeLog({ id: "a", date: "2026-07-01" })],
+      });
+      const b = makeBook({
+        id: "b",
+        readingLogs: [makeLog({ id: "b", date: "2026-06-05" })],
+      });
       const result = buildReadingCalendarMonth([a, b], {
         year: 2026,
         month: 5,
@@ -165,9 +187,17 @@ describe("buildReadingCalendarMonth", () => {
   });
 
   describe("day books and colors", () => {
-    it("attaches a book to the day matching its readingDay", () => {
+    function logOn(
+      id: string,
+      date: string,
+      pagesRead = 20
+    ): ReadingLog {
+      return makeLog({ id, date, pagesRead });
+    }
+
+    it("attaches a book to the day matching its log date", () => {
       const book = makeBook({
-        readingDays: ["2026-06-10"],
+        readingLogs: [logOn("a", "2026-06-10")],
         coverColor: "#b85b45",
       });
       const result = buildReadingCalendarMonth([book], { year: 2026, month: 5 });
@@ -178,14 +208,14 @@ describe("buildReadingCalendarMonth", () => {
     });
 
     it("leaves untouched days with an empty books array", () => {
-      const book = makeBook({ readingDays: ["2026-06-10"] });
+      const book = makeBook({ readingLogs: [logOn("a", "2026-06-10")] });
       const result = buildReadingCalendarMonth([book], { year: 2026, month: 5 });
       const day = result.days.find((d) => d.date === "2026-06-09");
       expect(day?.books).toEqual([]);
     });
 
     it("uses the fallback color when the book has no coverColor", () => {
-      const book = makeBook({ readingDays: ["2026-06-10"] });
+      const book = makeBook({ readingLogs: [logOn("a", "2026-06-10")] });
       const result = buildReadingCalendarMonth([book], { year: 2026, month: 5 });
       const day = result.days.find((d) => d.date === "2026-06-10");
       expect(day?.books[0]?.color).toBe(READING_CALENDAR_FALLBACK_COLOR);
@@ -193,7 +223,7 @@ describe("buildReadingCalendarMonth", () => {
 
     it("visibleColors has one entry for a single-book day", () => {
       const book = makeBook({
-        readingDays: ["2026-06-10"],
+        readingLogs: [logOn("a", "2026-06-10")],
         coverColor: "#b85b45",
       });
       const result = buildReadingCalendarMonth([book], { year: 2026, month: 5 });
@@ -205,19 +235,19 @@ describe("buildReadingCalendarMonth", () => {
       const a = makeBook({
         id: "a",
         title: "A",
-        readingDays: ["2026-06-10"],
+        readingLogs: [logOn("a", "2026-06-10", 5)],
         coverColor: "#aa0000",
       });
       const b = makeBook({
         id: "b",
         title: "B",
-        readingDays: ["2026-06-10"],
+        readingLogs: [logOn("b", "2026-06-10", 30)],
         coverColor: "#00aa00",
       });
       const c = makeBook({
         id: "c",
         title: "C",
-        readingDays: ["2026-06-10"],
+        readingLogs: [logOn("c", "2026-06-10", 15)],
         coverColor: "#0000aa",
       });
       const result = buildReadingCalendarMonth([a, b, c], {
@@ -225,7 +255,8 @@ describe("buildReadingCalendarMonth", () => {
         month: 5,
       });
       const day = result.days.find((d) => d.date === "2026-06-10");
-      expect(day?.visibleColors).toEqual(["#aa0000", "#00aa00", "#0000aa"]);
+      // Sorted by pagesRead desc: B (30), C (15), A (5).
+      expect(day?.visibleColors).toEqual(["#00aa00", "#0000aa", "#aa0000"]);
       expect(day?.books).toHaveLength(3);
     });
 
@@ -233,25 +264,25 @@ describe("buildReadingCalendarMonth", () => {
       const a = makeBook({
         id: "a",
         title: "A",
-        readingDays: ["2026-06-10"],
+        readingLogs: [logOn("a", "2026-06-10", 5)],
         coverColor: "#aa0000",
       });
       const b = makeBook({
         id: "b",
         title: "B",
-        readingDays: ["2026-06-10"],
+        readingLogs: [logOn("b", "2026-06-10", 30)],
         coverColor: "#00aa00",
       });
       const c = makeBook({
         id: "c",
         title: "C",
-        readingDays: ["2026-06-10"],
+        readingLogs: [logOn("c", "2026-06-10", 20)],
         coverColor: "#0000aa",
       });
       const d = makeBook({
         id: "d",
         title: "D",
-        readingDays: ["2026-06-10"],
+        readingLogs: [logOn("d", "2026-06-10", 10)],
         coverColor: "#aaaa00",
       });
       const result = buildReadingCalendarMonth([a, b, c, d], {
@@ -263,17 +294,17 @@ describe("buildReadingCalendarMonth", () => {
       expect(day?.books).toHaveLength(4);
     });
 
-    it("sorts day books by title, then id", () => {
+    it("breaks title ties by id when pages are equal", () => {
       const z = makeBook({
         id: "z",
         title: "Zebra",
-        readingDays: ["2026-06-10"],
+        readingLogs: [logOn("z", "2026-06-10", 10)],
         coverColor: "#aa0000",
       });
       const a = makeBook({
         id: "a",
         title: "Apple",
-        readingDays: ["2026-06-10"],
+        readingLogs: [logOn("a", "2026-06-10", 10)],
         coverColor: "#00aa00",
       });
       const result = buildReadingCalendarMonth([z, a], {
@@ -284,17 +315,17 @@ describe("buildReadingCalendarMonth", () => {
       expect(day?.books.map((b) => b.id)).toEqual(["a", "z"]);
     });
 
-    it("breaks title ties with id", () => {
+    it("breaks title-and-pages ties with id", () => {
       const late = makeBook({
         id: "z-2",
         title: "Same",
-        readingDays: ["2026-06-10"],
+        readingLogs: [logOn("z-2", "2026-06-10", 10)],
         coverColor: "#aa0000",
       });
       const early = makeBook({
         id: "a-1",
         title: "Same",
-        readingDays: ["2026-06-10"],
+        readingLogs: [logOn("a-1", "2026-06-10", 10)],
         coverColor: "#00aa00",
       });
       const result = buildReadingCalendarMonth([late, early], {
@@ -317,7 +348,7 @@ describe("buildReadingCalendarMonth", () => {
 
     it("includes the date and the book title in the label for a single-book day", () => {
       const book = makeBook({
-        readingDays: ["2026-06-10"],
+        readingLogs: [makeLog({ id: "a", date: "2026-06-10", pagesRead: 20 })],
         coverColor: "#b85b45",
       });
       const result = buildReadingCalendarMonth([book], { year: 2026, month: 5 });
@@ -330,25 +361,25 @@ describe("buildReadingCalendarMonth", () => {
       const a = makeBook({
         id: "a",
         title: "Alpha",
-        readingDays: ["2026-06-10"],
+        readingLogs: [makeLog({ id: "a", date: "2026-06-10", pagesRead: 5 })],
         coverColor: "#aa0000",
       });
       const b = makeBook({
         id: "b",
         title: "Beta",
-        readingDays: ["2026-06-10"],
+        readingLogs: [makeLog({ id: "b", date: "2026-06-10", pagesRead: 30 })],
         coverColor: "#00aa00",
       });
       const c = makeBook({
         id: "c",
         title: "Gamma",
-        readingDays: ["2026-06-10"],
+        readingLogs: [makeLog({ id: "c", date: "2026-06-10", pagesRead: 20 })],
         coverColor: "#0000aa",
       });
       const d = makeBook({
         id: "d",
         title: "Delta",
-        readingDays: ["2026-06-10"],
+        readingLogs: [makeLog({ id: "d", date: "2026-06-10", pagesRead: 10 })],
         coverColor: "#aaaa00",
       });
       const result = buildReadingCalendarMonth([a, b, c, d], {
@@ -369,17 +400,17 @@ describe("buildReadingCalendarMonth", () => {
       expect(result.legend).toEqual([]);
     });
 
-    it("omits books that have no reading days in the visible month", () => {
+    it("omits books that have no reading logs in the visible month", () => {
       const a = makeBook({
         id: "a",
         title: "In Month",
-        readingDays: ["2026-06-10"],
+        readingLogs: [makeLog({ id: "a", date: "2026-06-10" })],
         coverColor: "#b85b45",
       });
       const b = makeBook({
         id: "b",
         title: "Other Month",
-        readingDays: ["2026-07-10"],
+        readingLogs: [makeLog({ id: "b", date: "2026-07-10" })],
         coverColor: "#0000aa",
       });
       const result = buildReadingCalendarMonth([a, b], {
@@ -394,7 +425,11 @@ describe("buildReadingCalendarMonth", () => {
       const a = makeBook({
         id: "a",
         title: "Repeat",
-        readingDays: ["2026-06-10", "2026-06-11", "2026-06-12"],
+        readingLogs: [
+          makeLog({ id: "a1", date: "2026-06-10" }),
+          makeLog({ id: "a2", date: "2026-06-11" }),
+          makeLog({ id: "a3", date: "2026-06-12" }),
+        ],
         coverColor: "#b85b45",
       });
       const result = buildReadingCalendarMonth([a], { year: 2026, month: 5 });
@@ -405,25 +440,25 @@ describe("buildReadingCalendarMonth", () => {
       const early = makeBook({
         id: "e",
         title: "Early",
-        readingDays: ["2026-06-05"],
+        readingLogs: [makeLog({ id: "e", date: "2026-06-05" })],
         coverColor: "#aa0000",
       });
       const lateTitle = makeBook({
         id: "l",
         title: "Late",
-        readingDays: ["2026-06-20"],
+        readingLogs: [makeLog({ id: "l", date: "2026-06-20" })],
         coverColor: "#00aa00",
       });
       const sameDay1 = makeBook({
         id: "s-a",
         title: "Same",
-        readingDays: ["2026-06-10"],
+        readingLogs: [makeLog({ id: "s-a", date: "2026-06-10" })],
         coverColor: "#0000aa",
       });
       const sameDay2 = makeBook({
         id: "s-z",
         title: "Same",
-        readingDays: ["2026-06-10"],
+        readingLogs: [makeLog({ id: "s-z", date: "2026-06-10" })],
         coverColor: "#aaaa00",
       });
       const result = buildReadingCalendarMonth(
@@ -442,13 +477,13 @@ describe("buildReadingCalendarMonth", () => {
       const withColorBook = makeBook({
         id: "with",
         title: "With color",
-        readingDays: ["2026-06-10"],
+        readingLogs: [makeLog({ id: "with", date: "2026-06-10" })],
         coverColor: "#b85b45",
       });
       const withoutColorBook = makeBook({
         id: "without",
         title: "Without color",
-        readingDays: ["2026-06-15"],
+        readingLogs: [makeLog({ id: "without", date: "2026-06-15" })],
       });
       const result = buildReadingCalendarMonth(
         [withColorBook, withoutColorBook],
@@ -461,7 +496,7 @@ describe("buildReadingCalendarMonth", () => {
     });
   });
 
-  describe("readingLogs (spec 016)", () => {
+  describe("readingLogs (spec 016 / spec 022)", () => {
     it("attaches a book to the day matching its readingLog date", () => {
       const book = makeBook({
         readingLogs: [
@@ -620,37 +655,6 @@ describe("buildReadingCalendarMonth", () => {
       expect(day?.ariaLabel).toContain("Piranesi (30 pages)");
     });
 
-    it("logs take priority over legacy readingDays for the same book and date", () => {
-      const book = makeBook({
-        id: "a",
-        title: "Both",
-        readingLogs: [
-          {
-            id: "log-1",
-            date: "2026-06-10",
-            pagesRead: 30,
-            currentPageAfter: 120,
-            createdAt: "2026-06-07T10:00:00.000Z",
-            updatedAt: "2026-06-07T10:00:00.000Z",
-          },
-        ],
-        readingDays: ["2026-06-10", "2026-06-11"],
-        coverColor: "#b85b45",
-      });
-      const result = buildReadingCalendarMonth([book], {
-        year: 2026,
-        month: 5,
-      });
-      // June 10: only one ref (from log), with pagesRead.
-      const day10 = result.days.find((d) => d.date === "2026-06-10");
-      expect(day10?.books).toHaveLength(1);
-      expect(day10?.books[0]?.pagesRead).toBe(30);
-      // June 11: only readingDays, no log → legacy fallback.
-      const day11 = result.days.find((d) => d.date === "2026-06-11");
-      expect(day11?.books).toHaveLength(1);
-      expect(day11?.books[0]?.pagesRead).toBeUndefined();
-    });
-
     it("hasLoggedDays is true when readingLogs exist in the visible month", () => {
       const book = makeBook({
         readingLogs: [
@@ -680,8 +684,10 @@ describe("buildReadingCalendarMonth", () => {
       expect(result.days[30]?.date).toBe("2026-12-31");
     });
 
-    it("picks up a reading day that crosses a year boundary cleanly", () => {
-      const book = makeBook({ readingDays: ["2025-12-31"] });
+    it("picks up a reading log that crosses a year boundary cleanly", () => {
+      const book = makeBook({
+        readingLogs: [makeLog({ id: "a", date: "2025-12-31" })],
+      });
       const result = buildReadingCalendarMonth([book], {
         year: 2025,
         month: 11,
