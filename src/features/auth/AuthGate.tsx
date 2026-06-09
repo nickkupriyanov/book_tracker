@@ -1,9 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 
 import { LoginForm } from "./LoginForm";
 import type { StorageMode } from "@/storage/storage-mode";
+
+export interface AuthRenderHelpers {
+  /**
+   * Tell the gate to clear the in-memory token and return to the
+   * login screen. The HTTP subtree calls this when the backend
+   * rejects the token (typically 401).
+   */
+  onUnauthenticated: () => void;
+}
 
 export interface AuthGateProps {
   /**
@@ -17,10 +26,12 @@ export interface AuthGateProps {
    */
   apiBaseUrl: string | null;
   /**
-   * Render the protected tree with the current access token. The
-   * gate only ever invokes this callback after a successful login.
+   * Render the protected tree. The token is `null` before login and
+   * the JWT string after a successful login. The helpers object
+   * exposes `onUnauthenticated` so the HTTP subtree can return the
+   * user to login on a 401 (spec 023 §9).
    */
-  children: (token: string) => ReactNode;
+  children: (token: string | null, helpers: AuthRenderHelpers) => ReactNode;
   /**
    * Optional fetch override passed through to `LoginForm`. Intended
    * for tests.
@@ -36,26 +47,25 @@ export interface AuthGateProps {
  * The gate owns auth UI and the in-memory access token. It does not
  * call the book store directly — `RootClient` is the consumer that
  * turns the token into a `StorageAdapter` and initializes the
- * library (spec 023 §3.2).
+ * library (spec 023 §3.2). The gate clears the token on demand so
+ * an expired or rejected token returns the user to the login screen
+ * (spec 023 §9).
  */
 export function AuthGate({ mode, apiBaseUrl, children, fetchImpl }: AuthGateProps) {
   const [token, setToken] = useState<string | null>(null);
-
-  // On mount, the in-memory token is empty by design (spec 023 §6
-  // FR-21). A page reload returns the user to the login screen.
-  useEffect(() => {
-    setToken(null);
-  }, []);
 
   const handleLogin = useCallback(async (accessToken: string) => {
     setToken(accessToken);
   }, []);
 
+  const handleUnauthenticated = useCallback(() => {
+    setToken(null);
+  }, []);
+
+  const helpers: AuthRenderHelpers = { onUnauthenticated: handleUnauthenticated };
+
   if (mode === "local") {
-    // Local mode has no auth. We pass a placeholder token because
-    // LocalStorageAdapter doesn't need one. RootClient still receives
-    // the call so its signature stays uniform.
-    return <>{children("local")}</>;
+    return <>{children("local", helpers)}</>;
   }
 
   if (!apiBaseUrl) {
@@ -71,7 +81,7 @@ export function AuthGate({ mode, apiBaseUrl, children, fetchImpl }: AuthGateProp
   }
 
   if (token) {
-    return <>{children(token)}</>;
+    return <>{children(token, helpers)}</>;
   }
 
   return (

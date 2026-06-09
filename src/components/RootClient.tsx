@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
 import { AuthGate } from "@/features/auth/AuthGate";
+import { HttpLibrary } from "@/components/HttpLibrary";
 import {
   type StorageMode,
   createStorageAdapter,
@@ -23,18 +24,14 @@ interface RootClientProps {
  *   `useBookLibrary.init(adapter)` on mount.
  * - HTTP mode: hands the children to `AuthGate`. The gate renders
  *   the login surface until the user authenticates, then calls the
- *   render prop with the in-memory access token. `RootClient` uses
- *   the token to build an `HttpStorageAdapter` and only then calls
- *   `init`. The token is never persisted.
- *
- * The init is guarded with a ref so re-handoffs of the same token
- * do not reinitialise the store. The store's own `init` is also
- * idempotent (first successful call wins).
+ *   render prop with the in-memory access token. `HttpLibrary`
+ *   receives the token and initialises the store from a `useEffect`
+ *   so the side effect runs only after commit. The token is never
+ *   persisted.
  */
 export function RootClient({ children }: RootClientProps) {
   const mode: StorageMode = resolveStorageMode();
   const apiBaseUrl = mode === "http" ? requireHttpApiBaseUrl(mode) : null;
-  const initialisedTokenRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (mode !== "local") {
@@ -54,34 +51,19 @@ export function RootClient({ children }: RootClientProps) {
 
   return (
     <AuthGate mode={mode} apiBaseUrl={apiBaseUrl}>
-      {(token) => {
-        // The token is the in-memory signal. We re-init only on the
-        // first non-null token for a given token value, so a
-        // re-render of `AuthGate` that re-hands the same token does
-        // not reinitialise the store.
-        if (initialisedTokenRef.current !== token) {
-          initialisedTokenRef.current = token;
-          // Schedule init after the render commits so we don't
-          // trigger a setState during render.
-          queueMicrotask(() => {
-            useBookLibrary
-              .getState()
-              .init(
-                createStorageAdapter({
-                  mode: "http",
-                  apiBaseUrl,
-                  getToken: () => token,
-                }),
-              )
-              .catch((err: unknown) => {
-                console.error(
-                  "[RootClient] Failed to init library over HTTP",
-                  err,
-                );
-              });
-          });
+      {(token, { onUnauthenticated }) => {
+        if (!token) {
+          return <>{children}</>;
         }
-        return <>{children}</>;
+        return (
+          <HttpLibrary
+            apiBaseUrl={apiBaseUrl as string}
+            token={token}
+            onUnauthenticated={onUnauthenticated}
+          >
+            {children}
+          </HttpLibrary>
+        );
       }}
     </AuthGate>
   );

@@ -120,6 +120,47 @@ describe("AuthGate", () => {
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.queryByTestId("token")).not.toBeInTheDocument();
   });
+
+  it("returns to the login form when the children call onUnauthenticated", async () => {
+    const fetchImpl = makeFetch({
+      access_token: "jwt-1",
+      token_type: "bearer",
+      expires_in: 60,
+    });
+    render(
+      <AuthGate
+        mode="http"
+        apiBaseUrl="http://api"
+        fetchImpl={fetchImpl}
+      >
+        {(token, { onUnauthenticated }) => (
+          <div>
+            <span data-testid="token">{token ?? "logged-out"}</span>
+            <button type="button" onClick={onUnauthenticated}>
+              force logout
+            </button>
+          </div>
+        )}
+      </AuthGate>,
+    );
+    fireEvent.input(screen.getByLabelText(/email/i), {
+      target: { value: "x@y" },
+    });
+    fireEvent.input(screen.getByLabelText(/password/i), {
+      target: { value: "pw" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
+    await waitFor(() =>
+      expect(screen.getByTestId("token")).toHaveTextContent("jwt-1"),
+    );
+
+    // Trigger the unauthenticated path.
+    fireEvent.click(screen.getByRole("button", { name: /force logout/i }));
+    await waitFor(() =>
+      expect(screen.getByLabelText(/email/i)).toBeInTheDocument(),
+    );
+    expect(screen.queryByTestId("token")).not.toBeInTheDocument();
+  });
 });
 
 describe("LoginForm tokens never persist", () => {

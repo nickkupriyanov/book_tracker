@@ -39,6 +39,18 @@ export interface BookLibraryState {
    */
   challengeError: string | null;
   /**
+   * The last error raised by `init`, an add/update/delete, or a
+   * save challenge. `null` when the last operation succeeded or
+   * none has run yet. Used by the HTTP-mode `HttpLibrary` to detect
+   * 401s and return to the login screen (spec 023 §9).
+   *
+   * `unknown` here on purpose: the store does not narrow the type
+   * of the underlying failure (the adapter layer owns that). The
+   * HTTP library checks for `HttpStorageError(401)` at the call
+   * site.
+   */
+  lastError: unknown;
+  /**
    * Initialize the store with an adapter. Loads existing books
    * and the current-year challenge, then primes the adapter
    * reference for future {@link addBook} / {@link saveChallenge}
@@ -106,6 +118,7 @@ export function __resetBookLibrary(): void {
     challenge: null,
     isSavingChallenge: false,
     challengeError: null,
+    lastError: null,
   });
 }
 
@@ -115,17 +128,19 @@ export const useBookLibrary = create<BookLibraryState>((set) => ({
   challenge: null,
   isSavingChallenge: false,
   challengeError: null,
+  lastError: null,
   init: async (next) => {
     if (adapter !== null) return;
+    set({ lastError: null });
     try {
       const books = sortByCreatedAtDesc(await next.listBooks());
       const challenge = await next.getAnnualReadingChallenge(
         currentLocalYear()
       );
-      set({ books, challenge, status: "ready" });
+      set({ books, challenge, status: "ready", lastError: null });
       adapter = next;
     } catch (err) {
-      set({ status: "error" });
+      set({ status: "error", lastError: err });
       throw err;
     }
   },
@@ -138,10 +153,11 @@ export const useBookLibrary = create<BookLibraryState>((set) => ({
       set((state) => ({
         books: sortByCreatedAtDesc([book, ...state.books]),
         status: "ready",
+        lastError: null,
       }));
       return book;
     } catch (err) {
-      set({ status: "error" });
+      set({ status: "error", lastError: err });
       throw err;
     }
   },
@@ -156,10 +172,11 @@ export const useBookLibrary = create<BookLibraryState>((set) => ({
       set((state) => ({
         books: state.books.map((b) => (b.id === id ? updated : b)),
         status: "ready",
+        lastError: null,
       }));
       return updated;
     } catch (err) {
-      set({ status: "error" });
+      set({ status: "error", lastError: err });
       throw err;
     }
   },
@@ -176,9 +193,10 @@ export const useBookLibrary = create<BookLibraryState>((set) => ({
       set((state) => ({
         books: state.books.filter((b) => b.id !== id),
         status: "ready",
+        lastError: null,
       }));
     } catch (err) {
-      set({ status: "error" });
+      set({ status: "error", lastError: err });
       throw err;
     }
   },
@@ -188,15 +206,16 @@ export const useBookLibrary = create<BookLibraryState>((set) => ({
     }
     // Clear any stale error at the start of the attempt — the user
     // has acknowledged the previous failure by clicking save again.
-    set({ isSavingChallenge: true, challengeError: null });
+    set({ isSavingChallenge: true, challengeError: null, lastError: null });
     try {
       const saved = await adapter.saveAnnualReadingChallenge(input);
-      set({ challenge: saved, isSavingChallenge: false });
+      set({ challenge: saved, isSavingChallenge: false, lastError: null });
       return saved;
     } catch (err) {
       set({
         isSavingChallenge: false,
         challengeError: CHALLENGE_SAVE_ERROR_MESSAGE,
+        lastError: err,
       });
       throw err;
     }
