@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import type { ReaderStatsRhythm } from "@/lib/reader-stats";
 
 export interface ReadingRhythmSectionProps {
@@ -34,7 +35,7 @@ export function ReadingRhythmSection({ rhythm }: ReadingRhythmSectionProps) {
         </span>
       </header>
 
-      <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
+      <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
         <RhythmFact
           label="Active days"
           testId="stats-rhythm-active-days"
@@ -62,6 +63,7 @@ export function ReadingRhythmSection({ rhythm }: ReadingRhythmSectionProps) {
               ? "Page totals are hidden until you log reading sessions."
               : "Your most-read day will land here."
           }
+          wide
         />
       </dl>
     </section>
@@ -71,14 +73,28 @@ export function ReadingRhythmSection({ rhythm }: ReadingRhythmSectionProps) {
 interface RhythmFactProps {
   label: string;
   testId: string;
-  primary: string;
+  primary: ReactNode;
   empty: boolean;
   emptyHint?: string;
+  wide?: boolean;
 }
 
-function RhythmFact({ label, testId, primary, empty, emptyHint }: RhythmFactProps) {
+function RhythmFact({
+  label,
+  testId,
+  primary,
+  empty,
+  emptyHint,
+  wide = false,
+}: RhythmFactProps) {
   return (
-    <div className="bg-muted/40 rounded-lg border border-border/60 px-3 py-2">
+    <div
+      className={
+        wide
+          ? "bg-muted/40 rounded-lg border border-border/60 px-3 py-2 sm:col-span-2"
+          : "bg-muted/40 rounded-lg border border-border/60 px-3 py-2"
+      }
+    >
       <dt className="text-muted-foreground text-xs">{label}</dt>
       <dd
         data-testid={testId}
@@ -94,8 +110,15 @@ function RhythmFact({ label, testId, primary, empty, emptyHint }: RhythmFactProp
   );
 }
 
-function bestDayLabel(rhythm: ReaderStatsRhythm): string {
+function bestDayLabel(rhythm: ReaderStatsRhythm): ReactNode {
   if (rhythm.bestDay === null) return "—";
   const { date, pagesRead } = rhythm.bestDay;
-  return `${date} · ${pagesRead} pages`;
+  return (
+    <span className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between">
+      <span>{date}</span>
+      <span className="text-muted-foreground text-xs font-sans">
+        {pagesRead} {pagesRead === 1 ? "page" : "pages"}
+      </span>
+    </span>
+  );
 }

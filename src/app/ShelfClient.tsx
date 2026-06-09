@@ -41,7 +41,7 @@ import { Button } from "@/components/ui/button";
  * /library. No "Open library" CTA either (spec 020 FR-4 /
  * FR-5): the header already has navigation, so a duplicate
  * CTA on the home page is removed. Adding a book is still
- * reachable globally via the header's "Добавить книгу"
+ * reachable globally via the header's "Add book"
  * button.
  */
 export function ShelfClient() {

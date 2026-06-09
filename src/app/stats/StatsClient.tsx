@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { BookOpen } from "lucide-react";
 import { buildReaderStats } from "@/lib/reader-stats";
 import { useBookLibrary } from "@/state/book-library";
-import { EmptyShelf } from "@/components/EmptyShelf";
 import { PageContainer } from "@/components/PageContainer";
+import { Button } from "@/components/ui/button";
+import { AddBookDialog } from "@/features/add-book";
 import { HeroPortrait } from "@/features/stats/HeroPortrait";
 import { FavoriteTagsSection } from "@/features/stats/FavoriteTagsSection";
 import { TopRatedSection } from "@/features/stats/TopRatedSection";
@@ -28,7 +30,7 @@ export interface StatsClientProps {
  * States (T2):
  * - `loading` — quiet loading message inside the page container.
  * - `error` — friendly inline error.
- * - `ready` + empty library — the shared `EmptyShelf`.
+ * - `ready` + empty library — a stats-specific empty portrait.
  * - `ready` + books — the Reader Portrait (T3): hero, favorite
  *   tags, top-rated, reading rhythm, shelf balance.
  */
@@ -68,7 +70,7 @@ export function StatsClient({ now }: StatsClientProps = {}) {
 
       {status === "ready" && books.length === 0 && (
         <div data-testid="stats-empty">
-          <EmptyShelf />
+          <StatsEmptyState />
         </div>
       )}
 
@@ -87,5 +89,40 @@ export function StatsClient({ now }: StatsClientProps = {}) {
         </div>
       )}
     </PageContainer>
+  );
+}
+
+function StatsEmptyState() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 px-4 py-16 text-center">
+      <div
+        aria-hidden
+        className="bg-muted flex size-20 items-center justify-center rounded-full"
+      >
+        <BookOpen className="text-muted-foreground size-9" />
+      </div>
+
+      <h2 className="font-serif text-2xl text-foreground">
+        Your reader portrait is waiting
+      </h2>
+
+      <p className="text-muted-foreground max-w-sm text-sm">
+        Add your first book and this page will begin filling with reading
+        statistics, favorite tags, ratings, and shelf balance.
+      </p>
+
+      <Button
+        type="button"
+        onClick={() => setOpen(true)}
+        data-testid="add-first-book-button"
+        className="mt-2"
+      >
+        Add your first book
+      </Button>
+
+      <AddBookDialog open={open} onOpenChange={setOpen} />
+    </div>
   );
 }

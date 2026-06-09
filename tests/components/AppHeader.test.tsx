@@ -28,15 +28,15 @@ describe("AppHeader", () => {
   it("renders navigation links to each route", () => {
     mockUsePathname.mockReturnValue("/");
     render(<AppHeader />);
-    expect(screen.getByRole("link", { name: /главная/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /home/i })).toHaveAttribute(
       "href",
       "/"
     );
     expect(
-      screen.getByRole("link", { name: /библиотека/i })
+      screen.getByRole("link", { name: /library/i })
     ).toHaveAttribute("href", "/library");
     expect(
-      screen.getByRole("link", { name: /статистика/i })
+      screen.getByRole("link", { name: /statistics/i })
     ).toHaveAttribute("href", "/stats");
   });
 
@@ -44,7 +44,7 @@ describe("AppHeader", () => {
     mockUsePathname.mockReturnValue("/");
     render(<AppHeader />);
     expect(
-      screen.getByRole("link", { name: /главная/i })
+      screen.getByRole("link", { name: /home/i })
     ).toHaveAttribute("aria-current", "page");
   });
 
@@ -52,7 +52,7 @@ describe("AppHeader", () => {
     mockUsePathname.mockReturnValue("/library");
     render(<AppHeader />);
     expect(
-      screen.getByRole("link", { name: /библиотека/i })
+      screen.getByRole("link", { name: /library/i })
     ).toHaveAttribute("aria-current", "page");
   });
 
@@ -60,7 +60,7 @@ describe("AppHeader", () => {
     mockUsePathname.mockReturnValue("/stats");
     render(<AppHeader />);
     expect(
-      screen.getByRole("link", { name: /статистика/i })
+      screen.getByRole("link", { name: /statistics/i })
     ).toHaveAttribute("aria-current", "page");
   });
 
@@ -68,14 +68,14 @@ describe("AppHeader", () => {
     mockUsePathname.mockReturnValue("/");
     render(<AppHeader />);
     expect(
-      screen.getByRole("link", { name: /библиотека/i })
+      screen.getByRole("link", { name: /library/i })
     ).not.toHaveAttribute("aria-current");
     expect(
-      screen.getByRole("link", { name: /статистика/i })
+      screen.getByRole("link", { name: /statistics/i })
     ).not.toHaveAttribute("aria-current");
   });
 
-  it("renders a right-aligned 'Добавить книгу' button", () => {
+  it("renders a right-aligned 'Add book' button", () => {
     mockUsePathname.mockReturnValue("/");
     const { container } = render(<AppHeader />);
     const headerInner = container.querySelector("header > div");
@@ -84,7 +84,7 @@ describe("AppHeader", () => {
     expect(headerInner).toHaveClass("sm:flex-nowrap");
     const button = screen.getByTestId("header-add-book");
     expect(button).toBeInTheDocument();
-    expect(button).toHaveTextContent("Добавить книгу");
+    expect(button).toHaveTextContent("Add book");
     expect(button).toHaveClass("w-full");
     expect(button).toHaveClass("sm:w-auto");
   });

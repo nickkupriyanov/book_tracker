@@ -174,15 +174,18 @@ function buildFavoriteTags(books: Book[]): FavoriteTag[] {
 }
 
 function buildTopRated(books: Book[]): TopRatedBook[] {
-  const rated = books
-    .filter((b) => isRating(b.rating))
-    .map<TopRatedBook>((b) => ({
-      id: b.id,
-      title: b.title,
-      author: b.author,
-      rating: b.rating,
-      finishedAt: isLocalDateString(b.finishedAt) ? b.finishedAt : null,
-    }));
+  const rated: TopRatedBook[] = [];
+  for (const book of books) {
+    const rating = book.rating;
+    if (!isRating(rating)) continue;
+    rated.push({
+      id: book.id,
+      title: book.title,
+      author: book.author,
+      rating,
+      finishedAt: isLocalDateString(book.finishedAt) ? book.finishedAt : null,
+    });
+  }
 
   rated.sort((a, b) => {
     if (a.rating !== b.rating) return b.rating - a.rating;

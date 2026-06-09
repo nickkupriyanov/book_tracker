@@ -15,15 +15,15 @@ interface NavLink {
 }
 
 const NAV_LINKS: NavLink[] = [
-  { href: "/", label: "Главная" },
-  { href: "/library", label: "Библиотека" },
-  { href: "/stats", label: "Статистика" },
+  { href: "/", label: "Home" },
+  { href: "/library", label: "Library" },
+  { href: "/stats", label: "Statistics" },
 ];
 
 /**
  * The global app header (spec 020 §5.1). Carries the app
  * title, the section navigation, and a right-aligned primary
- * `Добавить книгу` action that opens the shared `AddBookDialog`.
+ * `Add book` action that opens the shared `AddBookDialog`.
  *
  * The button is disabled while the library store is not
  * `ready` so a click can never reach `useBookLibrary.addBook`
@@ -79,7 +79,7 @@ export function AppHeader() {
             className="w-full gap-1.5 sm:w-auto"
           >
             <Plus className="size-4" aria-hidden />
-            Добавить книгу
+            Add book
           </Button>
         </div>
       </div>
