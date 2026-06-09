@@ -55,14 +55,6 @@ export function BookForm({
     initialValues.coverColor ?? ""
   );
   const [tags, setTags] = useState(initialValues.tags.join(", "));
-  // Reading dates (spec 012). Both optional, both validated by
-  // `validateBookInput`. The native date input always emits a
-  // YYYY-MM-DD string (or empty), so the validator is the
-  // single source of truth on shape / cross-field rule.
-  const [startedAt, setStartedAt] = useState(initialValues.startedAt ?? "");
-  const [finishedAt, setFinishedAt] = useState(
-    initialValues.finishedAt ?? ""
-  );
   // Total page count (spec 015). Optional. Edited through
   // the shared BookForm; the currentPage lives on the
   // home quick-update block instead. Empty string = no
@@ -94,8 +86,6 @@ export function BookForm({
       ...(coverUrl ? { coverUrl } : {}),
       ...(coverColor ? { coverColor } : {}),
       ...(rating ? { rating: Number(rating) as 1 | 2 | 3 | 4 | 5 } : {}),
-      ...(startedAt ? { startedAt } : {}),
-      ...(finishedAt ? { finishedAt } : {}),
       ...(initialValues.currentPage !== undefined
         ? { currentPage: initialValues.currentPage }
         : {}),
@@ -266,50 +256,6 @@ export function BookForm({
         {errors.tags && (
           <p id="book-form-tags-error" className="text-sm text-destructive">
             {errors.tags}
-          </p>
-        )}
-      </div>
-
-      <div className="space-y-1.5">
-        <Label htmlFor="book-form-started">Started (optional)</Label>
-        <Input
-          id="book-form-started"
-          type="date"
-          value={startedAt}
-          onChange={(e) => setStartedAt(e.target.value)}
-          aria-invalid={errors.startedAt ? true : undefined}
-          aria-describedby={
-            errors.startedAt ? "book-form-started-error" : undefined
-          }
-        />
-        {errors.startedAt && (
-          <p
-            id="book-form-started-error"
-            className="text-sm text-destructive"
-          >
-            {errors.startedAt}
-          </p>
-        )}
-      </div>
-
-      <div className="space-y-1.5">
-        <Label htmlFor="book-form-finished">Finished (optional)</Label>
-        <Input
-          id="book-form-finished"
-          type="date"
-          value={finishedAt}
-          onChange={(e) => setFinishedAt(e.target.value)}
-          aria-invalid={errors.finishedAt ? true : undefined}
-          aria-describedby={
-            errors.finishedAt ? "book-form-finished-error" : undefined
-          }
-        />
-        {errors.finishedAt && (
-          <p
-            id="book-form-finished-error"
-            className="text-sm text-destructive"
-          >
-            {errors.finishedAt}
           </p>
         )}
       </div>

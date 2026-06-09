@@ -5,6 +5,7 @@ import { BookOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { StatusPill } from "@/features/shelf-list/StatusPill";
 import { formatReadingDuration } from "@/lib/format/reading-duration";
+import { deriveReadingDates } from "@/lib/reading-dates";
 import type { Book } from "@/types/book";
 
 export interface DetailMetaProps {
@@ -38,6 +39,7 @@ export function DetailMeta({ book }: DetailMetaProps) {
   const showCover = book.coverUrl !== undefined && !coverFailed;
 
   const addedOn = formatDate(book.createdAt);
+  const { startedAt, finishedAt } = deriveReadingDates(book);
 
   return (
     <div className="flex flex-col gap-6 md:flex-row">
@@ -80,19 +82,19 @@ export function DetailMeta({ book }: DetailMetaProps) {
         <p className="text-muted-foreground text-sm">
           Added on {addedOn}
         </p>
-        {book.startedAt !== undefined && (
+        {startedAt !== null && (
           <p className="text-muted-foreground text-sm">
-            Started {formatDate(book.startedAt)}
+            Started {formatDate(startedAt)}
           </p>
         )}
-        {book.finishedAt !== undefined && (
+        {finishedAt !== null && (
           <p className="text-muted-foreground text-sm">
-            Finished {formatDate(book.finishedAt)}
+            Finished {formatDate(finishedAt)}
           </p>
         )}
-        {book.startedAt !== undefined && book.finishedAt !== undefined && (
+        {startedAt !== null && finishedAt !== null && (
           <p className="text-muted-foreground text-sm">
-            Read over {formatReadingDuration(book.startedAt, book.finishedAt)}
+            Read over {formatReadingDuration(startedAt, finishedAt)}
           </p>
         )}
       </div>

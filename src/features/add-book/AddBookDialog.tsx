@@ -32,8 +32,6 @@ export function AddBookDialog({ open, onOpenChange }: AddBookDialogProps) {
     author: "",
     status: initialStatus,
     tags: [],
-    startedAt: "",
-    finishedAt: "",
   };
 
   return (

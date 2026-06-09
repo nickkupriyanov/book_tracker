@@ -2,7 +2,18 @@ import { describe, it, expect } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ShelfList } from "@/features/shelf-list/ShelfList";
-import type { Book } from "@/types/book";
+import type { Book, ReadingLog } from "@/types/book";
+
+function makeLog(date: string, overrides: Partial<ReadingLog> = {}): ReadingLog {
+  return {
+    id: overrides.id ?? `log-${date}`,
+    date,
+    pagesRead: overrides.pagesRead ?? 10,
+    currentPageAfter: overrides.currentPageAfter ?? 10,
+    createdAt: overrides.createdAt ?? `${date}T10:00:00.000Z`,
+    updatedAt: overrides.updatedAt ?? `${date}T10:00:00.000Z`,
+  };
+}
 
 const bookWant: Book = {
   id: "1",
@@ -448,8 +459,7 @@ describe("ShelfList", () => {
         status: "read",
         tags: [],
         createdAt: "2026-06-03T00:00:00.000Z",
-        startedAt: "2026-05-15",
-        finishedAt: "2026-05-20",
+        readingLogs: [makeLog("2026-05-15"), makeLog("2026-05-20")],
         rating: 5,
       },
       {
@@ -459,7 +469,7 @@ describe("ShelfList", () => {
         status: "reading",
         tags: [],
         createdAt: "2026-06-02T00:00:00.000Z",
-        startedAt: "2026-05-28",
+        readingLogs: [makeLog("2026-05-28")],
       },
     ];
 
@@ -488,8 +498,8 @@ describe("ShelfList", () => {
       await user.click(
         screen.getByRole("option", { name: "Recently started" })
       );
-      // Bravo has startedAt 2026-05-28, Alpha has 2026-05-15,
-      // Charlie has no startedAt → last.
+      // Bravo starts on 2026-05-28, Alpha starts on 2026-05-15,
+      // Charlie has no page logs → last.
       expect(gridTitles()).toEqual(["Bravo", "Alpha", "Charlie"]);
     });
 

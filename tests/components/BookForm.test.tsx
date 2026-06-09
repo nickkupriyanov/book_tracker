@@ -117,8 +117,8 @@ describe("BookForm", () => {
     expect(screen.getByLabelText("Author")).toHaveValue("Susanna Clarke");
   });
 
-  describe("started/finished date fields (spec 012)", () => {
-    it("renders the two new fields with the right labels", () => {
+  describe("legacy started/finished date fields", () => {
+    it("does not render manual reading date fields", () => {
       render(
         <BookForm
           initialValues={baseInput}
@@ -126,42 +126,11 @@ describe("BookForm", () => {
           onSubmit={vi.fn()}
         />
       );
-      const started = screen.getByLabelText("Started (optional)");
-      const finished = screen.getByLabelText("Finished (optional)");
-      expect(started).toBeInstanceOf(HTMLInputElement);
-      expect((started as HTMLInputElement).type).toBe("date");
-      expect(finished).toBeInstanceOf(HTMLInputElement);
-      expect((finished as HTMLInputElement).type).toBe("date");
+      expect(screen.queryByLabelText("Started (optional)")).not.toBeInTheDocument();
+      expect(screen.queryByLabelText("Finished (optional)")).not.toBeInTheDocument();
     });
 
-    it("includes valid YYYY-MM-DD values in the onSubmit input", async () => {
-      const onSubmit = vi.fn().mockResolvedValue(undefined);
-      const user = userEvent.setup();
-      render(
-        <BookForm
-          initialValues={baseInput}
-          submitLabel="Save"
-          onSubmit={onSubmit}
-        />
-      );
-      fireEvent.change(screen.getByLabelText("Started (optional)"), {
-        target: { value: "2026-04-01" },
-      });
-      fireEvent.change(screen.getByLabelText("Finished (optional)"), {
-        target: { value: "2026-04-15" },
-      });
-      await user.click(screen.getByRole("button", { name: "Save" }));
-      await waitFor(() => {
-        expect(onSubmit).toHaveBeenCalledWith(
-          expect.objectContaining({
-            startedAt: "2026-04-01",
-            finishedAt: "2026-04-15",
-          })
-        );
-      });
-    });
-
-    it("omits both date fields from the onSubmit input when empty", async () => {
+    it("omits legacy date fields from the onSubmit input", async () => {
       const onSubmit = vi.fn().mockResolvedValue(undefined);
       const user = userEvent.setup();
       render(
@@ -180,70 +149,31 @@ describe("BookForm", () => {
       expect("finishedAt" in arg).toBe(false);
     });
 
-    it("shows a finishedAt error when finishedAt < startedAt", async () => {
+    it("normalizes legacy initialValues away when saving", async () => {
+      const onSubmit = vi.fn().mockResolvedValue(undefined);
       const user = userEvent.setup();
+      const legacyInitialValues: BookInput & {
+        startedAt: string;
+        finishedAt: string;
+      } = {
+        ...baseInput,
+        startedAt: "2026-04-01",
+        finishedAt: "2026-04-15",
+      };
       render(
         <BookForm
-          initialValues={baseInput}
+          initialValues={legacyInitialValues}
           submitLabel="Save"
-          onSubmit={vi.fn()}
+          onSubmit={onSubmit}
         />
       );
-      fireEvent.change(screen.getByLabelText("Started (optional)"), {
-        target: { value: "2026-04-15" },
-      });
-      fireEvent.change(screen.getByLabelText("Finished (optional)"), {
-        target: { value: "2026-04-01" },
-      });
       await user.click(screen.getByRole("button", { name: "Save" }));
       await waitFor(() => {
-        expect(
-          screen.getByText(/finish date must be on or after the start date/i)
-        ).toBeInTheDocument();
+        expect(onSubmit).toHaveBeenCalled();
       });
-    });
-
-    it("marks the finishedAt input aria-invalid when the cross-field check fails", async () => {
-      const user = userEvent.setup();
-      render(
-        <BookForm
-          initialValues={baseInput}
-          submitLabel="Save"
-          onSubmit={vi.fn()}
-        />
-      );
-      fireEvent.change(screen.getByLabelText("Started (optional)"), {
-        target: { value: "2026-04-15" },
-      });
-      fireEvent.change(screen.getByLabelText("Finished (optional)"), {
-        target: { value: "2026-04-01" },
-      });
-      await user.click(screen.getByRole("button", { name: "Save" }));
-      await waitFor(() => {
-        expect(
-          screen.getByLabelText("Finished (optional)")
-        ).toHaveAttribute("aria-invalid", "true");
-      });
-    });
-
-    it("pre-fills the form with initialValues.startedAt and finishedAt", () => {
-      render(
-        <BookForm
-          initialValues={{
-            ...baseInput,
-            startedAt: "2026-04-01",
-            finishedAt: "2026-04-15",
-          }}
-          submitLabel="Save"
-          onSubmit={vi.fn()}
-        />
-      );
-      expect(screen.getByLabelText("Started (optional)")).toHaveValue(
-        "2026-04-01"
-      );
-      expect(screen.getByLabelText("Finished (optional)")).toHaveValue(
-        "2026-04-15"
-      );
+      const arg = onSubmit.mock.calls[0]?.[0] as BookInput;
+      expect("startedAt" in arg).toBe(false);
+      expect("finishedAt" in arg).toBe(false);
     });
   });
 

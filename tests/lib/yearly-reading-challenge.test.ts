@@ -1,9 +1,23 @@
 import { describe, it, expect } from "vitest";
 import { buildYearlyChallenge } from "@/lib/yearly-reading-challenge";
-import type { Book } from "@/types/book";
+import type { Book, ReadingLog } from "@/types/book";
 import type { AnnualReadingChallenge } from "@/types/challenge";
 
-function makeBook(overrides: Partial<Book> = {}): Book {
+function makeLog(date: string, overrides: Partial<ReadingLog> = {}): ReadingLog {
+  return {
+    id: overrides.id ?? `log-${date}`,
+    date,
+    pagesRead: overrides.pagesRead ?? 10,
+    currentPageAfter: overrides.currentPageAfter ?? 10,
+    createdAt: overrides.createdAt ?? "2026-01-01T00:00:00.000Z",
+    updatedAt: overrides.updatedAt ?? "2026-01-01T00:00:00.000Z",
+  };
+}
+
+function makeBook(
+  overrides: Partial<Book> & { finishedAt?: string } = {}
+): Book {
+  const { finishedAt, readingLogs, ...bookOverrides } = overrides;
   return {
     id: "book-1",
     title: "Book",
@@ -11,7 +25,9 @@ function makeBook(overrides: Partial<Book> = {}): Book {
     status: "read",
     tags: [],
     createdAt: "2026-01-01T00:00:00.000Z",
-    ...overrides,
+    ...(finishedAt !== undefined ? { readingLogs: [makeLog(finishedAt)] } : {}),
+    ...(readingLogs !== undefined ? { readingLogs } : {}),
+    ...bookOverrides,
   };
 }
 
@@ -105,7 +121,7 @@ describe("buildYearlyChallenge — completed count (FR-5…FR-7)", () => {
     expect(model.completed).toBe(0);
   });
 
-  it("does not count read books without a finishedAt (FR-6)", () => {
+  it("does not count read books without a derived finish date (FR-6)", () => {
     const books = [
       makeBook({ id: "a", status: "read" }),
       makeBook({ id: "b", status: "read", finishedAt: undefined }),
@@ -127,7 +143,7 @@ describe("buildYearlyChallenge — completed count (FR-5…FR-7)", () => {
     expect(model.completed).toBe(0);
   });
 
-  it("does not count books with malformed finishedAt", () => {
+  it("does not count books with malformed derived finish dates", () => {
     const books = [
       makeBook({ id: "a", status: "read", finishedAt: "not-a-date" }),
       makeBook({ id: "b", status: "read", finishedAt: "2026-13-40" }),
@@ -140,14 +156,12 @@ describe("buildYearlyChallenge — completed count (FR-5…FR-7)", () => {
     expect(model.completed).toBe(0);
   });
 
-  it("treats a non-string finishedAt as missing", () => {
-    // The Book type says finishedAt is string | undefined, but a
-    // corrupt record from a future migration could carry anything.
-    // The helper should be defensive and skip non-strings.
-    const corrupt = {
-      ...makeBook({ id: "a", status: "read" }),
-      finishedAt: 202604 as unknown as string,
-    };
+  it("treats a non-string log date as missing", () => {
+    const corrupt = makeBook({
+      id: "a",
+      status: "read",
+      readingLogs: [makeLog(202604 as unknown as string)],
+    });
     const model = buildYearlyChallenge([corrupt], makeChallenge(), {
       now: JUNE_15_2026,
     });
@@ -156,7 +170,7 @@ describe("buildYearlyChallenge — completed count (FR-5…FR-7)", () => {
 });
 
 describe("buildYearlyChallenge — undatedReadCount", () => {
-  it("counts read books missing a valid finishedAt", () => {
+  it("counts read books missing a valid derived finish date", () => {
     const books = [
       makeBook({ id: "a", status: "read" }),
       makeBook({ id: "b", status: "read", finishedAt: undefined }),

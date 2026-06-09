@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { YearlyChallengeCard } from "@/features/yearly-challenge/YearlyChallengeCard";
-import type { Book } from "@/types/book";
+import type { Book, ReadingLog } from "@/types/book";
 import type { AnnualReadingChallenge } from "@/types/challenge";
 
 /**
@@ -13,7 +13,21 @@ import type { AnnualReadingChallenge } from "@/types/challenge";
  */
 const NOW = new Date(2026, 5, 15);
 
-function makeBook(overrides: Partial<Book> = {}): Book {
+function makeLog(date: string, overrides: Partial<ReadingLog> = {}): ReadingLog {
+  return {
+    id: overrides.id ?? `log-${date}`,
+    date,
+    pagesRead: overrides.pagesRead ?? 10,
+    currentPageAfter: overrides.currentPageAfter ?? 10,
+    createdAt: overrides.createdAt ?? `${date}T10:00:00.000Z`,
+    updatedAt: overrides.updatedAt ?? `${date}T10:00:00.000Z`,
+  };
+}
+
+function makeBook(
+  overrides: Partial<Book> & { finishedAt?: string } = {}
+): Book {
+  const { finishedAt, readingLogs, ...bookOverrides } = overrides;
   return {
     id: "book-1",
     title: "Book",
@@ -21,7 +35,9 @@ function makeBook(overrides: Partial<Book> = {}): Book {
     status: "read",
     tags: [],
     createdAt: "2026-01-01T00:00:00.000Z",
-    ...overrides,
+    ...(finishedAt !== undefined ? { readingLogs: [makeLog(finishedAt)] } : {}),
+    ...(readingLogs !== undefined ? { readingLogs } : {}),
+    ...bookOverrides,
   };
 }
 

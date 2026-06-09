@@ -115,8 +115,10 @@ describe("StatsClient — Reader Portrait zones (spec 021 T3)", () => {
       status: "read",
       tags: ["fantasy", "classic"],
       rating: 5,
-      finishedAt: "2026-05-15",
-      readingLogs: [makeLog({ id: "l1", date: "2026-05-14", pagesRead: 40 })],
+      readingLogs: [
+        makeLog({ id: "l1", date: "2026-05-14", pagesRead: 40 }),
+        makeLog({ id: "l2", date: "2026-05-15", pagesRead: 10 }),
+      ],
     });
     await useBookLibrary.getState().addBook({
       title: "The Lord of the Rings",
@@ -124,7 +126,7 @@ describe("StatsClient — Reader Portrait zones (spec 021 T3)", () => {
       status: "read",
       tags: ["fantasy"],
       rating: 4,
-      finishedAt: "2026-04-01",
+      readingLogs: [makeLog({ id: "l3", date: "2026-04-01" })],
     });
     await useBookLibrary.getState().addBook({
       title: "An Untitled Draft",
@@ -156,7 +158,7 @@ describe("StatsClient — Reader Portrait zones (spec 021 T3)", () => {
       status: "read",
       tags: ["fantasy"],
       rating: 5,
-      finishedAt: "2026-05-15",
+      readingLogs: [makeLog({ id: "l4", date: "2026-05-15" })],
     });
     await useBookLibrary.getState().addBook({
       title: "The Lord of the Rings",

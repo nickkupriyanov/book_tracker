@@ -1,4 +1,5 @@
 import type { Book } from "@/types/book";
+import { deriveReadingDates } from "@/lib/reading-dates";
 
 /**
  * The seven sort modes the shelf supports. Discriminated string
@@ -39,11 +40,12 @@ function toUtcMidnightMs(yyyyMmDd: string): number {
 }
 
 function readDurationDays(book: Book): number {
-  if (book.startedAt === undefined || book.finishedAt === undefined) {
+  const { startedAt, finishedAt } = deriveReadingDates(book);
+  if (startedAt === null || finishedAt === null) {
     return NO_VALUE;
   }
-  const startMs = toUtcMidnightMs(book.startedAt);
-  const endMs = toUtcMidnightMs(book.finishedAt);
+  const startMs = toUtcMidnightMs(startedAt);
+  const endMs = toUtcMidnightMs(finishedAt);
   return Math.round((endMs - startMs) / MS_PER_DAY);
 }
 
@@ -62,20 +64,20 @@ export function sortBooks(books: Book[], sort: SortValue): Book[] {
         return b.createdAt.localeCompare(a.createdAt);
 
       case "recently-started": {
-        const av = a.startedAt;
-        const bv = b.startedAt;
-        if (av === undefined && bv === undefined) return 0;
-        if (av === undefined) return 1;
-        if (bv === undefined) return -1;
+        const av = deriveReadingDates(a).startedAt;
+        const bv = deriveReadingDates(b).startedAt;
+        if (av === null && bv === null) return 0;
+        if (av === null) return 1;
+        if (bv === null) return -1;
         return bv.localeCompare(av);
       }
 
       case "recently-finished": {
-        const av = a.finishedAt;
-        const bv = b.finishedAt;
-        if (av === undefined && bv === undefined) return 0;
-        if (av === undefined) return 1;
-        if (bv === undefined) return -1;
+        const av = deriveReadingDates(a).finishedAt;
+        const bv = deriveReadingDates(b).finishedAt;
+        if (av === null && bv === null) return 0;
+        if (av === null) return 1;
+        if (bv === null) return -1;
         return bv.localeCompare(av);
       }
 

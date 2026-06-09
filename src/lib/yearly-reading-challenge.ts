@@ -1,5 +1,6 @@
 import type { Book } from "@/types/book";
 import type { AnnualReadingChallenge } from "@/types/challenge";
+import { deriveReadingDates, isLocalDateString } from "@/lib/reading-dates";
 
 /**
  * The display model for the yearly reading challenge card
@@ -44,12 +45,10 @@ export interface BuildYearlyChallengeOptions {
   now?: Date;
 }
 
-const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-
 /**
  * Builds the display-ready yearly reading challenge model
  * (spec 018). Pure: no React, no storage, no DOM. Counts
- * only `read` books with a valid `YYYY-MM-DD` `finishedAt`
+ * only `read` books with a derived valid `YYYY-MM-DD` finish date
  * in the current local year (FR-5/6/7).
  */
 export function buildYearlyChallenge(
@@ -94,8 +93,9 @@ function countCompletedInYear(books: Book[], year: number): number {
   let count = 0;
   for (const book of books) {
     if (book.status !== "read") continue;
-    if (!isLocalDateString(book.finishedAt)) continue;
-    const [yStr] = book.finishedAt.split("-");
+    const { finishedAt } = deriveReadingDates(book);
+    if (!isLocalDateString(finishedAt)) continue;
+    const [yStr] = finishedAt.split("-");
     if (Number(yStr) !== year) continue;
     count += 1;
   }
@@ -106,7 +106,7 @@ function countUndatedRead(books: Book[]): number {
   let count = 0;
   for (const book of books) {
     if (book.status !== "read") continue;
-    if (isLocalDateString(book.finishedAt)) continue;
+    if (isLocalDateString(deriveReadingDates(book).finishedAt)) continue;
     count += 1;
   }
   return count;
@@ -161,32 +161,4 @@ function classifyPace(
   if (completed >= expected + 1) return "ahead";
   if (completed >= expected) return "on";
   return "behind";
-}
-
-/**
- * Defensive `YYYY-MM-DD` validator. Rejects non-strings,
- * wrong shapes, and impossible calendar dates (e.g.
- * `2026-02-31`). Mirrors the rule used by
- * `src/lib/reader-profile.ts` for the streak math.
- */
-function isLocalDateString(value: unknown): value is string {
-  if (typeof value !== "string") return false;
-  if (!DATE_PATTERN.test(value)) return false;
-  const [yStr, mStr, dStr] = value.split("-");
-  const year = Number(yStr);
-  const month = Number(mStr);
-  const day = Number(dStr);
-  if (
-    !Number.isInteger(year) ||
-    !Number.isInteger(month) ||
-    !Number.isInteger(day)
-  ) {
-    return false;
-  }
-  const parsed = new Date(year, month - 1, day);
-  return (
-    parsed.getFullYear() === year &&
-    parsed.getMonth() === month - 1 &&
-    parsed.getDate() === day
-  );
 }

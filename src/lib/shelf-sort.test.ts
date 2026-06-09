@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { Book } from "@/types/book";
+import type { Book, ReadingLog } from "@/types/book";
 import { sortBooks, type SortValue } from "./shelf-sort";
 
 const now = "2026-06-06T00:00:00.000Z";
@@ -13,6 +13,17 @@ function makeBook(overrides: Partial<Book> = {}): Book {
     tags: overrides.tags ?? [],
     createdAt: overrides.createdAt ?? now,
     ...overrides,
+  };
+}
+
+function makeLog(date: string, overrides: Partial<ReadingLog> = {}): ReadingLog {
+  return {
+    id: overrides.id ?? `log-${date}`,
+    date,
+    pagesRead: overrides.pagesRead ?? 10,
+    currentPageAfter: overrides.currentPageAfter ?? 10,
+    createdAt: overrides.createdAt ?? `${date}T10:00:00.000Z`,
+    updatedAt: overrides.updatedAt ?? `${date}T10:00:00.000Z`,
   };
 }
 
@@ -56,22 +67,37 @@ describe("sortBooks", () => {
   });
 
   it("'recently-started' sorts by startedAt desc, nulls last", () => {
-    const a = makeBook({ id: "a", startedAt: "2026-01-01" });
-    const b = makeBook({ id: "b", startedAt: "2026-06-01" });
-    const c = makeBook({ id: "c", startedAt: "2026-03-01" });
-    const d = makeBook({ id: "d" }); // no startedAt
-    const e = makeBook({ id: "e" }); // no startedAt
+    const a = makeBook({ id: "a", readingLogs: [makeLog("2026-01-01")] });
+    const b = makeBook({ id: "b", readingLogs: [makeLog("2026-06-01")] });
+    const c = makeBook({ id: "c", readingLogs: [makeLog("2026-03-01")] });
+    const d = makeBook({ id: "d" }); // no logs
+    const e = makeBook({ id: "e" }); // no logs
     const result = sortBooks([a, b, c, d, e], "recently-started");
     expect(result.map((b) => b.id)).toEqual(["b", "c", "a", "d", "e"]);
   });
 
   it("'recently-finished' sorts by finishedAt desc, nulls last", () => {
-    const a = makeBook({ id: "a", finishedAt: "2026-01-01" });
-    const b = makeBook({ id: "b", finishedAt: "2026-06-01" });
-    const c = makeBook({ id: "c", finishedAt: "2026-03-01" });
+    const a = makeBook({ id: "a", status: "read", readingLogs: [makeLog("2026-01-01")] });
+    const b = makeBook({ id: "b", status: "read", readingLogs: [makeLog("2026-06-01")] });
+    const c = makeBook({ id: "c", status: "read", readingLogs: [makeLog("2026-03-01")] });
     const d = makeBook({ id: "d" });
     const result = sortBooks([a, b, c, d], "recently-finished");
     expect(result.map((b) => b.id)).toEqual(["b", "c", "a", "d"]);
+  });
+
+  it("'recently-finished' ignores logs unless the book is read", () => {
+    const read = makeBook({
+      id: "read",
+      status: "read",
+      readingLogs: [makeLog("2026-01-01")],
+    });
+    const reading = makeBook({
+      id: "reading",
+      status: "reading",
+      readingLogs: [makeLog("2026-06-01")],
+    });
+    const result = sortBooks([reading, read], "recently-finished");
+    expect(result.map((b) => b.id)).toEqual(["read", "reading"]);
   });
 
   it("'title-az' sorts alphabetically by title (A→Z)", () => {
@@ -103,39 +129,52 @@ describe("sortBooks", () => {
   it("'longest-read' sorts by (finishedAt - startedAt) days desc, nulls last", () => {
     const short = makeBook({
       id: "short",
-      startedAt: "2026-04-01",
-      finishedAt: "2026-04-08", // 7 days
+      status: "read",
+      readingLogs: [makeLog("2026-04-01"), makeLog("2026-04-08")], // 7 days
     });
     const long = makeBook({
       id: "long",
-      startedAt: "2026-01-01",
-      finishedAt: "2026-04-01", // 90 days
+      status: "read",
+      readingLogs: [makeLog("2026-01-01"), makeLog("2026-04-01")], // 90 days
     });
     const medium = makeBook({
       id: "medium",
-      startedAt: "2026-03-01",
-      finishedAt: "2026-03-15", // 14 days
+      status: "read",
+      readingLogs: [makeLog("2026-03-01"), makeLog("2026-03-15")], // 14 days
     });
-    const noStart = makeBook({
-      id: "no-start",
-      finishedAt: "2026-04-01",
-    });
-    const noEnd = makeBook({
-      id: "no-end",
-      startedAt: "2026-03-01",
-    });
+    const notRead = makeBook({ id: "not-read", readingLogs: [makeLog("2026-03-01")] });
     const neither = makeBook({ id: "neither" });
     const result = sortBooks(
-      [short, long, medium, noStart, noEnd, neither],
+      [short, long, medium, notRead, neither],
       "longest-read"
     );
     expect(result.map((b) => b.id)).toEqual([
       "long",
       "medium",
       "short",
-      "no-start",
-      "no-end",
+      "not-read",
       "neither",
+    ]);
+  });
+
+  it("ignores legacy stored date fields", () => {
+    const legacy = {
+      ...makeBook({ id: "legacy" }),
+      startedAt: "2026-06-01",
+      finishedAt: "2026-06-02",
+    };
+    const logged = makeBook({
+      id: "logged",
+      status: "read",
+      readingLogs: [makeLog("2026-01-01")],
+    });
+    expect(sortBooks([legacy, logged], "recently-started").map((b) => b.id)).toEqual([
+      "logged",
+      "legacy",
+    ]);
+    expect(sortBooks([legacy, logged], "recently-finished").map((b) => b.id)).toEqual([
+      "logged",
+      "legacy",
     ]);
   });
 });

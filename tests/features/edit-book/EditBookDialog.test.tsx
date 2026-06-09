@@ -64,41 +64,35 @@ describe("EditBookDialog", () => {
     ).toBeInTheDocument();
   });
 
-  it("pre-fills the Started and Finished date fields from the book", async () => {
-    // Add a book with both dates, then open Edit on it.
-    __resetBookLibrary();
-    localStorage.clear();
-    await useBookLibrary.getState().init(new LocalStorageAdapter());
-    const bookWithDates = await useBookLibrary.getState().addBook({
-      title: "Dune",
-      author: "Frank Herbert",
-      status: "read",
-      tags: [],
-      startedAt: "2026-01-01",
-      finishedAt: "2026-02-01",
-    });
+  it("does not render manual Started and Finished date fields", async () => {
     render(
       <EditBookDialog
-        book={bookWithDates}
+        book={sampleBook}
         open={true}
         onOpenChange={vi.fn()}
       />
     );
     await screen.findByRole("dialog");
-    expect(screen.getByLabelText("Started (optional)")).toHaveValue(
-      "2026-01-01"
-    );
-    expect(screen.getByLabelText("Finished (optional)")).toHaveValue(
-      "2026-02-01"
-    );
+    expect(screen.queryByLabelText("Started (optional)")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Finished (optional)")).not.toBeInTheDocument();
   });
 
-  it("leaves Started and Finished empty when the book has no dates", async () => {
-    // sampleBook (set in beforeEach) has no startedAt / finishedAt.
-    renderDialog();
+  it("ignores legacy Started and Finished fields on old book records", async () => {
+    const legacyBook = {
+      ...sampleBook,
+      startedAt: "2026-01-01",
+      finishedAt: "2026-02-01",
+    };
+    render(
+      <EditBookDialog
+        book={legacyBook}
+        open={true}
+        onOpenChange={vi.fn()}
+      />
+    );
     await screen.findByRole("dialog");
-    expect(screen.getByLabelText("Started (optional)")).toHaveValue("");
-    expect(screen.getByLabelText("Finished (optional)")).toHaveValue("");
+    expect(screen.queryByLabelText("Started (optional)")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Finished (optional)")).not.toBeInTheDocument();
   });
 
   it("pre-fills the Cover color field from the book (spec 013)", async () => {

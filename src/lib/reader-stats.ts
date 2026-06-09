@@ -1,3 +1,4 @@
+import { deriveReadingDates, isLocalDateString } from "@/lib/reading-dates";
 import type { Book, ReadingLog } from "@/types/book";
 
 /**
@@ -104,8 +105,6 @@ export interface BuildReaderStatsOptions {
   now?: Date;
 }
 
-const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-
 /**
  * Builds the whole-library Reader Portrait display model. Pure:
  * no React, no storage, no DOM. After spec 022 only
@@ -177,7 +176,7 @@ function buildTopRated(books: Book[]): TopRatedBook[] {
       title: book.title,
       author: book.author,
       rating,
-      finishedAt: isLocalDateString(book.finishedAt) ? book.finishedAt : null,
+      finishedAt: deriveReadingDates(book).finishedAt,
     });
   }
 
@@ -368,34 +367,6 @@ function isRating(value: unknown): value is 1 | 2 | 3 | 4 | 5 {
 function isReadingLog(value: unknown): value is ReadingLog {
   if (typeof value !== "object" || value === null) return false;
   return "date" in value;
-}
-
-/**
- * Defensive `YYYY-MM-DD` validator. Rejects non-strings, wrong
- * shapes, and impossible calendar dates (e.g. `2026-02-31`).
- * Mirrors the rule used by `reader-profile.ts` and
- * `yearly-reading-challenge.ts`.
- */
-function isLocalDateString(value: unknown): value is string {
-  if (typeof value !== "string") return false;
-  if (!DATE_PATTERN.test(value)) return false;
-  const [yStr, mStr, dStr] = value.split("-");
-  const year = Number(yStr);
-  const month = Number(mStr);
-  const day = Number(dStr);
-  if (
-    !Number.isInteger(year) ||
-    !Number.isInteger(month) ||
-    !Number.isInteger(day)
-  ) {
-    return false;
-  }
-  const parsed = new Date(year, month - 1, day);
-  return (
-    parsed.getFullYear() === year &&
-    parsed.getMonth() === month - 1 &&
-    parsed.getDate() === day
-  );
 }
 
 function startOfLocalDay(d: Date): Date {

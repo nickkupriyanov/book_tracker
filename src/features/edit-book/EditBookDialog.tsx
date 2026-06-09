@@ -38,8 +38,6 @@ export function EditBookDialog({
     status: book.status,
     ...(book.coverUrl !== undefined ? { coverUrl: book.coverUrl } : {}),
     ...(book.coverColor !== undefined ? { coverColor: book.coverColor } : {}),
-    ...(book.startedAt !== undefined ? { startedAt: book.startedAt } : {}),
-    ...(book.finishedAt !== undefined ? { finishedAt: book.finishedAt } : {}),
     ...(book.currentPage !== undefined ? { currentPage: book.currentPage } : {}),
     ...(book.totalPages !== undefined ? { totalPages: book.totalPages } : {}),
     ...(book.readingLogs !== undefined ? { readingLogs: book.readingLogs } : {}),

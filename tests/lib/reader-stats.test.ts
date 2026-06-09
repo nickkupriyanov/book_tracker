@@ -2,7 +2,10 @@ import { describe, it, expect } from "vitest";
 import { buildReaderStats } from "@/lib/reader-stats";
 import type { Book, ReadingLog } from "@/types/book";
 
-function makeBook(overrides: Partial<Book> = {}): Book {
+function makeBook(
+  overrides: Partial<Book> & { finishedAt?: string } = {}
+): Book {
+  const { finishedAt, readingLogs, ...bookOverrides } = overrides;
   return {
     id: overrides.id ?? "book-1",
     title: overrides.title ?? "Untitled",
@@ -10,7 +13,11 @@ function makeBook(overrides: Partial<Book> = {}): Book {
     status: overrides.status ?? "want",
     tags: overrides.tags ?? [],
     createdAt: overrides.createdAt ?? "2026-06-01T00:00:00.000Z",
-    ...overrides,
+    ...(finishedAt !== undefined
+      ? { readingLogs: [makeLog({ date: finishedAt })] }
+      : {}),
+    ...(readingLogs !== undefined ? { readingLogs } : {}),
+    ...bookOverrides,
   };
 }
 
@@ -225,7 +232,7 @@ describe("buildReaderStats — top-rated books (FR-6)", () => {
     expect(stats.topRated.map((b) => b.id)).toEqual(["c", "b", "a", "d"]);
   });
 
-  it("treats an invalid finishedAt as null in tie-breaks", () => {
+  it("treats an invalid derived finishedAt as null in tie-breaks", () => {
     const books = [
       makeBook({
         id: "a",

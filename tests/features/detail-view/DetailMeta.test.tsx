@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { DetailMeta } from "@/features/detail-view/DetailMeta";
-import type { Book } from "@/types/book";
+import type { Book, ReadingLog } from "@/types/book";
 
 const baseBook: Book = {
   id: "1",
@@ -11,6 +11,17 @@ const baseBook: Book = {
   tags: ["fiction", "fantasy", "house"],
   createdAt: "2026-06-01T12:00:00.000Z",
 };
+
+function makeLog(date: string, overrides: Partial<ReadingLog> = {}): ReadingLog {
+  return {
+    id: overrides.id ?? `log-${date}`,
+    date,
+    pagesRead: overrides.pagesRead ?? 10,
+    currentPageAfter: overrides.currentPageAfter ?? 10,
+    createdAt: overrides.createdAt ?? `${date}T10:00:00.000Z`,
+    updatedAt: overrides.updatedAt ?? `${date}T10:00:00.000Z`,
+  };
+}
 
 describe("DetailMeta", () => {
   it("renders title, author, status, all tags, and the added-on date", () => {
@@ -83,24 +94,23 @@ describe("DetailMeta", () => {
     expect(expected).toMatch(/\d+ \w+ \d{4}/);
   });
 
-  describe("reading dates (spec 012)", () => {
+  describe("derived reading dates", () => {
     const formatDate = (raw: string): string =>
       new Intl.DateTimeFormat("en-GB", { dateStyle: "long" }).format(
         new Date(raw)
       );
 
-    it("a book with no dates — only 'Added on …' is rendered, no new lines", () => {
+    it("a book with no page logs — only 'Added on …' is rendered, no new lines", () => {
       render(<DetailMeta book={baseBook} />);
-      // baseBook has no startedAt / finishedAt.
       expect(screen.queryByText(/^Started /)).not.toBeInTheDocument();
       expect(screen.queryByText(/^Finished /)).not.toBeInTheDocument();
       expect(screen.queryByText(/^Read over /)).not.toBeInTheDocument();
     });
 
-    it("a book with only startedAt — 'Started …' is rendered, no 'Finished' or 'Read over'", () => {
+    it("a reading book with page logs renders only Started", () => {
       render(
         <DetailMeta
-          book={{ ...baseBook, startedAt: "2026-04-01" }}
+          book={{ ...baseBook, readingLogs: [makeLog("2026-04-01")] }}
         />
       );
       expect(
@@ -110,13 +120,13 @@ describe("DetailMeta", () => {
       expect(screen.queryByText(/^Read over /)).not.toBeInTheDocument();
     });
 
-    it("a book with both dates (multi-day) — all three new lines render", () => {
+    it("a read book with page logs renders Started, Finished, and duration", () => {
       render(
         <DetailMeta
           book={{
             ...baseBook,
-            startedAt: "2026-04-01",
-            finishedAt: "2026-04-15",
+            status: "read",
+            readingLogs: [makeLog("2026-04-15"), makeLog("2026-04-01")],
           }}
         />
       );
@@ -130,17 +140,29 @@ describe("DetailMeta", () => {
       expect(screen.getByText("Read over 2 weeks")).toBeInTheDocument();
     });
 
-    it("a book with both dates (same day) — 'Read over a day' is rendered", () => {
+    it("a read book with one page-log date renders 'Read over a day'", () => {
       render(
         <DetailMeta
           book={{
             ...baseBook,
-            startedAt: "2026-04-01",
-            finishedAt: "2026-04-01",
+            status: "read",
+            readingLogs: [makeLog("2026-04-01")],
           }}
         />
       );
       expect(screen.getByText("Read over a day")).toBeInTheDocument();
+    });
+
+    it("ignores legacy stored reading date fields", () => {
+      const legacy = {
+        ...baseBook,
+        startedAt: "2026-04-01",
+        finishedAt: "2026-04-15",
+      };
+      render(<DetailMeta book={legacy} />);
+      expect(screen.queryByText(/^Started /)).not.toBeInTheDocument();
+      expect(screen.queryByText(/^Finished /)).not.toBeInTheDocument();
+      expect(screen.queryByText(/^Read over /)).not.toBeInTheDocument();
     });
   });
 });
