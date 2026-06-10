@@ -106,6 +106,8 @@ describe("RatingSection", () => {
       saveAnnualReadingChallenge: vi.fn().mockImplementation(
         () => new Promise<never>(() => {})
       ),
+      listAchievementUnlocks: vi.fn().mockResolvedValue([]),
+      saveAchievementUnlocks: vi.fn().mockResolvedValue([]),
     };
     await useBookLibrary.getState().init(slowAdapter);
     const book = await useBookLibrary.getState().addBook({

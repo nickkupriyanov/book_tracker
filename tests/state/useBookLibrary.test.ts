@@ -6,6 +6,7 @@ import type {
   AnnualReadingChallenge,
   AnnualReadingChallengeInput,
 } from "@/types/challenge";
+import type { AchievementUnlock } from "@/types/achievement";
 
 function makeFakeAdapter(overrides: Partial<StorageAdapter> = {}): StorageAdapter {
   return {
@@ -48,6 +49,14 @@ function makeFakeAdapter(overrides: Partial<StorageAdapter> = {}): StorageAdapte
         updatedAt: new Date().toISOString(),
       })
     ),
+    listAchievementUnlocks: vi
+      .fn()
+      .mockResolvedValue([] as AchievementUnlock[]),
+    saveAchievementUnlocks: vi
+      .fn()
+      .mockImplementation(
+        async (unlocks: AchievementUnlock[]): Promise<AchievementUnlock[]> => unlocks
+      ),
     ...overrides,
   };
 }

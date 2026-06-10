@@ -2,9 +2,11 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { LocalStorageAdapter } from "@/storage/local-storage-adapter";
 import type { BookInput } from "@/types/book";
 import type { AnnualReadingChallengeInput } from "@/types/challenge";
+import type { AchievementUnlock } from "@/types/achievement";
 
 const STORAGE_KEY = "book-tracker:books";
 const CHALLENGE_KEY = "book-tracker:annual-reading-challenge";
+const ACHIEVEMENT_KEY = "book-tracker:achievement-unlocks";
 
 describe("LocalStorageAdapter", () => {
   beforeEach(() => {
@@ -501,6 +503,213 @@ describe("LocalStorageAdapter", () => {
         adapter.saveAnnualReadingChallenge({ year: 2026, targetBooks: 12 })
       ).rejects.toThrow();
       setItemSpy.mockRestore();
+    });
+  });
+
+  describe("listAchievementUnlocks", () => {
+    it("returns an empty array when storage is empty", async () => {
+      const adapter = new LocalStorageAdapter();
+      const result = await adapter.listAchievementUnlocks();
+      expect(result).toEqual([]);
+    });
+
+    it("returns previously saved unlocks", async () => {
+      const adapter = new LocalStorageAdapter();
+      const unlocks: AchievementUnlock[] = [
+        {
+          achievementId: "first-finished-book",
+          unlockedAt: "2026-01-10T00:00:00.000Z",
+        },
+      ];
+      await adapter.saveAchievementUnlocks(unlocks);
+      const loaded = await adapter.listAchievementUnlocks();
+      expect(loaded).toEqual(unlocks);
+    });
+
+    it("returns an empty array and warns on corrupt JSON", async () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      localStorage.setItem(ACHIEVEMENT_KEY, "not valid json");
+      const adapter = new LocalStorageAdapter();
+      const result = await adapter.listAchievementUnlocks();
+      expect(result).toEqual([]);
+      expect(warnSpy).toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
+    it("returns an empty array and warns when stored value is not an array", async () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      localStorage.setItem(ACHIEVEMENT_KEY, JSON.stringify({ not: "an array" }));
+      const adapter = new LocalStorageAdapter();
+      const result = await adapter.listAchievementUnlocks();
+      expect(result).toEqual([]);
+      expect(warnSpy).toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
+    it("drops entries with unknown IDs while keeping valid ones", async () => {
+      localStorage.setItem(
+        ACHIEVEMENT_KEY,
+        JSON.stringify([
+          {
+            achievementId: "first-finished-book",
+            unlockedAt: "2026-01-01T00:00:00.000Z",
+          },
+          {
+            achievementId: "unknown-id",
+            unlockedAt: "2026-01-01T00:00:00.000Z",
+          },
+          {
+            achievementId: "first-quote",
+            unlockedAt: "not-a-date",
+          },
+        ])
+      );
+      const adapter = new LocalStorageAdapter();
+      const result = await adapter.listAchievementUnlocks();
+      expect(result).toEqual([
+        {
+          achievementId: "first-finished-book",
+          unlockedAt: "2026-01-01T00:00:00.000Z",
+        },
+      ]);
+    });
+  });
+
+  describe("saveAchievementUnlocks", () => {
+    it("stores unlocks under the achievement-unlocks key", async () => {
+      const adapter = new LocalStorageAdapter();
+      const unlocks: AchievementUnlock[] = [
+        {
+          achievementId: "first-finished-book",
+          unlockedAt: "2026-01-01T00:00:00.000Z",
+        },
+      ];
+      await adapter.saveAchievementUnlocks(unlocks);
+      const raw = localStorage.getItem(ACHIEVEMENT_KEY);
+      expect(raw).not.toBeNull();
+      const parsed = JSON.parse(raw!);
+      expect(parsed).toEqual(unlocks);
+    });
+
+    it("is idempotent and preserves the earliest timestamp on duplicates", async () => {
+      const adapter = new LocalStorageAdapter();
+      await adapter.saveAchievementUnlocks([
+        {
+          achievementId: "first-finished-book",
+          unlockedAt: "2026-01-10T00:00:00.000Z",
+        },
+      ]);
+      await adapter.saveAchievementUnlocks([
+        {
+          achievementId: "first-finished-book",
+          unlockedAt: "2026-01-05T00:00:00.000Z",
+        },
+      ]);
+      const result = await adapter.listAchievementUnlocks();
+      expect(result).toEqual([
+        {
+          achievementId: "first-finished-book",
+          unlockedAt: "2026-01-05T00:00:00.000Z",
+        },
+      ]);
+    });
+
+    it("does not overwrite an earlier saved timestamp with a later one", async () => {
+      const adapter = new LocalStorageAdapter();
+      await adapter.saveAchievementUnlocks([
+        {
+          achievementId: "first-quote",
+          unlockedAt: "2026-01-01T00:00:00.000Z",
+        },
+      ]);
+      await adapter.saveAchievementUnlocks([
+        {
+          achievementId: "first-quote",
+          unlockedAt: "2026-12-31T00:00:00.000Z",
+        },
+      ]);
+      const result = await adapter.listAchievementUnlocks();
+      expect(result[0]?.unlockedAt).toBe("2026-01-01T00:00:00.000Z");
+    });
+
+    it("returns canonical records in request order", async () => {
+      const adapter = new LocalStorageAdapter();
+      const result = await adapter.saveAchievementUnlocks([
+        {
+          achievementId: "first-review",
+          unlockedAt: "2026-01-01T00:00:00.000Z",
+        },
+        {
+          achievementId: "first-quote",
+          unlockedAt: "2026-01-02T00:00:00.000Z",
+        },
+      ]);
+      expect(result.map((u) => u.achievementId)).toEqual([
+        "first-review",
+        "first-quote",
+      ]);
+    });
+
+    it("ignores requested unlocks with unknown IDs", async () => {
+      const adapter = new LocalStorageAdapter();
+      const result = await adapter.saveAchievementUnlocks([
+        {
+          achievementId: "first-finished-book",
+          unlockedAt: "2026-01-01T00:00:00.000Z",
+        },
+        {
+          achievementId: "unknown-id" as never,
+          unlockedAt: "2026-01-01T00:00:00.000Z",
+        },
+      ]);
+      expect(result).toEqual([
+        {
+          achievementId: "first-finished-book",
+          unlockedAt: "2026-01-01T00:00:00.000Z",
+        },
+      ]);
+    });
+
+    it("preserves existing books and challenges when saving unlocks", async () => {
+      const adapter = new LocalStorageAdapter();
+      const added = await adapter.addBook({
+        title: "Piranesi",
+        author: "Susanna Clarke",
+        status: "reading",
+        tags: [],
+      });
+      await adapter.saveAnnualReadingChallenge({ year: 2026, targetBooks: 12 });
+      await adapter.saveAchievementUnlocks([
+        {
+          achievementId: "first-finished-book",
+          unlockedAt: "2026-01-01T00:00:00.000Z",
+        },
+      ]);
+      const books = await adapter.listBooks();
+      expect(books).toEqual([added]);
+      const challenge = await adapter.getAnnualReadingChallenge(2026);
+      expect(challenge?.targetBooks).toBe(12);
+    });
+
+    it("does not touch books or challenge storage on unlock save", async () => {
+      const adapter = new LocalStorageAdapter();
+      await adapter.addBook({
+        title: "A",
+        author: "a",
+        status: "want",
+        tags: [],
+      });
+      await adapter.saveAnnualReadingChallenge({ year: 2026, targetBooks: 5 });
+      const booksBefore = localStorage.getItem(STORAGE_KEY);
+      const challengeBefore = localStorage.getItem(CHALLENGE_KEY);
+      await adapter.saveAchievementUnlocks([
+        {
+          achievementId: "first-finished-book",
+          unlockedAt: "2026-01-01T00:00:00.000Z",
+        },
+      ]);
+      expect(localStorage.getItem(STORAGE_KEY)).toBe(booksBefore);
+      expect(localStorage.getItem(CHALLENGE_KEY)).toBe(challengeBefore);
     });
   });
 });

@@ -9,7 +9,7 @@ acceptance line is satisfied and all relevant frontend/backend gates pass.
 
 ---
 
-## [ ] T1. Add achievement domain types and catalog
+## [x] T1. Add achievement domain types and catalog
 
 - **Files:** `src/types/achievement.ts`, `src/lib/achievements.ts`
 - **Acceptance:** The typed catalog contains exactly the eight approved IDs,
@@ -17,7 +17,7 @@ acceptance line is satisfied and all relevant frontend/backend gates pass.
 - **Notes:** Keep display metadata and rule identity in code; persist unlocks
   only.
 
-## [ ] T2. Implement and test the pure achievement engine
+## [x] T2. Implement and test the pure achievement engine
 
 - **Files:** `src/lib/achievements.ts`, `src/lib/achievements.test.ts`
 - **Acceptance:** Unit tests cover all eight rules, boundary values, invalid

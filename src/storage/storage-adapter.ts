@@ -3,6 +3,7 @@ import type {
   AnnualReadingChallenge,
   AnnualReadingChallengeInput,
 } from "@/types/challenge";
+import type { AchievementUnlock } from "@/types/achievement";
 
 /**
  * Persistence contract for the books library.
@@ -78,4 +79,27 @@ export interface StorageAdapter {
   saveAnnualReadingChallenge(
     input: AnnualReadingChallengeInput
   ): Promise<AnnualReadingChallenge>;
+
+  /**
+   * Read every saved achievement unlock for the active storage
+   * scope. Returns `[]` when nothing has been saved yet; corrupt
+   * or malformed entries are dropped silently (spec 024 FR-5,
+   * §9).
+   *
+   * @throws on real storage failure (quota, disabled, network).
+   */
+  listAchievementUnlocks(): Promise<AchievementUnlock[]>;
+
+  /**
+   * Persist a batch of achievement unlocks. Idempotent: an
+   * already-saved unlock keeps its original `unlockedAt`. The
+   * canonical record for every requested `achievementId` is
+   * returned in request order. Implementations must not mutate
+   * the input array.
+   *
+   * @throws on storage failure (quota, disabled, network).
+   */
+  saveAchievementUnlocks(
+    unlocks: AchievementUnlock[]
+  ): Promise<AchievementUnlock[]>;
 }

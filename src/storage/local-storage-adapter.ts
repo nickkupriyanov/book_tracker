@@ -3,6 +3,11 @@ import type {
   AnnualReadingChallenge,
   AnnualReadingChallengeInput,
 } from "@/types/challenge";
+import type {
+  AchievementId,
+  AchievementUnlock,
+} from "@/types/achievement";
+import { ACHIEVEMENT_IDS } from "@/types/achievement";
 import type { StorageAdapter } from "./storage-adapter";
 
 /**
@@ -20,6 +25,23 @@ const STORAGE_KEY = "book-tracker:books";
  * map so the adapter can serve every year from one read.
  */
 const CHALLENGE_KEY = "book-tracker:annual-reading-challenge";
+
+/**
+ * Separate key for achievement unlocks (spec 024). Isolated
+ * from book data so corrupt achievement storage cannot
+ * interfere with the library and so the books payload never
+ * has to be migrated when the achievement catalog grows.
+ */
+const ACHIEVEMENT_KEY = "book-tracker:achievement-unlocks";
+
+/**
+ * Known v1 achievement IDs. The local adapter uses this set to
+ * reject persisted entries that no longer exist in the catalog
+ * (forward-compat insurance — see plan §6).
+ */
+const KNOWN_ACHIEVEMENT_IDS: ReadonlySet<AchievementId> = new Set(
+  ACHIEVEMENT_IDS,
+);
 
 /**
  * LocalStorage-backed implementation of {@link StorageAdapter}.
@@ -132,6 +154,92 @@ export class LocalStorageAdapter implements StorageAdapter {
     localStorage.setItem(CHALLENGE_KEY, JSON.stringify(map));
     return next;
   }
+
+  async listAchievementUnlocks(): Promise<AchievementUnlock[]> {
+    return readAchievementUnlocks();
+  }
+
+  async saveAchievementUnlocks(
+    unlocks: AchievementUnlock[]
+  ): Promise<AchievementUnlock[]> {
+    const existing = readAchievementUnlocks();
+    const byId = new Map<AchievementId, AchievementUnlock>();
+    for (const unlock of existing) {
+      byId.set(unlock.achievementId, unlock);
+    }
+    for (const requested of unlocks) {
+      if (!isValidUnlock(requested)) continue;
+      const current = byId.get(requested.achievementId);
+      if (current === undefined) {
+        byId.set(requested.achievementId, requested);
+        continue;
+      }
+      if (requested.unlockedAt.localeCompare(current.unlockedAt) < 0) {
+        byId.set(requested.achievementId, requested);
+      }
+    }
+    const merged = Array.from(byId.values());
+    localStorage.setItem(ACHIEVEMENT_KEY, JSON.stringify(merged));
+    const lookup = new Map<AchievementId, AchievementUnlock>();
+    for (const unlock of merged) {
+      lookup.set(unlock.achievementId, unlock);
+    }
+    const ordered: AchievementUnlock[] = [];
+    for (const requested of unlocks) {
+      const canonical = lookup.get(requested.achievementId);
+      if (canonical !== undefined) ordered.push(canonical);
+    }
+    return ordered;
+  }
+}
+
+/**
+ * Reads the saved achievement unlock array. Absent, corrupt, or
+ * non-array storage collapses to `[]` (mirrors `listBooks`).
+ * Per-entry validation drops anything that is not one of the
+ * eight v1 IDs with a parseable ISO timestamp; the rest of the
+ * array is preserved.
+ */
+function readAchievementUnlocks(): AchievementUnlock[] {
+  const raw = localStorage.getItem(ACHIEVEMENT_KEY);
+  if (raw === null) return [];
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    console.warn(
+      `[LocalStorageAdapter] Failed to parse ${ACHIEVEMENT_KEY}, treating as empty`,
+      err
+    );
+    return [];
+  }
+  if (!Array.isArray(parsed)) {
+    console.warn(
+      `[LocalStorageAdapter] Value at ${ACHIEVEMENT_KEY} is not an array, treating as empty`
+    );
+    return [];
+  }
+  const valid: AchievementUnlock[] = [];
+  for (const entry of parsed) {
+    if (!isValidUnlock(entry)) continue;
+    valid.push(entry);
+  }
+  return valid;
+}
+
+function isValidUnlock(value: unknown): value is AchievementUnlock {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as { achievementId?: unknown; unlockedAt?: unknown };
+  if (
+    typeof candidate.achievementId !== "string" ||
+    !KNOWN_ACHIEVEMENT_IDS.has(candidate.achievementId as AchievementId)
+  ) {
+    return false;
+  }
+  if (typeof candidate.unlockedAt !== "string") return false;
+  const parsed = Date.parse(candidate.unlockedAt);
+  if (!Number.isFinite(parsed)) return false;
+  return true;
 }
 
 /**
