@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
 
 import { AuthGate } from "@/features/auth/AuthGate";
 import { HttpLibrary } from "@/components/HttpLibrary";
@@ -11,6 +11,7 @@ import {
   resolveStorageMode,
 } from "@/storage/storage-mode";
 import { useBookLibrary } from "@/state/book-library";
+import { AchievementLifecycle } from "@/features/achievements/AchievementLifecycle";
 
 interface RootClientProps {
   children: ReactNode;
@@ -28,25 +29,44 @@ interface RootClientProps {
  *   receives the token and initialises the store from a `useEffect`
  *   so the side effect runs only after commit. The token is never
  *   persisted.
+ *
+ * The local `AchievementLifecycle` is mounted alongside the book
+ * library init in local mode. HTTP mode mounts its lifecycle
+ * inside `HttpLibrary` so it follows the token.
  */
 export function RootClient({ children }: RootClientProps) {
   const mode: StorageMode = resolveStorageMode();
   const apiBaseUrl = mode === "http" ? requireHttpApiBaseUrl(mode) : null;
 
+  const localAdapter = useMemo(
+    () =>
+      mode === "local"
+        ? createStorageAdapter({ mode: "local", apiBaseUrl: null })
+        : null,
+    [mode]
+  );
+
   useEffect(() => {
-    if (mode !== "local") {
+    if (localAdapter === null) {
       return;
     }
     useBookLibrary
       .getState()
-      .init(createStorageAdapter({ mode: "local", apiBaseUrl: null }))
+      .init(localAdapter)
       .catch((err: unknown) => {
         console.error("[RootClient] Failed to init library", err);
       });
-  }, [mode]);
+  }, [localAdapter]);
 
   if (mode === "local") {
-    return <>{children}</>;
+    return (
+      <>
+        {localAdapter !== null ? (
+          <AchievementLifecycle adapter={localAdapter} />
+        ) : null}
+        {children}
+      </>
+    );
   }
 
   return (

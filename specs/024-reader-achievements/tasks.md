@@ -36,7 +36,7 @@ acceptance line is satisfied and all relevant frontend/backend gates pass.
 - **Notes:** Use the separate `book-tracker:achievement-unlocks` key. Update all
   `StorageAdapter` test doubles so TypeScript remains green.
 
-## [ ] T4. Add the achievement Zustand store
+## [x] T4. Add the achievement Zustand store
 
 - **Files:** `src/state/achievements.ts`, `tests/state/achievements.test.ts`
 - **Acceptance:** Tests cover load states, silent initial reconciliation,

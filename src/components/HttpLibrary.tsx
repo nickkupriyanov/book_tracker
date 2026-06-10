@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
 
 import { __resetBookLibrary, useBookLibrary } from "@/state/book-library";
 import { createStorageAdapter } from "@/storage/storage-mode";
 import { HttpStorageError } from "@/storage/http-storage-adapter";
+import { AchievementLifecycle } from "@/features/achievements/AchievementLifecycle";
 
 interface HttpLibraryProps {
   apiBaseUrl: string;
@@ -36,6 +37,16 @@ export function HttpLibrary({
   onUnauthenticated,
   children,
 }: HttpLibraryProps) {
+  const adapter = useMemo(
+    () =>
+      createStorageAdapter({
+        mode: "http",
+        apiBaseUrl,
+        getToken: () => token,
+      }),
+    [apiBaseUrl, token]
+  );
+
   useEffect(() => {
     let cancelled = false;
 
@@ -43,13 +54,7 @@ export function HttpLibrary({
       // Drop the previous adapter so a new token forces a fresh init.
       __resetBookLibrary();
       try {
-        await useBookLibrary.getState().init(
-          createStorageAdapter({
-            mode: "http",
-            apiBaseUrl,
-            getToken: () => token,
-          }),
-        );
+        await useBookLibrary.getState().init(adapter);
       } catch (err) {
         if (cancelled) {
           return;
@@ -65,7 +70,7 @@ export function HttpLibrary({
     return () => {
       cancelled = true;
     };
-  }, [token, apiBaseUrl, onUnauthenticated]);
+  }, [adapter, onUnauthenticated]);
 
   // Watch the store for runtime 401s. A 401 from any later request
   // also returns the user to login — the in-memory token is the only
@@ -77,5 +82,10 @@ export function HttpLibrary({
     }
   }, [lastError, onUnauthenticated]);
 
-  return <>{children}</>;
+  return (
+    <>
+      <AchievementLifecycle adapter={adapter} />
+      {children}
+    </>
+  );
 }
