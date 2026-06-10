@@ -1,6 +1,6 @@
 # Plan: Post-MVP Python Backend With Switchable Storage
 
-> **Status:** Draft
+> **Status:** Implemented
 > **Spec:** `./spec.md` (read this first)
 > **Author:** Codex
 > **Created:** 2026-06-09
