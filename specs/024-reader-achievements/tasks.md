@@ -26,7 +26,7 @@ acceptance line is satisfied and all relevant frontend/backend gates pass.
 - **Notes:** Reuse existing reading-date and rich-text helpers where possible.
   The engine returns eligible IDs and never reads storage or current time.
 
-## [ ] T3. Extend StorageAdapter and local persistence
+## [x] T3. Extend StorageAdapter and local persistence
 
 - **Files:** `src/storage/storage-adapter.ts`,
   `src/storage/local-storage-adapter.ts`, relevant storage tests and test fakes
