@@ -77,7 +77,7 @@ acceptance line is satisfied and all relevant frontend/backend gates pass.
 - **Notes:** `POST /achievements/unlocks` returns canonical records for every
   requested ID in request order.
 
-## [ ] T8. Implement HttpStorageAdapter achievement methods
+## [x] T8. Implement HttpStorageAdapter achievement methods
 
 - **Files:** `src/storage/http-storage-adapter.ts`,
   `tests/storage/http-storage-adapter.test.ts`
