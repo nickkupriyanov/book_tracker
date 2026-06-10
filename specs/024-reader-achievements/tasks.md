@@ -67,7 +67,7 @@ acceptance line is satisfied and all relevant frontend/backend gates pass.
 - **Notes:** Store timestamps in a timezone-aware column and keep the migration
   additive.
 
-## [ ] T7. Add achievement backend API
+## [x] T7. Add achievement backend API
 
 - **Files:** backend achievement schema/service/router modules, app router
   registration, `backend/tests/test_achievements_api.py`

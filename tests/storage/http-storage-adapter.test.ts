@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { HttpStorageAdapter, HttpStorageError } from "@/storage/http-storage-adapter";
 import type { Book, BookInput } from "@/types/book";
 import type { AnnualReadingChallenge, AnnualReadingChallengeInput } from "@/types/challenge";
+import type { AchievementUnlock } from "@/types/achievement";
 
 interface RecordedCall {
   url: string;
@@ -280,5 +281,152 @@ describe("HttpStorageAdapter", () => {
       fetchImpl: fetch,
     });
     await expect(adapter.listBooks()).rejects.toBeInstanceOf(HttpStorageError);
+  });
+
+  describe("achievements", () => {
+    it("listAchievementUnlocks GETs /achievements and returns unlocks", async () => {
+      const responseBody: { unlocks: AchievementUnlock[] } = {
+        unlocks: [
+          {
+            achievementId: "first-finished-book",
+            unlockedAt: "2026-01-01T00:00:00Z",
+          },
+        ],
+      };
+      const { fetch, calls } = makeFetch((url, init) => {
+        expect(url).toBe("http://api.example.com/achievements");
+        expect(init.method).toBe("GET");
+        return { status: 200, body: JSON.stringify(responseBody) };
+      });
+      const adapter = new HttpStorageAdapter({
+        baseUrl: "http://api.example.com",
+        getToken: () => "abc",
+        fetchImpl: fetch,
+      });
+      const result = await adapter.listAchievementUnlocks();
+      expect(result).toEqual(responseBody.unlocks);
+      expect(calls).toHaveLength(1);
+    });
+
+    it("listAchievementUnlocks returns an empty array when the server returns no unlocks", async () => {
+      const { fetch } = makeFetch(() => ({
+        status: 200,
+        body: JSON.stringify({ unlocks: [] }),
+      }));
+      const adapter = new HttpStorageAdapter({
+        baseUrl: "http://api.example.com",
+        getToken: () => "abc",
+        fetchImpl: fetch,
+      });
+      const result = await adapter.listAchievementUnlocks();
+      expect(result).toEqual([]);
+    });
+
+    it("saveAchievementUnlocks POSTs snake_case payload to /achievements/unlocks and returns canonical unlocks", async () => {
+      const unlocks: AchievementUnlock[] = [
+        {
+          achievementId: "first-finished-book",
+          unlockedAt: "2026-01-01T00:00:00Z",
+        },
+        {
+          achievementId: "first-quote",
+          unlockedAt: "2026-01-02T00:00:00Z",
+        },
+      ];
+      const canonical: AchievementUnlock[] = unlocks.map((u) => ({
+        ...u,
+      }));
+      const { fetch, calls } = makeFetch((url, init) => {
+        expect(url).toBe("http://api.example.com/achievements/unlocks");
+        expect(init.method).toBe("POST");
+        expect(init.body).toBe(
+          JSON.stringify({
+            unlocks: [
+              {
+                achievement_id: "first-finished-book",
+                unlocked_at: "2026-01-01T00:00:00Z",
+              },
+              {
+                achievement_id: "first-quote",
+                unlocked_at: "2026-01-02T00:00:00Z",
+              },
+            ],
+          }),
+        );
+        return {
+          status: 200,
+          body: JSON.stringify({ unlocks: canonical }),
+        };
+      });
+      const adapter = new HttpStorageAdapter({
+        baseUrl: "http://api.example.com",
+        getToken: () => "abc",
+        fetchImpl: fetch,
+      });
+      const result = await adapter.saveAchievementUnlocks(unlocks);
+      expect(result).toEqual(canonical);
+      expect(calls).toHaveLength(1);
+    });
+
+    it("saveAchievementUnlocks skips the network call when the input is empty", async () => {
+      const { fetch, calls } = makeFetch(() => {
+        throw new Error("should not be called");
+      });
+      const adapter = new HttpStorageAdapter({
+        baseUrl: "http://api.example.com",
+        getToken: () => "abc",
+        fetchImpl: fetch,
+      });
+      await expect(adapter.saveAchievementUnlocks([])).resolves.toEqual([]);
+      expect(calls).toHaveLength(0);
+    });
+
+    it("saveAchievementUnlocks propagates 401 as HttpStorageError", async () => {
+      const { fetch } = makeFetch(() => ({ status: 401, body: "{}" }));
+      const adapter = new HttpStorageAdapter({
+        baseUrl: "http://api.example.com",
+        getToken: () => "abc",
+        fetchImpl: fetch,
+      });
+      await expect(
+        adapter.saveAchievementUnlocks([
+          {
+            achievementId: "first-finished-book",
+            unlockedAt: "2026-01-01T00:00:00Z",
+          },
+        ]),
+      ).rejects.toMatchObject({ status: 401, message: "unauthorized" });
+    });
+
+    it("listAchievementUnlocks wraps network failure in HttpStorageError", async () => {
+      const fetchImpl = vi.fn(async () => {
+        throw new Error("ECONNREFUSED");
+      }) as unknown as typeof fetch;
+      const adapter = new HttpStorageAdapter({
+        baseUrl: "http://api.example.com",
+        getToken: () => "abc",
+        fetchImpl,
+      });
+      await expect(adapter.listAchievementUnlocks()).rejects.toBeInstanceOf(
+        HttpStorageError,
+      );
+    });
+
+    it("saveAchievementUnlocks wraps malformed JSON in HttpStorageError", async () => {
+      const { fetch } = makeFetch(() => ({ status: 200, body: "not-json" }));
+      const adapter = new HttpStorageAdapter({
+        baseUrl: "http://api.example.com",
+        getToken: () => "abc",
+        fetchImpl: fetch,
+      });
+      await expect(
+        adapter.saveAchievementUnlocks([
+          {
+            achievementId: "first-finished-book",
+            unlockedAt: "2026-01-01T00:00:00Z",
+          },
+        ]),
+      ).rejects.toBeInstanceOf(HttpStorageError);
+    });
   });
 });

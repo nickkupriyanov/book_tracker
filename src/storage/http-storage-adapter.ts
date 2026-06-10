@@ -15,6 +15,7 @@ import type {
   AnnualReadingChallengeInput,
 } from "@/types/challenge";
 import type { Book, BookInput } from "@/types/book";
+import type { AchievementUnlock } from "@/types/achievement";
 
 import type { StorageAdapter } from "./storage-adapter";
 
@@ -172,5 +173,30 @@ export class HttpStorageAdapter implements StorageAdapter {
       path: `/challenges/${input.year}`,
       body: { year: input.year, target_books: input.targetBooks },
     });
+  }
+
+  async listAchievementUnlocks(): Promise<AchievementUnlock[]> {
+    const response = await this.request<{ unlocks: AchievementUnlock[] }>({
+      method: "GET",
+      path: "/achievements",
+    });
+    return response.unlocks;
+  }
+
+  async saveAchievementUnlocks(
+    unlocks: AchievementUnlock[]
+  ): Promise<AchievementUnlock[]> {
+    if (unlocks.length === 0) return [];
+    const response = await this.request<{ unlocks: AchievementUnlock[] }>({
+      method: "POST",
+      path: "/achievements/unlocks",
+      body: {
+        unlocks: unlocks.map((u) => ({
+          achievement_id: u.achievementId,
+          unlocked_at: u.unlockedAt,
+        })),
+      },
+    });
+    return response.unlocks;
   }
 }
