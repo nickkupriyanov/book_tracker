@@ -38,6 +38,9 @@ describe("AppHeader", () => {
     expect(
       screen.getByRole("link", { name: /statistics/i })
     ).toHaveAttribute("href", "/stats");
+    expect(
+      screen.getByRole("link", { name: /achievements/i })
+    ).toHaveAttribute("href", "/achievements");
   });
 
   it("marks the home route as active with aria-current=page", () => {
@@ -64,6 +67,14 @@ describe("AppHeader", () => {
     ).toHaveAttribute("aria-current", "page");
   });
 
+  it("marks the achievements route as active", () => {
+    mockUsePathname.mockReturnValue("/achievements");
+    render(<AppHeader />);
+    expect(
+      screen.getByRole("link", { name: /achievements/i })
+    ).toHaveAttribute("aria-current", "page");
+  });
+
   it("does not mark non-active links with aria-current", () => {
     mockUsePathname.mockReturnValue("/");
     render(<AppHeader />);
@@ -72,6 +83,9 @@ describe("AppHeader", () => {
     ).not.toHaveAttribute("aria-current");
     expect(
       screen.getByRole("link", { name: /statistics/i })
+    ).not.toHaveAttribute("aria-current");
+    expect(
+      screen.getByRole("link", { name: /achievements/i })
     ).not.toHaveAttribute("aria-current");
   });
 

@@ -18,6 +18,7 @@ const NAV_LINKS: NavLink[] = [
   { href: "/", label: "Home" },
   { href: "/library", label: "Library" },
   { href: "/stats", label: "Statistics" },
+  { href: "/achievements", label: "Achievements" },
 ];
 
 /**

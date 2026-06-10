@@ -10,6 +10,7 @@ import {
 import { ReadingCalendar } from "@/features/reading-calendar";
 import { ReaderProfileCard } from "@/features/reader-profile";
 import { YearlyChallengeCard } from "@/features/yearly-challenge";
+import { AchievementsPreview } from "@/features/achievements";
 import { useBookLibrary } from "@/state/book-library";
 import { EmptyShelf } from "@/components/EmptyShelf";
 import { PageContainer } from "@/components/PageContainer";
@@ -103,6 +104,12 @@ export function ShelfClient() {
           >
             <div data-testid="home-profile-slot" className="order-1">
               <ReaderProfileCard books={books} />
+            </div>
+            <div
+              data-testid="home-achievements-slot"
+              className="order-2"
+            >
+              <AchievementsPreview />
             </div>
             <div
               data-testid="home-calendar-rail"

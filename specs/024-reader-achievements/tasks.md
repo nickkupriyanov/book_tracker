@@ -87,7 +87,7 @@ acceptance line is satisfied and all relevant frontend/backend gates pass.
 - **Notes:** Keep HTTP details inside the adapter; store and UI consume only the
   interface.
 
-## [ ] T9. Build achievement cards and full collection page
+## [x] T9. Build achievement cards and full collection page
 
 - **Files:** `src/features/achievements/`, `src/app/achievements/`, focused UI
   tests

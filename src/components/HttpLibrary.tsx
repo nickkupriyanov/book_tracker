@@ -6,6 +6,7 @@ import { __resetBookLibrary, useBookLibrary } from "@/state/book-library";
 import { createStorageAdapter } from "@/storage/storage-mode";
 import { HttpStorageError } from "@/storage/http-storage-adapter";
 import { AchievementLifecycle } from "@/features/achievements/AchievementLifecycle";
+import { AchievementToastBridge } from "@/features/achievements/AchievementToastBridge";
 
 interface HttpLibraryProps {
   apiBaseUrl: string;
@@ -85,6 +86,7 @@ export function HttpLibrary({
   return (
     <>
       <AchievementLifecycle adapter={adapter} />
+      <AchievementToastBridge />
       {children}
     </>
   );

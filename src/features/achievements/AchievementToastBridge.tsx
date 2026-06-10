@@ -16,12 +16,15 @@ import { ACHIEVEMENT_CATALOG } from "@/lib/achievements";
  *                  action that routes to `/achievements`.
  * - Many unlocks -> a calm aggregate toast with the same
  *                  routing action.
+ *
+ * Mounted only inside `RootClient`/`HttpLibrary`, both of
+ * which run in the Next app-router context.
  */
 export function AchievementToastBridge() {
   const notification = useAchievements((s) => s.notification);
   const acknowledge = useAchievements((s) => s.acknowledgeNotification);
-  const router = useRouter();
   const lastIdRef = useRef<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     if (notification === null) return;

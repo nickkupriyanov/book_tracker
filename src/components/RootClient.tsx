@@ -11,7 +11,10 @@ import {
   resolveStorageMode,
 } from "@/storage/storage-mode";
 import { useBookLibrary } from "@/state/book-library";
-import { AchievementLifecycle } from "@/features/achievements/AchievementLifecycle";
+import {
+  AchievementLifecycle,
+  AchievementToastBridge,
+} from "@/features/achievements";
 
 interface RootClientProps {
   children: ReactNode;
@@ -64,6 +67,7 @@ export function RootClient({ children }: RootClientProps) {
         {localAdapter !== null ? (
           <AchievementLifecycle adapter={localAdapter} />
         ) : null}
+        <AchievementToastBridge />
         {children}
       </>
     );
