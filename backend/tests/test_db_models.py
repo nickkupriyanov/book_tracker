@@ -9,7 +9,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
-from app.models import AnnualReadingChallenge, Book, User
+from app.models import AchievementUnlock, AnnualReadingChallenge, Book, User
 
 
 def _make_user(db, email: str = "alice@example.com") -> User:
@@ -222,3 +222,85 @@ def test_payload_column_is_postgres_jsonb(db) -> None:
         )
     ).scalar_one()
     assert type_name == "jsonb"
+
+
+def test_achievement_unlock_is_unique_per_user(db) -> None:
+    user = _make_user(db, "ach@example.com")
+    db.add(
+        AchievementUnlock(
+            user_id=user.id,
+            achievement_id="first-finished-book",
+            unlocked_at=datetime(2026, 1, 10, tzinfo=timezone.utc),
+        )
+    )
+    db.commit()
+
+    db.add(
+        AchievementUnlock(
+            user_id=user.id,
+            achievement_id="first-finished-book",
+            unlocked_at=datetime(2026, 1, 11, tzinfo=timezone.utc),
+        )
+    )
+    with pytest.raises(IntegrityError):
+        db.commit()
+    db.rollback()
+
+
+def test_achievement_unlock_user_isolation(db) -> None:
+    alice = _make_user(db, "alice-ach@example.com")
+    bob = _make_user(db, "bob-ach@example.com")
+    db.add(
+        AchievementUnlock(
+            user_id=alice.id,
+            achievement_id="first-finished-book",
+            unlocked_at=datetime(2026, 1, 10, tzinfo=timezone.utc),
+        )
+    )
+    db.add(
+        AchievementUnlock(
+            user_id=bob.id,
+            achievement_id="first-finished-book",
+            unlocked_at=datetime(2026, 1, 10, tzinfo=timezone.utc),
+        )
+    )
+    db.commit()
+
+    alice_unlocks = (
+        db.execute(
+            select(AchievementUnlock).where(
+                AchievementUnlock.user_id == alice.id
+            )
+        )
+        .scalars()
+        .all()
+    )
+    bob_unlocks = (
+        db.execute(
+            select(AchievementUnlock).where(AchievementUnlock.user_id == bob.id)
+        )
+        .scalars()
+        .all()
+    )
+    assert {u.achievement_id for u in alice_unlocks} == {"first-finished-book"}
+    assert {u.achievement_id for u in bob_unlocks} == {"first-finished-book"}
+
+
+def test_achievement_unlock_cascades_with_user(db) -> None:
+    user = _make_user(db, "cascade-ach@example.com")
+    db.add(
+        AchievementUnlock(
+            user_id=user.id,
+            achievement_id="first-finished-book",
+            unlocked_at=datetime(2026, 1, 10, tzinfo=timezone.utc),
+        )
+    )
+    db.commit()
+
+    db.delete(user)
+    db.commit()
+
+    remaining = (
+        db.execute(select(AchievementUnlock)).scalars().all()
+    )
+    assert remaining == []

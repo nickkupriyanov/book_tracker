@@ -11,6 +11,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 
 if TYPE_CHECKING:
+    from app.models.achievement import AchievementUnlock
     from app.models.book import Book
     from app.models.challenge import AnnualReadingChallenge
 
@@ -31,6 +32,10 @@ class User(Base):
         cascade="all, delete-orphan",
     )
     challenges: Mapped[list["AnnualReadingChallenge"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    achievement_unlocks: Mapped[list["AchievementUnlock"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
     )

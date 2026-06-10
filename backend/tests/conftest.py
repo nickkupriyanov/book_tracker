@@ -59,7 +59,7 @@ def db(engine: Engine) -> Generator[Session, None, None]:
         conn.execute(
             text(
                 "TRUNCATE TABLE books, annual_reading_challenges, "
-                "users RESTART IDENTITY CASCADE"
+                "achievement_unlocks, users RESTART IDENTITY CASCADE"
             )
         )
 

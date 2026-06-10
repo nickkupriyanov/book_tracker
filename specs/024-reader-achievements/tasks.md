@@ -47,7 +47,7 @@ acceptance line is satisfied and all relevant frontend/backend gates pass.
   existing library-store pattern. Achievement errors must not set library
   status to `error`.
 
-## [ ] T5. Wire achievement lifecycle into local and HTTP roots
+## [x] T5. Wire achievement lifecycle into local and HTTP roots
 
 - **Files:** root/HTTP adapter wiring components and focused component tests
 - **Acceptance:** Local and HTTP modes initialize achievements with the exact
