@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run --passWithNoTests",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "backend:dev": "cd backend && uvicorn app.main:app --reload --port 8000"
   },
   "dependencies": {
     "@tiptap/extension-highlight": "^3.26.0",

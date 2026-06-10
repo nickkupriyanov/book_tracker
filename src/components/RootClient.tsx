@@ -1,36 +1,70 @@
 "use client";
 
 import { useEffect, type ReactNode } from "react";
-import { LocalStorageAdapter } from "@/storage/local-storage-adapter";
+
+import { AuthGate } from "@/features/auth/AuthGate";
+import { HttpLibrary } from "@/components/HttpLibrary";
+import {
+  type StorageMode,
+  createStorageAdapter,
+  requireHttpApiBaseUrl,
+  resolveStorageMode,
+} from "@/storage/storage-mode";
 import { useBookLibrary } from "@/state/book-library";
 
+interface RootClientProps {
+  children: ReactNode;
+}
+
 /**
- * Root-level client wrapper that initialises the book library
- * store on mount. Wraps the root layout's `children` so every
- * page (shelf, detail, future routes) sees a `ready` store
- * after the first effect tick.
+ * Root-level client wrapper that selects the right storage mode and
+ * initialises the book library.
  *
- * Why this exists: previously the `init()` call lived in
- * `ShelfClient`, which only mounts on `/`. Direct loads on
- * `/book/<id>` (reload, paste URL, deep link) would never
- * call init, leaving the store stuck in `loading` and
- * BookDetail showing `<DetailLoading />` forever. Moving init
- * to the root layout fixes that — every page benefits, no
- * duplicate-effect dance required.
- *
- * The init is idempotent (the store's `init` is a no-op once
- * the first call succeeds), so multiple mounts across
- * navigations are safe and cheap.
+ * - Local mode: creates a `LocalStorageAdapter` and calls
+ *   `useBookLibrary.init(adapter)` on mount.
+ * - HTTP mode: hands the children to `AuthGate`. The gate renders
+ *   the login surface until the user authenticates, then calls the
+ *   render prop with the in-memory access token. `HttpLibrary`
+ *   receives the token and initialises the store from a `useEffect`
+ *   so the side effect runs only after commit. The token is never
+ *   persisted.
  */
-export function RootClient({ children }: { children: ReactNode }) {
+export function RootClient({ children }: RootClientProps) {
+  const mode: StorageMode = resolveStorageMode();
+  const apiBaseUrl = mode === "http" ? requireHttpApiBaseUrl(mode) : null;
+
   useEffect(() => {
+    if (mode !== "local") {
+      return;
+    }
     useBookLibrary
       .getState()
-      .init(new LocalStorageAdapter())
+      .init(createStorageAdapter({ mode: "local", apiBaseUrl: null }))
       .catch((err: unknown) => {
         console.error("[RootClient] Failed to init library", err);
       });
-  }, []);
+  }, [mode]);
 
-  return <>{children}</>;
+  if (mode === "local") {
+    return <>{children}</>;
+  }
+
+  return (
+    <AuthGate mode={mode} apiBaseUrl={apiBaseUrl}>
+      {(token, { onUnauthenticated }) => {
+        if (!token) {
+          return <>{children}</>;
+        }
+        return (
+          <HttpLibrary
+            apiBaseUrl={apiBaseUrl as string}
+            token={token}
+            onUnauthenticated={onUnauthenticated}
+          >
+            {children}
+          </HttpLibrary>
+        );
+      }}
+    </AuthGate>
+  );
 }

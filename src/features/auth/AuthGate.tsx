@@ -1,0 +1,96 @@
+"use client";
+
+import { useCallback, useState, type ReactNode } from "react";
+
+import { LoginForm } from "./LoginForm";
+import type { StorageMode } from "@/storage/storage-mode";
+
+export interface AuthRenderHelpers {
+  /**
+   * Tell the gate to clear the in-memory token and return to the
+   * login screen. The HTTP subtree calls this when the backend
+   * rejects the token (typically 401).
+   */
+  onUnauthenticated: () => void;
+}
+
+export interface AuthGateProps {
+  /**
+   * Storage mode selected at build time. In local mode the gate is a
+   * no-op and children render immediately.
+   */
+  mode: StorageMode;
+  /**
+   * API base URL required in HTTP mode. When `mode === "http"` and
+   * this is null/empty the gate shows a configuration error.
+   */
+  apiBaseUrl: string | null;
+  /**
+   * Render the protected tree. The token is `null` before login and
+   * the JWT string after a successful login. The helpers object
+   * exposes `onUnauthenticated` so the HTTP subtree can return the
+   * user to login on a 401 (spec 023 §9).
+   */
+  children: (token: string | null, helpers: AuthRenderHelpers) => ReactNode;
+  /**
+   * Optional fetch override passed through to `LoginForm`. Intended
+   * for tests.
+   *
+   * @internal
+   */
+  fetchImpl?: typeof fetch;
+}
+
+/**
+ * HTTP-mode authentication gate.
+ *
+ * The gate owns auth UI and the in-memory access token. It does not
+ * call the book store directly — `RootClient` is the consumer that
+ * turns the token into a `StorageAdapter` and initializes the
+ * library (spec 023 §3.2). The gate clears the token on demand so
+ * an expired or rejected token returns the user to the login screen
+ * (spec 023 §9).
+ */
+export function AuthGate({ mode, apiBaseUrl, children, fetchImpl }: AuthGateProps) {
+  const [token, setToken] = useState<string | null>(null);
+
+  const handleLogin = useCallback(async (accessToken: string) => {
+    setToken(accessToken);
+  }, []);
+
+  const handleUnauthenticated = useCallback(() => {
+    setToken(null);
+  }, []);
+
+  const helpers: AuthRenderHelpers = { onUnauthenticated: handleUnauthenticated };
+
+  if (mode === "local") {
+    return <>{children("local", helpers)}</>;
+  }
+
+  if (!apiBaseUrl) {
+    return (
+      <div className="mx-auto mt-24 max-w-md rounded-lg border border-border bg-card p-6 text-sm shadow-sm">
+        <h1 className="text-lg font-semibold">Server not configured</h1>
+        <p className="mt-2 text-muted-foreground">
+          HTTP mode is enabled but <code>NEXT_PUBLIC_API_BASE_URL</code>{" "}
+          is missing. Set it in your environment and reload.
+        </p>
+      </div>
+    );
+  }
+
+  if (token) {
+    return <>{children(token, helpers)}</>;
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background p-6">
+      <LoginForm
+        apiBaseUrl={apiBaseUrl}
+        onLogin={handleLogin}
+        {...(fetchImpl ? { fetchImpl } : {})}
+      />
+    </div>
+  );
+}
