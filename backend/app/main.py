@@ -58,6 +58,7 @@ def create_app(*, cors_allow_origins: Iterable[str] | None = None) -> FastAPI:
     def health() -> dict[str, Any]:
         return HealthResponse(status="ok", app_env=settings.app_env).model_dump()
 
+    from app.api.routes import achievements as achievements_routes
     from app.api.routes import auth as auth_routes
     from app.api.routes import books as books_routes
     from app.api.routes import challenges as challenges_routes
@@ -65,6 +66,7 @@ def create_app(*, cors_allow_origins: Iterable[str] | None = None) -> FastAPI:
     app.include_router(auth_routes.router)
     app.include_router(books_routes.router)
     app.include_router(challenges_routes.router)
+    app.include_router(achievements_routes.router)
 
     return app
 

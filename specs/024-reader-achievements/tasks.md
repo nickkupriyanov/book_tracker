@@ -56,7 +56,7 @@ acceptance line is satisfied and all relevant frontend/backend gates pass.
 - **Notes:** Add a narrow provider/orchestrator rather than duplicating
   evaluation calls across add, edit, quote, review, rating, and progress UI.
 
-## [ ] T6. Add PostgreSQL model and migration
+## [x] T6. Add PostgreSQL model and migration
 
 - **Files:** `backend/app/models/achievement.py`, model exports/user
   relationship, `backend/migrations/versions/0002_achievement_unlocks.py`,
