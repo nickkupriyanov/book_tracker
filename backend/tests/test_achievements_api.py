@@ -245,3 +245,34 @@ def test_unlocks_are_user_scoped(
     alice_list = client.get("/achievements", headers=alice_h).json()
     assert len(alice_list["unlocks"]) == 1
     assert alice_list["unlocks"][0]["achievementId"] == "first-finished-book"
+
+
+def test_concurrent_saves_are_idempotent(auth_client) -> None:
+    """Two POSTs with the same `(achievement_id, unlocked_at)`
+    must both succeed and return identical canonical records.
+
+    The endpoint relies on `INSERT ... ON CONFLICT DO NOTHING`
+    so the second request cannot raise `IntegrityError` and
+    fall into a 500.
+    """
+    client, headers, _ = auth_client
+    payload = {
+        "unlocks": [
+            {
+                "achievement_id": "first-finished-book",
+                "unlocked_at": "2026-01-10T00:00:00Z",
+            }
+        ]
+    }
+    first = client.post(
+        "/achievements/unlocks", json=payload, headers=headers
+    )
+    second = client.post(
+        "/achievements/unlocks", json=payload, headers=headers
+    )
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert first.json() == second.json()
+    body = second.json()["unlocks"][0]
+    assert body["achievementId"] == "first-finished-book"
+    assert body["unlockedAt"].startswith("2026-01-10")
