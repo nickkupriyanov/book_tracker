@@ -116,7 +116,7 @@ acceptance line is satisfied and all relevant frontend/backend gates pass.
   mobile layout, and reduced-motion expectations are manually verified.
 - **Notes:** Pending in-memory unlocks remain visible with calm retry feedback.
 
-## [ ] T12. End-to-end verification and acceptance pass
+## [x] T12. End-to-end verification and acceptance pass
 
 - **Files:** `specs/024-reader-achievements/spec.md`,
   `specs/024-reader-achievements/plan.md`,

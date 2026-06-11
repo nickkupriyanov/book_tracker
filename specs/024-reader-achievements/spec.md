@@ -208,25 +208,25 @@ FastAPI, PostgreSQL, or auth internals.
 
 ## 10. Acceptance criteria
 
-^- [x] A typed catalog contains exactly the eight approved achievements and
+- [x] A typed catalog contains exactly the eight approved achievements and
   marks exactly two as secret.
-^- [x] A pure, unit-tested engine evaluates every rule deterministically.
-^- [x] Initial retrospective evaluation persists matching unlocks without a
+- [x] A pure, unit-tested engine evaluates every rule deterministically.
+- [x] Initial retrospective evaluation persists matching unlocks without a
   toast and uses discovery time.
-^- [x] Later evaluations show at most one toast and persist all newly matched
+- [x] Later evaluations show at most one toast and persist all newly matched
   achievements in one batch.
-^- [x] Saved unlocks remain after qualifying book data is changed or deleted.
-^- [x] `StorageAdapter`, localStorage, HTTP adapter, FastAPI, and PostgreSQL all
+- [x] Saved unlocks remain after qualifying book data is changed or deleted.
+- [x] `StorageAdapter`, localStorage, HTTP adapter, FastAPI, and PostgreSQL all
   support idempotent achievement unlock persistence.
-^- [x] HTTP unlock data is isolated by authenticated user.
-^- [x] The home preview shows the three latest unlocks or gentle empty copy.
-^- [x] `/achievements` handles loading, error, locked-only, and unlocked states.
-^- [x] Locked secret achievements do not reveal their title or condition.
-^- [x] Navigation includes `Achievements` and active-link behavior remains
+- [x] HTTP unlock data is isolated by authenticated user.
+- [x] The home preview shows the three latest unlocks or gentle empty copy.
+- [x] `/achievements` handles loading, error, locked-only, and unlocked states.
+- [x] Locked secret achievements do not reveal their title or condition.
+- [x] Navigation includes `Achievements` and active-link behavior remains
   correct.
-^- [x] Achievement failures never roll back successful book operations.
-^- [x] Frontend lint and tests pass.
-^- [x] Backend tests pass.
+- [x] Achievement failures never roll back successful book operations.
+- [x] Frontend lint and tests pass.
+- [x] Backend tests pass.
 
 ## 11. Out of scope (for this spec)
 
