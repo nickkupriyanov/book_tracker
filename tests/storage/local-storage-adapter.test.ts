@@ -591,7 +591,7 @@ describe("LocalStorageAdapter", () => {
       expect(parsed).toEqual(unlocks);
     });
 
-    it("is idempotent and preserves the earliest timestamp on duplicates", async () => {
+    it("is idempotent and preserves the first recorded timestamp on duplicates", async () => {
       const adapter = new LocalStorageAdapter();
       await adapter.saveAchievementUnlocks([
         {
@@ -606,10 +606,12 @@ describe("LocalStorageAdapter", () => {
         },
       ]);
       const result = await adapter.listAchievementUnlocks();
+      // First-timestamp-wins: the original 2026-01-10 must be
+      // preserved (FR-5). A later save cannot backdate history.
       expect(result).toEqual([
         {
           achievementId: "first-finished-book",
-          unlockedAt: "2026-01-05T00:00:00.000Z",
+          unlockedAt: "2026-01-10T00:00:00.000Z",
         },
       ]);
     });
@@ -630,6 +632,26 @@ describe("LocalStorageAdapter", () => {
       ]);
       const result = await adapter.listAchievementUnlocks();
       expect(result[0]?.unlockedAt).toBe("2026-01-01T00:00:00.000Z");
+    });
+
+    it("does not accept a fabricated earlier timestamp on a later save", async () => {
+      const adapter = new LocalStorageAdapter();
+      await adapter.saveAchievementUnlocks([
+        {
+          achievementId: "first-quote",
+          unlockedAt: "2026-12-31T00:00:00.000Z",
+        },
+      ]);
+      // A later save attempts to backdate the same row.
+      await adapter.saveAchievementUnlocks([
+        {
+          achievementId: "first-quote",
+          unlockedAt: "2026-01-01T00:00:00.000Z",
+        },
+      ]);
+      const result = await adapter.listAchievementUnlocks();
+      // Original (later) timestamp must be preserved (FR-5).
+      expect(result[0]?.unlockedAt).toBe("2026-12-31T00:00:00.000Z");
     });
 
     it("returns canonical records in request order", async () => {

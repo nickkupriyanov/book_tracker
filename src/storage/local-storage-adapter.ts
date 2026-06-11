@@ -170,11 +170,9 @@ export class LocalStorageAdapter implements StorageAdapter {
     for (const requested of unlocks) {
       if (!isValidUnlock(requested)) continue;
       const current = byId.get(requested.achievementId);
+      // First-timestamp-wins: a row's original `unlockedAt` is
+      // never overwritten by a later save (spec 024 FR-5).
       if (current === undefined) {
-        byId.set(requested.achievementId, requested);
-        continue;
-      }
-      if (requested.unlockedAt.localeCompare(current.unlockedAt) < 0) {
         byId.set(requested.achievementId, requested);
       }
     }

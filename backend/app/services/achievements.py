@@ -70,9 +70,8 @@ def save_unlocks_for_user(
             )
             db.add(row)
             existing[achievement_id] = row
-            continue
-        if unlocked_at < row.unlocked_at:
-            row.unlocked_at = unlocked_at
+        # First-timestamp-wins: a row's original `unlocked_at`
+        # is never overwritten by a later save (spec 024 FR-5).
     db.commit()
     for row in existing.values():
         db.refresh(row)

@@ -125,6 +125,8 @@ def test_repeated_save_is_idempotent_and_preserves_earliest(auth_client) -> None
         },
         headers=headers,
     )
+    # A later save that tries to backdate the row is a no-op —
+    # the original timestamp is the source of truth (FR-5).
     second = client.post(
         "/achievements/unlocks",
         json={
@@ -140,9 +142,9 @@ def test_repeated_save_is_idempotent_and_preserves_earliest(auth_client) -> None
     assert second.status_code == 200
     body = second.json()["unlocks"][0]
     assert body["achievementId"] == "first-finished-book"
-    # Earlier timestamp must be preserved (server is the source of truth).
-    assert body["unlockedAt"].startswith("2026-01-05")
+    assert body["unlockedAt"].startswith("2026-02-10")
 
+    # Subsequent later timestamps are also no-ops.
     third = client.post(
         "/achievements/unlocks",
         json={
@@ -156,7 +158,7 @@ def test_repeated_save_is_idempotent_and_preserves_earliest(auth_client) -> None
         headers=headers,
     )
     body = third.json()["unlocks"][0]
-    assert body["unlockedAt"].startswith("2026-01-05")
+    assert body["unlockedAt"].startswith("2026-02-10")
 
 
 def test_save_rejects_unknown_achievement_id(auth_client) -> None:
