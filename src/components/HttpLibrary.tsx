@@ -85,7 +85,10 @@ export function HttpLibrary({
 
   return (
     <>
-      <AchievementLifecycle adapter={adapter} />
+      <AchievementLifecycle
+        adapter={adapter}
+        onUnauthenticated={onUnauthenticated}
+      />
       <AchievementToastBridge />
       {children}
     </>

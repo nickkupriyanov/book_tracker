@@ -135,4 +135,65 @@ describe("AchievementLifecycle", () => {
     expect(useAchievements.getState().status).toBe("error");
     errSpy.mockRestore();
   });
+
+  it("calls onUnauthenticated when a 401 surfaces from the achievement store", async () => {
+    const { HttpStorageError } = await import(
+      "@/storage/http-storage-adapter"
+    );
+    const onUnauthenticated = vi.fn();
+    const adapter = makeFakeAdapter();
+    useBookLibrary.setState({
+      status: "ready",
+      books: [book({ id: "a", status: "read" })],
+    });
+    await act(async () => {
+      render(
+        <AchievementLifecycle
+          adapter={adapter}
+          onUnauthenticated={onUnauthenticated}
+        />,
+      );
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(onUnauthenticated).not.toHaveBeenCalled();
+    // Simulate a later 401 by pushing an HttpStorageError(401)
+    // into the store's `lastError`. The subscriber forwards the
+    // callback exactly once.
+    act(() => {
+      useAchievements.setState({
+        lastError: new HttpStorageError("unauthorized", 401, ""),
+        error: "Could not save your achievement progress.",
+      });
+    });
+    expect(onUnauthenticated).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not call onUnauthenticated for non-401 achievement errors", async () => {
+    const { HttpStorageError } = await import(
+      "@/storage/http-storage-adapter"
+    );
+    const onUnauthenticated = vi.fn();
+    const adapter = makeFakeAdapter();
+    useBookLibrary.setState({ status: "ready", books: [] });
+    await act(async () => {
+      render(
+        <AchievementLifecycle
+          adapter={adapter}
+          onUnauthenticated={onUnauthenticated}
+        />,
+      );
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    act(() => {
+      useAchievements.setState({
+        lastError: new HttpStorageError("server error", 500, ""),
+        error: "Could not save your achievement progress.",
+      });
+    });
+    expect(onUnauthenticated).not.toHaveBeenCalled();
+  });
 });

@@ -7,6 +7,15 @@ import type { StorageAdapter } from "@/storage/storage-adapter";
 
 interface AchievementLifecycleProps {
   adapter: StorageAdapter;
+  /**
+   * Optional HTTP-only callback fired when the achievement
+   * store surfaces an `HttpStorageError(401)`. Mirrors the
+   * pattern used for the book library in `HttpLibrary` so an
+   * expired token during achievement load/save returns the
+   * user to the login screen instead of leaving them in a
+   * broken state (spec 023 §9 + spec 024).
+   */
+  onUnauthenticated?: () => void;
 }
 
 /**
@@ -18,6 +27,10 @@ interface AchievementLifecycleProps {
  * - Subscribes to subsequent book changes and triggers a non-silent
  *   evaluation. A single batch produces one notification payload
  *   (see the achievement store).
+ * - Watches the achievement store for new errors. A 401 is
+ *   forwarded to the optional `onUnauthenticated` callback so the
+ *   app can drop the in-memory token and return to the login
+ *   screen.
  * - Tears down on unmount: a token change or mode switch remounts
  *   the orchestrator and the store resets inside `init`.
  *
@@ -25,7 +38,10 @@ interface AchievementLifecycleProps {
  * effects, so callers can drop it anywhere below the storage
  * adapter boundary.
  */
-export function AchievementLifecycle({ adapter }: AchievementLifecycleProps) {
+export function AchievementLifecycle({
+  adapter,
+  onUnauthenticated,
+}: AchievementLifecycleProps) {
   const status = useBookLibrary((s) => s.status);
   const books = useBookLibrary((s) => s.books);
   const initialisedRef = useRef(false);
@@ -45,8 +61,9 @@ export function AchievementLifecycle({ adapter }: AchievementLifecycleProps) {
           .init(adapter, undefined, books);
         if (cancelled) return;
       } catch (err) {
-        // Init failure is already reflected in the store. Log for
-        // the dev console only — books remain usable.
+        // Init failure is already reflected in the store. Log
+        // and let the runtime 401 subscriber bounce the user if
+        // needed.
         console.error("[AchievementLifecycle] init failed", err);
       }
     })();
@@ -65,6 +82,28 @@ export function AchievementLifecycle({ adapter }: AchievementLifecycleProps) {
     });
     return unsubscribe;
   }, [status]);
+
+  // Runtime 401 watcher — mirrors the book library's pattern
+  // in `HttpLibrary`. A single subscriber avoids re-rendering
+  // the surrounding tree on every store change.
+  useEffect(() => {
+    if (onUnauthenticated === undefined) return;
+    const unsubscribe = useAchievements.subscribe((state, prev) => {
+      if (state.lastError === prev.lastError) return;
+      const err = state.lastError;
+      if (
+        err !== null &&
+        typeof err === "object" &&
+        "name" in err &&
+        (err as { name?: string }).name === "HttpStorageError" &&
+        "status" in err &&
+        (err as { status?: number }).status === 401
+      ) {
+        onUnauthenticated();
+      }
+    });
+    return unsubscribe;
+  }, [onUnauthenticated]);
 
   return null;
 }
