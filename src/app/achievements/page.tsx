@@ -1,3 +1,4 @@
+import { PageContainer } from "@/components/PageContainer";
 import { AchievementsClient } from "@/features/achievements/AchievementsClient";
 
 export const metadata = {
@@ -5,5 +6,9 @@ export const metadata = {
 };
 
 export default function AchievementsPage() {
-  return <AchievementsClient />;
+  return (
+    <PageContainer>
+      <AchievementsClient />
+    </PageContainer>
+  );
 }

@@ -5,11 +5,11 @@ import {
   __resetAchievements,
   useAchievements,
 } from "@/state/achievements";
-import {
-  ACHIEVEMENT_CATALOG,
-  type AchievementDefinition,
-} from "@/lib/achievements";
-import type { AchievementUnlock } from "@/types/achievement";
+import { ACHIEVEMENT_CATALOG } from "@/lib/achievements";
+import type {
+  AchievementDefinition,
+  AchievementUnlock,
+} from "@/types/achievement";
 
 function findDef(id: AchievementDefinition["id"]): AchievementDefinition {
   const def = ACHIEVEMENT_CATALOG.find((d) => d.id === id);

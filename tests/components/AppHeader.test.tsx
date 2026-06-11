@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AppHeader } from "@/components/AppHeader";
 import { useBookLibrary, __resetBookLibrary } from "@/state/book-library";
@@ -144,5 +144,75 @@ describe("AppHeader", () => {
     expect(
       await screen.findByRole("heading", { name: /add a book/i })
     ).toBeInTheDocument();
+  });
+
+  describe("mobile navigation", () => {
+    it("renders a hamburger toggle with the correct aria attributes", () => {
+      mockUsePathname.mockReturnValue("/");
+      render(<AppHeader />);
+      const toggle = screen.getByTestId("header-nav-toggle");
+      expect(toggle).toHaveAttribute("aria-expanded", "false");
+      expect(toggle).toHaveAttribute("aria-controls");
+      expect(toggle).toHaveAttribute("aria-label", "Open navigation");
+    });
+
+    it("clicking the hamburger reveals the mobile nav with all four links", async () => {
+      const user = userEvent.setup();
+      mockUsePathname.mockReturnValue("/library");
+      render(<AppHeader />);
+      // Mobile nav is hidden initially.
+      expect(
+        screen.queryByTestId("header-mobile-nav"),
+      ).not.toBeInTheDocument();
+      await user.click(screen.getByTestId("header-nav-toggle"));
+      const mobileNav = screen.getByTestId("header-mobile-nav");
+      // All four links are present, including the new
+      // Achievements entry.
+      const links = within(mobileNav).getAllByRole("link");
+      expect(links.map((l) => l.textContent)).toEqual([
+        "Home",
+        "Library",
+        "Statistics",
+        "Achievements",
+      ]);
+      // Active route is marked in the mobile nav too.
+      const active = links.find((l) =>
+        l.hasAttribute("aria-current"),
+      );
+      expect(active).toBeDefined();
+      expect(active?.textContent).toBe("Library");
+      // Toggle is now in the open state.
+      const toggle = screen.getByTestId("header-nav-toggle");
+      expect(toggle).toHaveAttribute("aria-expanded", "true");
+      expect(toggle).toHaveAttribute("aria-label", "Close navigation");
+    });
+
+    it("Escape closes the mobile nav", async () => {
+      const user = userEvent.setup();
+      mockUsePathname.mockReturnValue("/");
+      render(<AppHeader />);
+      await user.click(screen.getByTestId("header-nav-toggle"));
+      expect(screen.getByTestId("header-mobile-nav")).toBeInTheDocument();
+      await user.keyboard("{Escape}");
+      expect(
+        screen.queryByTestId("header-mobile-nav"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("a route change auto-closes the mobile nav", async () => {
+      mockUsePathname.mockReturnValue("/");
+      const user = userEvent.setup();
+      const { rerender } = render(<AppHeader />);
+      await user.click(screen.getByTestId("header-nav-toggle"));
+      expect(screen.getByTestId("header-mobile-nav")).toBeInTheDocument();
+      // Simulate a route change: pathname updates and the
+      // component re-renders. The useEffect on `pathname`
+      // closes the panel.
+      mockUsePathname.mockReturnValue("/library");
+      rerender(<AppHeader />);
+      expect(
+        screen.queryByTestId("header-mobile-nav"),
+      ).not.toBeInTheDocument();
+    });
   });
 });

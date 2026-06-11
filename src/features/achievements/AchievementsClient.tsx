@@ -56,24 +56,24 @@ export function AchievementsClient() {
 
   if (status === "loading") {
     return (
-      <main
+      <div
         aria-label="Achievements"
         data-testid="achievements-page"
         data-state="loading"
-        className="mx-auto max-w-3xl px-4 py-10"
+        className="mx-auto max-w-3xl"
       >
         <p className="text-muted-foreground">Loading your achievements…</p>
-      </main>
+      </div>
     );
   }
 
   if (status === "error") {
     return (
-      <main
+      <div
         aria-label="Achievements"
         data-testid="achievements-page"
         data-state="error"
-        className="mx-auto max-w-3xl px-4 py-10"
+        className="mx-auto max-w-3xl"
       >
         <header className="mb-6">
           <h1 className="font-serif text-2xl text-foreground">Achievements</h1>
@@ -94,16 +94,16 @@ export function AchievementsClient() {
         >
           Try again
         </Button>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main
+    <div
       aria-label="Achievements"
       data-testid="achievements-page"
       data-state="ready"
-      className="mx-auto max-w-3xl px-4 py-10"
+      className="mx-auto max-w-3xl"
     >
       <header className="mb-6">
         <h1 className="font-serif text-2xl text-foreground">Achievements</h1>
@@ -202,6 +202,6 @@ export function AchievementsClient() {
           </ul>
         </section>
       )}
-    </main>
+    </div>
   );
 }
