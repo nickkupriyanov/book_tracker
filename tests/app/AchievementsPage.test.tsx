@@ -31,4 +31,20 @@ describe("/achievements page", () => {
     // so existing selectors (state, sections) keep working.
     expect(screen.getByTestId("achievements-page")).toBeInTheDocument();
   });
+
+  it("does not constrain the inner content to a narrower max-width than the page container", () => {
+    useAchievements.setState({ status: "ready", unlocks: [] });
+    render(<AchievementsPage />);
+    const page = screen.getByTestId("achievements-page");
+    // The page itself must not impose an additional `max-w-*`
+    // narrower than the PageContainer's `max-w-6xl`. If a
+    // future change reintroduces a `max-w-3xl` wrapper, the
+    // achievements page would look narrower than stats /
+    // library on desktop — exactly the bug the inner-wrapper
+    // refactor removed.
+    expect(page.className).not.toMatch(/max-w-3xl/);
+    expect(page.className).not.toMatch(/max-w-2xl/);
+    expect(page.className).not.toMatch(/max-w-xl/);
+    expect(page.className).not.toMatch(/max-w-lg/);
+  });
 });

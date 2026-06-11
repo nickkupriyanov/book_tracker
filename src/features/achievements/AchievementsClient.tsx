@@ -60,7 +60,6 @@ export function AchievementsClient() {
         aria-label="Achievements"
         data-testid="achievements-page"
         data-state="loading"
-        className="mx-auto max-w-3xl"
       >
         <p className="text-muted-foreground">Loading your achievements…</p>
       </div>
@@ -73,10 +72,9 @@ export function AchievementsClient() {
         aria-label="Achievements"
         data-testid="achievements-page"
         data-state="error"
-        className="mx-auto max-w-3xl"
       >
-        <header className="mb-6">
-          <h1 className="font-serif text-2xl text-foreground">Achievements</h1>
+        <header className="mb-8">
+          <h1 className="font-serif text-3xl text-foreground">Achievements</h1>
           <p className="text-muted-foreground text-sm">
             Milestones from your reading life.
           </p>
@@ -103,10 +101,9 @@ export function AchievementsClient() {
       aria-label="Achievements"
       data-testid="achievements-page"
       data-state="ready"
-      className="mx-auto max-w-3xl"
     >
-      <header className="mb-6">
-        <h1 className="font-serif text-2xl text-foreground">Achievements</h1>
+      <header className="mb-8">
+        <h1 className="font-serif text-3xl text-foreground">Achievements</h1>
         <p className="text-muted-foreground text-sm">
           Milestones from your reading life.
         </p>
