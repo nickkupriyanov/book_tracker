@@ -97,7 +97,7 @@ acceptance line is satisfied and all relevant frontend/backend gates pass.
 - **Notes:** Use existing shadcn/ui primitives and warm visual tokens. Avoid
   progress bars, dense dashboard presentation, and celebratory animation.
 
-## [ ] T10. Add home preview, navigation, and toast bridge
+## [x] T10. Add home preview, navigation, and toast bridge
 
 - **Files:** `src/app/ShelfClient.tsx`, `src/components/AppHeader.tsx`,
   achievement feature components, focused tests

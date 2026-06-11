@@ -68,7 +68,7 @@ function UnlockedCard({
       data-achievement-state="unlocked"
       aria-label={`${definition.title} — unlocked`}
       className={cn(
-        "bg-card border-border relative flex h-full flex-col gap-2 rounded-lg border px-4 py-4 shadow-sm",
+        "bg-card border-border relative flex h-full flex-col gap-2 rounded-lg border px-4 py-4 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
         className,
       )}
     >

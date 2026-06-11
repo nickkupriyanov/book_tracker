@@ -4,6 +4,13 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { RootClient } from "@/components/RootClient";
 import { __resetBookLibrary, useBookLibrary } from "@/state/book-library";
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
+  usePathname: () => "/",
+  useParams: () => ({}),
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 beforeEach(() => {
   vi.unstubAllEnvs();
   localStorage.clear();

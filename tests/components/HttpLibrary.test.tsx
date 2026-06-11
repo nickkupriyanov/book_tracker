@@ -5,6 +5,13 @@ import { HttpLibrary } from "@/components/HttpLibrary";
 import { __resetBookLibrary, useBookLibrary } from "@/state/book-library";
 import { HttpStorageError } from "@/storage/http-storage-adapter";
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
+  usePathname: () => "/library",
+  useParams: () => ({}),
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 type Responder = (url: string, init: RequestInit) => {
   status: number;
   body?: string;
