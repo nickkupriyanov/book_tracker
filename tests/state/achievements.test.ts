@@ -162,31 +162,15 @@ describe("useAchievements", () => {
     );
   });
 
-  it("a later successful save uses the earliest discovered timestamp", async () => {
-    let stored: AchievementUnlock[] = [];
+  it("does not re-send an already-saved ID on later evaluations", async () => {
+    const saveSpy = vi
+      .fn()
+      .mockImplementation(
+        async (u: AchievementUnlock[]) => u,
+      );
     const adapter = makeFakeAdapter({
-      listAchievementUnlocks: vi
-        .fn()
-        .mockImplementation(async () => stored),
-      saveAchievementUnlocks: vi
-        .fn()
-        .mockImplementation(async (u: AchievementUnlock[]) => {
-          const byId = new Map(stored.map((s) => [s.achievementId, s]));
-          for (const next of u) {
-            const current = byId.get(next.achievementId);
-            if (
-              current === undefined ||
-              next.unlockedAt.localeCompare(current.unlockedAt) < 0
-            ) {
-              byId.set(next.achievementId, next);
-            }
-          }
-          stored = Array.from(byId.values());
-          return u.map(
-            (req) =>
-              stored.find((s) => s.achievementId === req.achievementId) ?? req
-          );
-        }),
+      listAchievementUnlocks: vi.fn().mockResolvedValue([]),
+      saveAchievementUnlocks: saveSpy,
     });
     await useAchievements
       .getState()
@@ -195,17 +179,16 @@ describe("useAchievements", () => {
         { now: () => new Date("2026-03-01T00:00:00.000Z") },
         [book({ id: "a", status: "read" })]
       );
-    const initialTimestamp =
-      useAchievements.getState().unlocks[0]?.unlockedAt;
-    expect(initialTimestamp).toBe("2026-03-01T00:00:00.000Z");
+    expect(saveSpy).toHaveBeenCalledTimes(1);
     await useAchievements
       .getState()
       .evaluate(
         { now: () => new Date("2026-12-01T00:00:00.000Z") },
         [book({ id: "a", status: "read" })]
       );
-    const storedNow = await adapter.listAchievementUnlocks();
-    expect(storedNow[0]?.unlockedAt).toBe("2026-03-01T00:00:00.000Z");
+    // Second evaluation must not re-send the same ID — the
+    // store has confirmed it as saved.
+    expect(saveSpy).toHaveBeenCalledTimes(1);
   });
 
   it("init sets error status when load fails and rethrows", async () => {
@@ -260,5 +243,124 @@ describe("useAchievements", () => {
     expect(state.status).toBe("ready");
     expect(state.error).toBeNull();
     expect(state.unlocks.map((u) => u.achievementId)).toEqual(["first-quote"]);
+  });
+
+  it("after save failure, retry sends the same batch and clears pending", async () => {
+    let attempts = 0;
+    const saveSpy = vi
+      .fn()
+      .mockImplementation(async (u: AchievementUnlock[]) => {
+        attempts += 1;
+        if (attempts === 1) {
+          throw new Error("network");
+        }
+        return u;
+      });
+    const adapter = makeFakeAdapter({
+      listAchievementUnlocks: vi.fn().mockResolvedValue([]),
+      saveAchievementUnlocks: saveSpy,
+    });
+    await useAchievements.getState().init(adapter, undefined, []);
+    await useAchievements
+      .getState()
+      .evaluate({ now: () => new Date("2026-03-01T00:00:00.000Z") }, [
+        book({ id: "a", status: "read" }),
+      ]);
+    expect(useAchievements.getState().pendingUnlocks).toHaveLength(1);
+    expect(saveSpy).toHaveBeenCalledTimes(1);
+    await useAchievements.getState().retry();
+    expect(saveSpy).toHaveBeenCalledTimes(2);
+    const state = useAchievements.getState();
+    expect(state.pendingUnlocks).toEqual([]);
+    expect(state.error).toBeNull();
+    expect(state.unlocks.map((u) => u.achievementId)).toContain(
+      "first-finished-book"
+    );
+  });
+
+  it("after save failure, a later evaluate re-queues the failed IDs and resends the union", async () => {
+    const saveSpy = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("network"))
+      .mockResolvedValueOnce([]);
+    const adapter = makeFakeAdapter({
+      listAchievementUnlocks: vi.fn().mockResolvedValue([]),
+      saveAchievementUnlocks: saveSpy,
+    });
+    await useAchievements.getState().init(adapter, undefined, []);
+    await useAchievements
+      .getState()
+      .evaluate({ now: () => new Date("2026-03-01T00:00:00.000Z") }, [
+        book({ id: "a", status: "read" }),
+      ]);
+    expect(saveSpy).toHaveBeenCalledTimes(1);
+    expect(saveSpy.mock.calls[0]?.[0].map((u: AchievementUnlock) => u.achievementId)).toEqual(
+      ["first-finished-book"],
+    );
+    // Second evaluate with a richer library must include the
+    // previously-failed ID in the next save batch.
+    await useAchievements
+      .getState()
+      .evaluate({ now: () => new Date("2026-03-02T00:00:00.000Z") }, [
+        book({ id: "a", status: "read" }),
+        book({
+          id: "b",
+          status: "read",
+          quotes: [
+            {
+              id: "q1",
+              text: "quote",
+              createdAt: "2026-01-01T00:00:00.000Z",
+            },
+          ],
+        }),
+      ]);
+    expect(saveSpy).toHaveBeenCalledTimes(2);
+    const secondBatch = saveSpy.mock.calls[1]?.[0] as AchievementUnlock[];
+    expect(secondBatch.map((u) => u.achievementId).sort()).toEqual([
+      "first-finished-book",
+      "first-quote",
+    ]);
+  });
+
+  it("retry with empty pending reloads from storage", async () => {
+    const listSpy = vi.fn().mockResolvedValue([]);
+    const saveSpy = vi.fn().mockResolvedValue([]);
+    const adapter = makeFakeAdapter({
+      listAchievementUnlocks: listSpy,
+      saveAchievementUnlocks: saveSpy,
+    });
+    await useAchievements.getState().init(adapter, undefined, []);
+    // No books -> no eligible -> no save in the silent eval.
+    expect(saveSpy).toHaveBeenCalledTimes(0);
+    useAchievements.setState({ status: "error", error: "boom" });
+    await useAchievements.getState().retry();
+    expect(saveSpy).toHaveBeenCalledTimes(0);
+    expect(useAchievements.getState().pendingUnlocks).toEqual([]);
+    expect(useAchievements.getState().status).toBe("ready");
+  });
+
+  it("a successful save adds the IDs to savedIds so they are never re-sent", async () => {
+    const saveSpy = vi
+      .fn()
+      .mockImplementation(async (u: AchievementUnlock[]) => u);
+    const adapter = makeFakeAdapter({
+      listAchievementUnlocks: vi.fn().mockResolvedValue([]),
+      saveAchievementUnlocks: saveSpy,
+    });
+    await useAchievements
+      .getState()
+      .init(
+        adapter,
+        undefined,
+        [book({ id: "a", status: "read" })],
+      );
+    expect(saveSpy).toHaveBeenCalledTimes(1);
+    // Re-mount with the same adapter and the same library — the
+    // ID is already saved so no second save fires.
+    await useAchievements
+      .getState()
+      .init(adapter, undefined, [book({ id: "a", status: "read" })]);
+    expect(saveSpy).toHaveBeenCalledTimes(1);
   });
 });
