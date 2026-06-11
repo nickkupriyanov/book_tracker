@@ -7,6 +7,7 @@ import {
   sortUnlocksByRecency,
 } from "@/lib/achievements";
 import { AchievementCard } from "./AchievementCard";
+import { Button } from "@/components/ui/button";
 import type {
   AchievementDefinition,
   AchievementUnlock,
@@ -53,14 +54,16 @@ export function AchievementsPreview() {
         <p className="text-muted-foreground text-sm" role="alert">
           {error}
         </p>
-        <button
+        <Button
           type="button"
+          variant="link"
+          size="sm"
           onClick={() => void retry()}
           data-testid="achievements-preview-retry"
-          className="text-primary mt-2 text-sm underline-offset-2 hover:underline"
+          className="mt-2 px-0"
         >
           Try again
-        </button>
+        </Button>
       </section>
     );
   }
