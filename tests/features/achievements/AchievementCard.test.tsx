@@ -46,25 +46,22 @@ describe("AchievementCard", () => {
     expect(card.textContent).toContain(def.title);
   });
 
-  it("renders the secret-locked variant with neither title nor condition", () => {
+  it("renders the secret-locked variant with neither title nor condition (anywhere in the card)", () => {
     const def = findDef("long-read");
     const { container } = render(<AchievementCard definition={def} />);
     const card = screen.getByTestId("achievement-card");
     expect(card.dataset["achievementState"]).toBe("locked-secret");
-    // The card body shows neutral copy only; the secret title
-    // and condition live behind an `sr-only` paragraph for
-    // assistive tech and must not appear in any non-sr-only
-    // text node.
-    const visibleText = Array.from(
-      container.querySelectorAll<HTMLElement>(
-        "[data-testid='achievement-card'] *:not(.sr-only)",
-      ),
-    )
-      .map((el) => el.textContent ?? "")
-      .join(" ");
-    expect(visibleText).not.toContain(def.title);
-    expect(visibleText).not.toContain(def.condition);
-    expect(card.textContent).toMatch(/hidden achievement/i);
+    // The card body shows neutral copy only. The secret title
+    // and condition must not appear in the visible UI nor in
+    // the `sr-only` paragraph (spec 024 FR-2: "secret until
+    // unlocked" applies to assistive tech too).
+    const fullText =
+      container.querySelector(
+        "[data-testid='achievement-card']",
+      )?.textContent ?? "";
+    expect(fullText).not.toContain(def.title);
+    expect(fullText).not.toContain(def.condition);
+    expect(fullText).toMatch(/hidden achievement/i);
   });
 });
 

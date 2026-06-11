@@ -153,7 +153,7 @@ function SecretLockedCard({
         </h3>
       </div>
       <p className="text-sm">Keep reading to discover this one.</p>
-      <p className="sr-only">{`Secret achievement. ${definition.title}. ${definition.condition}`}</p>
+      <p className="sr-only">Hidden achievement. Keep reading to discover this one.</p>
     </article>
   );
 }
