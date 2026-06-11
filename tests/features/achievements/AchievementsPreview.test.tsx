@@ -26,7 +26,7 @@ describe("AchievementsPreview", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows up to three latest unlocks and a 'View all' link", () => {
+  it("shows the three latest unlocks as compact rows in newest-first order", () => {
     setUnlocks([
       {
         achievementId: "first-finished-book",
@@ -48,9 +48,14 @@ describe("AchievementsPreview", () => {
     render(<AchievementsPreview />);
     const section = screen.getByTestId("achievements-preview");
     expect(section.dataset["state"]).toBe("ready");
-    const cards = within(section).getAllByTestId("achievement-card");
-    expect(cards).toHaveLength(3);
-    expect(cards[0]).toHaveAttribute("data-achievement-state", "unlocked");
+    const rows = within(section).getAllByTestId("achievement-preview-row");
+    expect(rows).toHaveLength(3);
+    expect(rows.map((row) => row.dataset["achievementId"])).toEqual([
+      "first-finished-book",
+      "first-quote",
+      "first-review",
+    ]);
+    expect(within(section).queryByTestId("achievement-card")).not.toBeInTheDocument();
     expect(
       within(section).getByTestId("achievements-preview-view-all"),
     ).toHaveAttribute("href", "/achievements");
@@ -97,7 +102,10 @@ describe("AchievementsPreview", () => {
     expect(
       within(banner).getByTestId("achievements-preview-save-retry"),
     ).toBeInTheDocument();
-    // The unlocked card is still visible alongside the banner.
-    expect(within(section).getAllByTestId("achievement-card")).toHaveLength(1);
+    // The compact unlocked row is still visible alongside the banner.
+    expect(
+      within(section).getAllByTestId("achievement-preview-row"),
+    ).toHaveLength(1);
+    expect(within(section).queryByTestId("achievement-card")).not.toBeInTheDocument();
   });
 });

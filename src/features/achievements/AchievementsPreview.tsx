@@ -6,8 +6,9 @@ import {
   ACHIEVEMENT_CATALOG,
   sortUnlocksByRecency,
 } from "@/lib/achievements";
-import { AchievementCard } from "./AchievementCard";
 import { Button } from "@/components/ui/button";
+import { formatUnlockDate } from "./format";
+import { getAchievementIcon } from "./icons";
 import type {
   AchievementDefinition,
   AchievementUnlock,
@@ -119,16 +120,18 @@ export function AchievementsPreview() {
           Keep reading — your milestones will gather here.
         </p>
       ) : (
-        <ul className="space-y-2">
+        <ul className="divide-border/60 divide-y">
           {recent.map((unlock) => {
             const definition = definitionFor(unlock.achievementId);
             if (definition === undefined) return null;
             return (
-              <li key={unlock.achievementId}>
-                <AchievementCard
+              <li
+                key={unlock.achievementId}
+                className="py-3 first:pt-1 last:pb-0"
+              >
+                <AchievementPreviewRow
                   definition={definition}
                   unlock={unlock}
-                  className="px-3 py-3"
                 />
               </li>
             );
@@ -136,5 +139,44 @@ export function AchievementsPreview() {
         </ul>
       )}
     </section>
+  );
+}
+
+interface AchievementPreviewRowProps {
+  definition: AchievementDefinition;
+  unlock: AchievementUnlock;
+}
+
+function AchievementPreviewRow({
+  definition,
+  unlock,
+}: AchievementPreviewRowProps) {
+  const { Icon } = getAchievementIcon(definition.icon);
+
+  return (
+    <article
+      aria-label={`${definition.title} — unlocked`}
+      data-testid="achievement-preview-row"
+      data-achievement-id={definition.id}
+      className="grid grid-cols-[2.25rem_minmax(0,1fr)] gap-x-3"
+    >
+      <span
+        aria-hidden
+        className="bg-primary/10 text-primary row-span-2 flex size-9 items-center justify-center rounded-full"
+      >
+        <Icon className="size-4" />
+      </span>
+      <div className="min-w-0">
+        <h3 className="font-serif text-base leading-tight text-foreground">
+          {definition.title}
+        </h3>
+        <p className="text-muted-foreground mt-0.5 text-xs tabular-nums">
+          Unlocked {formatUnlockDate(unlock.unlockedAt)}
+        </p>
+      </div>
+      <p className="text-muted-foreground col-start-2 mt-1.5 text-xs leading-relaxed">
+        {definition.description}
+      </p>
+    </article>
   );
 }
