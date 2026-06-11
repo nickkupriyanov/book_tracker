@@ -43,9 +43,16 @@ export function AchievementsClient() {
   const status = useAchievements((s) => s.status);
   const unlocks = useAchievements((s) => s.unlocks);
   const error = useAchievements((s) => s.error);
+  const pendingUnlocks = useAchievements((s) => s.pendingUnlocks);
   const retry = useAchievements((s) => s.retry);
 
   const groups = useMemo(() => groupAchievements(unlocks), [unlocks]);
+  // Save-failure retry surface: a calm inline banner above the
+  // unlocked/locked groups. Unlocks stay visible so the user
+  // keeps their reading history (spec 024 FR-16) and a single
+  // button resends the pending batch (FR-17).
+  const hasSaveFailure =
+    status === "ready" && error !== null && pendingUnlocks.length > 0;
 
   if (status === "loading") {
     return (
@@ -104,6 +111,27 @@ export function AchievementsClient() {
           Milestones from your reading life.
         </p>
       </header>
+
+      {hasSaveFailure && (
+        <div
+          role="alert"
+          data-testid="achievements-save-banner"
+          className="bg-card text-card-foreground border-border mb-6 flex flex-wrap items-center gap-2 rounded-lg border px-4 py-3 text-sm"
+        >
+          <p className="text-muted-foreground flex-1">{error}</p>
+          <Button
+            type="button"
+            variant="link"
+            size="sm"
+            onClick={() => void retry()}
+            data-testid="achievements-save-retry"
+            aria-label="Retry saving your achievements"
+            className="px-0"
+          >
+            Try again
+          </Button>
+        </div>
+      )}
 
       {groups.unlocked.length > 0 ? (
         <section

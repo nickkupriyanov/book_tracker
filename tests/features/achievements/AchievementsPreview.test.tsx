@@ -68,4 +68,36 @@ describe("AchievementsPreview", () => {
       within(section).getByTestId("achievements-preview-retry"),
     ).toBeInTheDocument();
   });
+
+  it("after a save failure, the preview shows a retry banner but keeps the unlocked list visible", () => {
+    useAchievements.setState({
+      status: "ready",
+      unlocks: [
+        {
+          achievementId: "first-finished-book",
+          unlockedAt: "2026-01-10T00:00:00.000Z",
+        },
+      ],
+      error: "Could not save your achievement progress. Please try again.",
+      pendingUnlocks: [
+        {
+          achievementId: "first-finished-book",
+          unlockedAt: "2026-01-10T00:00:00.000Z",
+        },
+      ],
+    });
+    render(<AchievementsPreview />);
+    const section = screen.getByTestId("achievements-preview");
+    // Section still reports `ready` so the list keeps rendering.
+    expect(section.dataset["state"]).toBe("ready");
+    const banner = within(section).getByTestId(
+      "achievements-preview-save-banner",
+    );
+    expect(banner).toHaveAttribute("role", "alert");
+    expect(
+      within(banner).getByTestId("achievements-preview-save-retry"),
+    ).toBeInTheDocument();
+    // The unlocked card is still visible alongside the banner.
+    expect(within(section).getAllByTestId("achievement-card")).toHaveLength(1);
+  });
 });

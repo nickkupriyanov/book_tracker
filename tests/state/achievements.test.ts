@@ -160,6 +160,13 @@ describe("useAchievements", () => {
     expect(state.unlocks.map((u) => u.achievementId)).toContain(
       "first-finished-book"
     );
+    // Status must remain `ready` so the UI can render the
+    // unlock list. The retry affordance is a separate surface
+    // driven by `error` + `pendingUnlocks`, not by `status`.
+    expect(state.status).toBe("ready");
+    expect(state.pendingUnlocks.map((u) => u.achievementId)).toEqual([
+      "first-finished-book",
+    ]);
   });
 
   it("does not re-send an already-saved ID on later evaluations", async () => {

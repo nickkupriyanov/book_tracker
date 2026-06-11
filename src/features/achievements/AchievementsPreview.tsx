@@ -33,12 +33,18 @@ export function AchievementsPreview() {
   const status = useAchievements((s) => s.status);
   const unlocks = useAchievements((s) => s.unlocks);
   const error = useAchievements((s) => s.error);
+  const pendingUnlocks = useAchievements((s) => s.pendingUnlocks);
   const retry = useAchievements((s) => s.retry);
 
   const recent = useMemo(() => {
     const sorted = sortUnlocksByRecency(unlocks);
     return sorted.slice(0, PREVIEW_LIMIT);
   }, [unlocks]);
+  // Mirror the full collection: surface a calm retry banner
+  // when the most recent save failed, while still showing the
+  // unlocked list (spec 024 FR-16, FR-17).
+  const hasSaveFailure =
+    status === "ready" && error !== null && pendingUnlocks.length > 0;
 
   if (status === "error") {
     return (
@@ -85,6 +91,26 @@ export function AchievementsPreview() {
           View all
         </a>
       </header>
+      {hasSaveFailure && (
+        <div
+          role="alert"
+          data-testid="achievements-preview-save-banner"
+          className="mb-3 flex flex-wrap items-center gap-2 text-sm"
+        >
+          <p className="text-muted-foreground flex-1">{error}</p>
+          <Button
+            type="button"
+            variant="link"
+            size="sm"
+            onClick={() => void retry()}
+            data-testid="achievements-preview-save-retry"
+            aria-label="Retry saving your achievements"
+            className="px-0"
+          >
+            Try again
+          </Button>
+        </div>
+      )}
       {recent.length === 0 ? (
         <p
           className="text-muted-foreground text-sm"

@@ -140,4 +140,87 @@ describe("AchievementsClient", () => {
     screen.getByTestId("achievements-retry").click();
     expect(retrySpy).toHaveBeenCalledTimes(1);
   });
+
+  it("after a save failure, renders a save-failure banner above the unlocked groups without hiding unlocks", async () => {
+    const { AchievementsClient } = await import(
+      "@/features/achievements/AchievementsClient"
+    );
+    useAchievements.setState({
+      status: "ready",
+      error: "Could not save your achievement progress. Please try again.",
+      pendingUnlocks: [
+        {
+          achievementId: "first-finished-book",
+          unlockedAt: "2026-01-10T00:00:00.000Z",
+        },
+      ],
+      unlocks: [
+        {
+          achievementId: "first-finished-book",
+          unlockedAt: "2026-01-10T00:00:00.000Z",
+        },
+      ],
+    });
+    render(<AchievementsClient />);
+    const page = screen.getByTestId("achievements-page");
+    expect(page.dataset["state"]).toBe("ready");
+    // Banner is visible and announces its message via role=alert.
+    const banner = screen.getByTestId("achievements-save-banner");
+    expect(banner).toHaveAttribute("role", "alert");
+    expect(banner.textContent).toMatch(/could not save/i);
+    // The unlocked section is still rendered — the save-failure
+    // banner is supplemental, not a replacement (FR-16).
+    const sections = screen.getAllByTestId("achievements-section");
+    expect(sections.map((el) => el.dataset["section"])).toContain("unlocked");
+  });
+
+  it("clicking Try again in the save-failure banner calls the store retry", async () => {
+    const { AchievementsClient } = await import(
+      "@/features/achievements/AchievementsClient"
+    );
+    const retrySpy = vi.fn().mockResolvedValue(undefined);
+    useAchievements.setState({
+      status: "ready",
+      error: "Could not save your achievement progress. Please try again.",
+      pendingUnlocks: [
+        {
+          achievementId: "first-finished-book",
+          unlockedAt: "2026-01-10T00:00:00.000Z",
+        },
+      ],
+      unlocks: [
+        {
+          achievementId: "first-finished-book",
+          unlockedAt: "2026-01-10T00:00:00.000Z",
+        },
+      ],
+      retry: retrySpy as never,
+    });
+    render(<AchievementsClient />);
+    screen.getByTestId("achievements-save-retry").click();
+    expect(retrySpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not render a save-failure banner when pending is empty", async () => {
+    const { AchievementsClient } = await import(
+      "@/features/achievements/AchievementsClient"
+    );
+    // A stale error without a pending batch is treated as
+    // cleared and the banner is suppressed.
+    useAchievements.setState({
+      status: "ready",
+      error: "Could not save your achievement progress. Please try again.",
+      pendingUnlocks: [],
+      unlocks: [
+        {
+          achievementId: "first-finished-book",
+          unlockedAt: "2026-01-10T00:00:00.000Z",
+        },
+      ],
+    });
+    render(<AchievementsClient />);
+    expect(
+      screen.queryByTestId("achievements-save-banner"),
+    ).not.toBeInTheDocument();
+  });
 });
