@@ -108,7 +108,7 @@ acceptance line is satisfied and all relevant frontend/backend gates pass.
 - **Notes:** Preserve current home responsive ordering and active navigation
   behavior.
 
-## [ ] T11. Complete failure, accessibility, and responsive polish
+## [x] T11. Complete failure, accessibility, and responsive polish
 
 - **Files:** affected achievement UI/state files and tests
 - **Acceptance:** Achievement load/save failure never blocks book operations;
