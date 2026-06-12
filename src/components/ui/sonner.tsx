@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react";
 import {
   CircleCheckIcon,
   InfoIcon,
@@ -10,12 +11,31 @@ import {
 import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 
+import { resolveAppTheme } from "@/lib/themes"
+
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
+  const { theme } = useTheme()
+  // Defer to "light" until next-themes has resolved on the client.
+  // Sonner's theme prop is a closed union ("light" | "dark" | "system"),
+  // so we must not forward the app theme id directly — we map each
+  // approved id to its light/dark classification and fall back to
+  // "light" for unknown values (e.g. an old stored id).
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const resolved = resolveAppTheme(theme)
+  const sonnerTheme: ToasterProps["theme"] = mounted
+    ? resolved === "paper"
+      ? "light"
+      : "dark"
+    : "light"
 
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme={sonnerTheme}
       className="toaster group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,
