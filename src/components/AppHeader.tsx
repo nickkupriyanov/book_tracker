@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Menu, Plus, X } from "lucide-react";
 import { AddBookDialog } from "@/features/add-book";
 import { Button } from "@/components/ui/button";
+import { ThemePicker } from "@/components/ThemePicker";
 import { useBookLibrary } from "@/state/book-library";
 import { cn } from "@/lib/utils";
 
@@ -119,7 +120,8 @@ export function AppHeader() {
             );
           })}
         </nav>
-        <div className="flex w-full items-center sm:ml-auto sm:w-auto">
+        <div className="flex w-full items-center gap-2 sm:ml-auto sm:w-auto">
+          <ThemePicker />
           <Button
             type="button"
             onClick={() => setDialogOpen(true)}
@@ -127,7 +129,7 @@ export function AppHeader() {
             data-testid="header-add-book"
             data-state={canAddBook ? "ready" : "loading"}
             size="sm"
-            className="w-full gap-1.5 sm:w-auto"
+            className="flex-1 gap-1.5 sm:flex-none"
           >
             <Plus className="size-4" aria-hidden />
             Add book

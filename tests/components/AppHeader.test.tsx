@@ -89,7 +89,7 @@ describe("AppHeader", () => {
     ).not.toHaveAttribute("aria-current");
   });
 
-  it("renders a right-aligned 'Add book' button", () => {
+  it("renders a right-aligned 'Add book' button next to the theme picker", () => {
     mockUsePathname.mockReturnValue("/");
     const { container } = render(<AppHeader />);
     const headerInner = container.querySelector("header > div");
@@ -99,8 +99,13 @@ describe("AppHeader", () => {
     const button = screen.getByTestId("header-add-book");
     expect(button).toBeInTheDocument();
     expect(button).toHaveTextContent("Add book");
-    expect(button).toHaveClass("w-full");
-    expect(button).toHaveClass("sm:w-auto");
+    // On narrow widths the Add book button expands to fill the
+    // available space next to the theme picker; on wider screens
+    // it shrinks to its content width.
+    expect(button).toHaveClass("flex-1");
+    expect(button).toHaveClass("sm:flex-none");
+    // The theme picker trigger is present in the header.
+    expect(screen.getByTestId("header-theme-picker")).toBeInTheDocument();
   });
 
   it("disables the add-book button while the store is loading", () => {
