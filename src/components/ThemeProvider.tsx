@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import {
   APP_THEME_IDS,
   DEFAULT_APP_THEME,
+  THEME_STORAGE_KEY,
 } from "@/lib/themes";
 
 /**
@@ -28,9 +29,11 @@ import {
  * - `disableTransitionOnChange`: prevents a flash of animated
  *   `transition-colors` on theme swap, which the spec's UI rules
  *   describe as motion discomfort.
- * - `storageKey="book-tracker-theme"`: isolates the theme preference
+ * - `storageKey={THEME_STORAGE_KEY}`: isolates the theme preference
  *   from any other `next-themes` consumer in the same browser and
- *   signals ownership.
+ *   signals ownership. The key is shared with the inline scrubber
+ *   script in `app/layout.tsx` so an unknown persisted value is
+ *   normalised to `paper` before next-themes ever reads it.
  */
 export interface ThemeProviderProps {
   children: ReactNode;
@@ -45,7 +48,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       enableSystem={false}
       enableColorScheme
       disableTransitionOnChange
-      storageKey="book-tracker-theme"
+      storageKey={THEME_STORAGE_KEY}
     >
       {children}
     </NextThemesProvider>

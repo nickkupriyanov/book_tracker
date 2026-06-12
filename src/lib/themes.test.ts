@@ -3,6 +3,8 @@ import {
   APP_THEMES,
   APP_THEME_IDS,
   DEFAULT_APP_THEME,
+  THEME_STORAGE_KEY,
+  buildThemeStorageScrubberScript,
   getAppThemeDefinition,
   isAppTheme,
   resolveAppTheme,
@@ -141,5 +143,87 @@ describe("getAppThemeDefinition", () => {
       const definition: AppThemeDefinition = getAppThemeDefinition(id);
       expect(definition.swatches[0]).not.toBe(definition.swatches[1]);
     }
+  });
+});
+
+describe("THEME_STORAGE_KEY", () => {
+  it("is a stable, namespaced key", () => {
+    expect(THEME_STORAGE_KEY).toBe("book-tracker-theme");
+  });
+});
+
+describe("buildThemeStorageScrubberScript", () => {
+  function makeStorage() {
+    const map = new Map<string, string>();
+    return {
+      getItem: (k: string): string | null => map.get(k) ?? null,
+      setItem: (k: string, v: string): void => {
+        map.set(k, v);
+      },
+      removeItem: (k: string): void => {
+        map.delete(k);
+      },
+      _map: map,
+    };
+  }
+
+  function runScript(script: string, storage: ReturnType<typeof makeStorage>): void {
+    // The script uses `localStorage` directly; bind it to the stub.
+    // eslint-disable-next-line no-new-func
+    new Function("localStorage", script)(storage);
+  }
+
+  it("leaves a known persisted value untouched", () => {
+    const storage = makeStorage();
+    storage.setItem(THEME_STORAGE_KEY, "espresso");
+    runScript(buildThemeStorageScrubberScript(), storage);
+    expect(storage.getItem(THEME_STORAGE_KEY)).toBe("espresso");
+  });
+
+  it("overwrites an unknown persisted value with the default theme", () => {
+    const storage = makeStorage();
+    storage.setItem(THEME_STORAGE_KEY, "solarized");
+    runScript(buildThemeStorageScrubberScript(), storage);
+    expect(storage.getItem(THEME_STORAGE_KEY)).toBe(DEFAULT_APP_THEME);
+  });
+
+  it("overwrites 'system' and other unapproved values with 'paper'", () => {
+    const candidates = ["system", "light", "dark", "", "  espresso", "ESPRESSO"];
+    for (const candidate of candidates) {
+      const storage = makeStorage();
+      storage.setItem(THEME_STORAGE_KEY, candidate);
+      runScript(buildThemeStorageScrubberScript(), storage);
+      expect(storage.getItem(THEME_STORAGE_KEY)).toBe(DEFAULT_APP_THEME);
+    }
+  });
+
+  it("does nothing when no value is stored", () => {
+    const storage = makeStorage();
+    runScript(buildThemeStorageScrubberScript(), storage);
+    expect(storage.getItem(THEME_STORAGE_KEY)).toBeNull();
+  });
+
+  it("swallows localStorage exceptions (e.g. disabled storage)", () => {
+    const brokenStorage = {
+      getItem: (): string | null => {
+        throw new Error("blocked");
+      },
+      setItem: (): void => {
+        throw new Error("blocked");
+      },
+      removeItem: (): void => {},
+    };
+    expect(() =>
+      runScript(buildThemeStorageScrubberScript(), brokenStorage),
+    ).not.toThrow();
+  });
+
+  it("uses the supplied key when called with an override", () => {
+    const storage = makeStorage();
+    storage.setItem("custom-key", "solarized");
+    runScript(buildThemeStorageScrubberScript("custom-key"), storage);
+    expect(storage.getItem("custom-key")).toBe(DEFAULT_APP_THEME);
+    // Default key was not touched.
+    expect(storage.getItem(THEME_STORAGE_KEY)).toBeNull();
   });
 });

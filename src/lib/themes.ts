@@ -22,6 +22,13 @@ export const APP_THEME_IDS = [
 
 export type AppTheme = (typeof APP_THEME_IDS)[number];
 
+/**
+ * The localStorage key next-themes reads from and writes to.
+ * Exported so the head-of-document scrubber script and the
+ * ThemeProvider can share a single source of truth for the key.
+ */
+export const THEME_STORAGE_KEY = "book-tracker-theme";
+
 export type AppThemeColorScheme = "light" | "dark";
 
 export interface AppThemeDefinition {
@@ -82,4 +89,23 @@ export function getAppThemeDefinition(id: AppTheme): AppThemeDefinition {
     throw new Error(`Unknown app theme id: ${id}`);
   }
   return match;
+}
+
+/**
+ * Returns the minimal synchronous body of the storage-scrubber
+ * script that `app/layout.tsx` injects into `<head>`. It reads the
+ * persisted value, and if it isn't one of the four approved ids,
+ * overwrites it with `paper`. The string is a pure expression so it
+ * can be wrapped in an IIFE without imports and inlined into the
+ * document.
+ *
+ * Exposed for unit tests that exercise the scrubber contract
+ * directly against a stub localStorage.
+ */
+export function buildThemeStorageScrubberScript(
+  key: string = THEME_STORAGE_KEY,
+): string {
+  const safeKey = JSON.stringify(key);
+  const allowed = JSON.stringify([...APP_THEME_IDS]);
+  return `(function(){try{var k=${safeKey};var ok=${allowed};var v=localStorage.getItem(k);if(v!==null&&ok.indexOf(v)===-1){localStorage.setItem(k,"paper");}}catch(e){}})();`;
 }
