@@ -148,22 +148,22 @@ it. The preference is not synchronized between browsers or HTTP-mode users.
 
 ## 10. Acceptance criteria
 
-- [ ] The palette popover lists `Paper`, `Warm Espresso`, `Night Library`, and
+- [x] The palette popover lists `Paper`, `Warm Espresso`, `Night Library`, and
   `Soft Charcoal` with swatches and one active checkmark.
-- [ ] `Paper` matches the existing light palette and is used on first visit.
-- [ ] Each dark theme has a visibly distinct cozy palette with readable text,
+- [x] `Paper` matches the existing light palette and is used on first visit.
+- [x] Each dark theme has a visibly distinct cozy palette with readable text,
   surfaces, borders, inputs, focus rings, and destructive states.
-- [ ] Selecting a theme updates the whole application immediately and closes
+- [x] Selecting a theme updates the whole application immediately and closes
   the popover.
-- [ ] Reloading preserves the selected theme without a visible light flash.
-- [ ] Invalid saved preferences fall back to `Paper`.
-- [ ] The trigger and popover work with keyboard, Escape, focus return, and
+- [x] Reloading preserves the selected theme without a visible light flash.
+- [x] Invalid saved preferences fall back to `Paper`.
+- [x] The trigger and popover work with keyboard, Escape, focus return, and
   screen-reader semantics.
-- [ ] Header layout remains usable without horizontal scrolling on mobile.
-- [ ] Dialogs, forms, toasts, rich text, statistics, achievements, and the
+- [x] Header layout remains usable without horizontal scrolling on mobile.
+- [x] Dialogs, forms, toasts, rich text, statistics, achievements, and the
   reading calendar are visually verified in every theme.
-- [ ] Local and HTTP storage modes require no theme-specific integration.
-- [ ] `npm run lint`, `npm run test`, and `npm run build` pass.
+- [x] Local and HTTP storage modes require no theme-specific integration.
+- [x] `npm run lint`, `npm run test`, and `npm run build` pass.
 
 ## 11. Out of scope (for this spec)
 

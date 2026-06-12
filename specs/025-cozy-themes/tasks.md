@@ -9,7 +9,7 @@ acceptance line is satisfied and `npm run lint && npm run test` passes.
 
 ---
 
-## [ ] T1. Define the typed theme catalog
+## [x] T1. Define the typed theme catalog
 
 - **Files:** `src/lib/themes.ts`, focused unit tests
 - **Acceptance:** The catalog exposes exactly the four approved IDs, labels,
@@ -18,7 +18,7 @@ acceptance line is satisfied and `npm run lint && npm run test` passes.
 - **Notes:** Keep palette metadata static and UI-only; do not add theme data to
   book types or `StorageAdapter`.
 
-## [ ] T2. Add provider and semantic token palettes
+## [x] T2. Add provider and semantic token palettes
 
 - **Files:** `src/components/ThemeProvider.tsx`, `src/app/layout.tsx`,
   `src/app/globals.css`, focused provider tests
@@ -29,7 +29,7 @@ acceptance line is satisfied and `npm run lint && npm run test` passes.
 - **Notes:** Preserve current token values exactly for `Paper`. Define complete
   semantic token overrides and native `color-scheme` per theme.
 
-## [ ] T3. Add the shadcn popover primitive
+## [x] T3. Add the shadcn popover primitive
 
 - **Files:** `src/components/ui/popover.tsx`
 - **Acceptance:** The project exposes typed shadcn-style popover wrappers with
@@ -38,7 +38,7 @@ acceptance line is satisfied and `npm run lint && npm run test` passes.
 - **Notes:** Use the installed Radix primitives; add no dependency unless the
   existing package exports cannot provide the required primitive.
 
-## [ ] T4. Build the palette picker
+## [x] T4. Build the palette picker
 
 - **Files:** `src/components/ThemePicker.tsx`, focused component tests
 - **Acceptance:** Tests confirm the icon trigger opens a four-row list, each row
@@ -48,7 +48,7 @@ acceptance line is satisfied and `npm run lint && npm run test` passes.
 - **Notes:** Keep current-theme-dependent markup hydration-safe. Decorative
   swatches and icons must not create redundant screen-reader output.
 
-## [ ] T5. Integrate the picker into the responsive header
+## [x] T5. Integrate the picker into the responsive header
 
 - **Files:** `src/components/AppHeader.tsx`, relevant header tests
 - **Acceptance:** The palette trigger sits adjacent to `Add book`, remains
@@ -57,14 +57,14 @@ acceptance line is satisfied and `npm run lint && npm run test` passes.
 - **Notes:** Preserve current navigation, route-active state, dialog behavior,
   and loading-disabled `Add book` contract.
 
-## [ ] T6. Map named themes to toast appearance
+## [x] T6. Map named themes to toast appearance
 
 - **Files:** `src/components/ui/sonner.tsx`, focused tests
 - **Acceptance:** Sonner receives `light` for `Paper`, `dark` for all three dark
   themes, and a safe fallback during mount or unknown theme state.
 - **Notes:** Do not cast arbitrary app theme names to Sonner's theme type.
 
-## [ ] T7. Audit special colors and contrast
+## [x] T7. Audit special colors and contrast
 
 - **Files:** affected UI/CSS files and focused tests where behavior changes
 - **Acceptance:** Calendar cells and legend, user cover colors, overlays,
@@ -74,7 +74,7 @@ acceptance line is satisfied and `npm run lint && npm run test` passes.
 - **Notes:** Prefer semantic tokens. Keep direct black/white only where it is
   intentionally contrast against arbitrary user colors or modal backdrops.
 
-## [ ] T8. Complete accessibility and visual QA
+## [x] T8. Complete accessibility and visual QA
 
 - **Files:** theme components and tests; spec documents only when recording
   accepted completion
@@ -85,7 +85,7 @@ acceptance line is satisfied and `npm run lint && npm run test` passes.
 - **Notes:** Confirm theme changes do not lose open dialog input and no page
   shows a light flash, hydration warning, glassmorphism, or unintended motion.
 
-## [ ] T9. Run final verification and acceptance pass
+## [x] T9. Run final verification and acceptance pass
 
 - **Files:** `specs/025-cozy-themes/spec.md`,
   `specs/025-cozy-themes/plan.md`, `specs/025-cozy-themes/tasks.md`, affected
