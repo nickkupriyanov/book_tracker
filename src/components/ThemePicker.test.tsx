@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { APP_THEMES, DEFAULT_APP_THEME } from "@/lib/themes";
@@ -55,9 +55,10 @@ describe("ThemePicker", () => {
       expect(option).toBeInTheDocument();
       expect(within(popover).getByText(theme.label)).toBeInTheDocument();
     }
-    expect(
-      within(popover).getAllByRole("option"),
-    ).toHaveLength(APP_THEMES.length);
+    // Each row is a Radix RadioGroupItem, which renders as role="radio".
+    expect(within(popover).getAllByRole("radio")).toHaveLength(
+      APP_THEMES.length,
+    );
   });
 
   it("marks exactly one theme as the active option", async () => {
@@ -67,12 +68,15 @@ describe("ThemePicker", () => {
     await user.click(screen.getByTestId("header-theme-picker"));
 
     const popover = await screen.findByTestId("theme-picker-popover");
-    const activeOptions = within(popover).getAllByRole("option", {
-      selected: true,
-    });
-    expect(activeOptions).toHaveLength(1);
-    const activeId = activeOptions[0]?.getAttribute("data-testid");
-    expect(activeId).toBe(`theme-option-${DEFAULT_APP_THEME}`);
+    const radios = within(popover).getAllByRole("radio");
+    const checked = radios.filter((radio) =>
+      radio.getAttribute("data-state") === "checked" ||
+      radio.getAttribute("aria-checked") === "true",
+    );
+    expect(checked).toHaveLength(1);
+    expect(checked[0]?.getAttribute("data-testid")).toBe(
+      `theme-option-${DEFAULT_APP_THEME}`,
+    );
   });
 
   it("decorates each row with two swatches", async () => {
@@ -116,21 +120,87 @@ describe("ThemePicker", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("supports ArrowDown / ArrowUp / Home / End navigation between options", async () => {
+    const user = userEvent.setup();
+    render(<ThemePicker />);
+
+    await user.click(screen.getByTestId("header-theme-picker"));
+    const popover = await screen.findByTestId("theme-picker-popover");
+
+    // Default theme is paper, so focus lands on the checked item.
+    const paper = within(popover).getByTestId("theme-option-paper");
+    expect(paper).toHaveFocus();
+
+    // ArrowDown moves focus to the next option.
+    await user.keyboard("{ArrowDown}");
+    const espresso = within(popover).getByTestId("theme-option-espresso");
+    expect(espresso).toHaveFocus();
+
+    // ArrowUp returns to the previous option.
+    await user.keyboard("{ArrowUp}");
+    expect(paper).toHaveFocus();
+
+    // End jumps to the last option.
+    await user.keyboard("{End}");
+    const softCharcoal = within(popover).getByTestId("theme-option-soft-charcoal");
+    expect(softCharcoal).toHaveFocus();
+
+    // Home jumps to the first option.
+    await user.keyboard("{Home}");
+    const nightLibrary = within(popover).getByTestId("theme-option-night-library");
+    // First focusable item is paper; navigation through the radio group
+    // follows DOM order, so Home puts focus on paper.
+    const firstItem = within(popover).getByTestId("theme-option-paper");
+    expect(firstItem).toHaveFocus();
+    // Sanity: night-library still exists.
+    expect(nightLibrary).toBeInTheDocument();
+  });
+
+  it("ArrowDown wraps from the last option back to the first (loop)", async () => {
+    const user = userEvent.setup();
+    render(<ThemePicker />);
+
+    await user.click(screen.getByTestId("header-theme-picker"));
+    const popover = await screen.findByTestId("theme-picker-popover");
+    const softCharcoal = within(popover).getByTestId("theme-option-soft-charcoal");
+    await user.click(softCharcoal);
+    // After click, the popover closes (selection applies a theme). We
+    // need to re-open it to keep focus inside the group for the
+    // ArrowDown wrap test. Easiest: re-render and use the keyboard.
+    // The loop behaviour is owned by RovingFocusGroup; this test
+    // exercises the next-down wrap path explicitly.
+    await user.click(screen.getByTestId("header-theme-picker"));
+    const popover2 = await screen.findByTestId("theme-picker-popover");
+    const lastOption = within(popover2).getByTestId("theme-option-soft-charcoal");
+    act(() => {
+      lastOption.focus();
+    });
+    await user.keyboard("{ArrowDown}");
+    const paper = within(popover2).getByTestId("theme-option-paper");
+    expect(paper).toHaveFocus();
+  });
+
   it("falls back to the default theme when next-themes reports an unknown value", async () => {
     currentTheme = "solarized";
     const user = userEvent.setup();
     render(<ThemePicker />);
 
     const trigger = screen.getByTestId("header-theme-picker");
-    expect(trigger).toHaveAttribute("aria-label", `Theme: ${DEFAULT_APP_THEME === "paper" ? "Paper" : ""}`);
+    expect(trigger).toHaveAttribute(
+      "aria-label",
+      `Theme: ${DEFAULT_APP_THEME === "paper" ? "Paper" : ""}`,
+    );
 
     await user.click(trigger);
     const popover = await screen.findByTestId("theme-picker-popover");
-    const activeOptions = within(popover).getAllByRole("option", {
-      selected: true,
-    });
-    expect(activeOptions).toHaveLength(1);
-    expect(activeOptions[0]?.getAttribute("data-testid")).toBe(
+    const radios = within(popover).getAllByRole("radio");
+    const checked = radios.filter(
+      (r) =>
+        r.getAttribute("data-state") === "checked" ||
+        r.getAttribute("aria-checked") === "true",
+    );
+    expect(checked).toHaveLength(1);
+    expect(checked[0]?.getAttribute("data-testid")).toBe(
       `theme-option-${DEFAULT_APP_THEME}`,
     );
   });

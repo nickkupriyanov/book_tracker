@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { Check, Palette } from "lucide-react";
+import { RadioGroup as RadioGroupPrimitive } from "radix-ui";
 
 import {
   APP_THEMES,
   getAppThemeDefinition,
+  isAppTheme,
   resolveAppTheme,
-  type AppTheme,
 } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -24,12 +25,19 @@ import {
  * decorative swatches, the theme name, and a checkmark for the active
  * theme. Selecting a row applies the theme and closes the popover.
  *
+ * Keyboard navigation: the four options are rendered as a Radix
+ * `RadioGroup`, which gives us proper Roving Tabindex and
+ * ArrowUp/ArrowDown/Home/End/Enter/Space handling for free. The
+ * group is the semantically correct primitive for "pick one of N"
+ * (ARIA listbox is for non-fixed collections; a finite set of
+ * mutually-exclusive choices is a radio group).
+ *
  * Hydration: the trigger label and icon are stable across server and
- * client renders. The active checkmark only appears after `mounted` is
- * true, so the server output and the first client render match
- * regardless of the persisted theme. The aria-label and `aria-pressed`
- * derive from the resolved theme, which is always the default `paper`
- * until mount completes.
+ * client renders. The active checkmark only appears after `mounted`
+ * is true, so the server output and the first client render match
+ * regardless of the persisted theme. The `aria-label` derives from
+ * the resolved theme, which is always the default `paper` until
+ * mount completes.
  */
 export function ThemePicker() {
   const { theme, setTheme } = useTheme();
@@ -71,58 +79,58 @@ export function ThemePicker() {
         className="w-64 p-1"
         data-testid="theme-picker-popover"
       >
-        <ul role="listbox" aria-label="Themes" className="flex flex-col">
+        <RadioGroupPrimitive.Root
+          aria-label="Themes"
+          value={mounted ? resolved : undefined}
+          onValueChange={(value: string) => {
+            if (isAppTheme(value)) {
+              setTheme(value);
+              setOpen(false);
+            }
+          }}
+          className="flex flex-col"
+        >
           {APP_THEMES.map((definition) => {
             const isActive = mounted && resolved === definition.id;
             return (
-              <li key={definition.id} role="presentation">
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={isActive}
-                  data-testid={`theme-option-${definition.id}`}
-                  data-active={isActive ? "true" : "false"}
-                  onClick={() => {
-                    setTheme(definition.id);
-                    setOpen(false);
-                  }}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-sm px-2 py-2 text-left text-sm transition-colors",
-                    "hover:bg-accent hover:text-accent-foreground",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-popover",
-                    isActive && "bg-accent text-accent-foreground",
-                  )}
+              <RadioGroupPrimitive.Item
+                key={definition.id}
+                value={definition.id}
+                data-testid={`theme-option-${definition.id}`}
+                data-active={isActive ? "true" : "false"}
+                className={cn(
+                  "flex w-full items-center gap-3 rounded-sm px-2 py-2 text-left text-sm transition-colors",
+                  "hover:bg-accent hover:text-accent-foreground",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-popover",
+                  "data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground",
+                )}
+              >
+                <span
+                  aria-hidden
+                  className="flex shrink-0 items-center gap-0.5"
                 >
                   <span
-                    aria-hidden
-                    className="flex shrink-0 items-center gap-0.5"
-                  >
-                    <span
-                      className="block size-4 rounded-full border border-border"
-                      style={{ backgroundColor: definition.swatches[0] }}
-                    />
-                    <span
-                      className="block size-4 -ml-1.5 rounded-full border border-border"
-                      style={{ backgroundColor: definition.swatches[1] }}
-                    />
-                  </span>
-                  <span className="flex-1 font-medium">
-                    {definition.label}
-                  </span>
+                    className="block size-4 rounded-full border border-border"
+                    style={{ backgroundColor: definition.swatches[0] }}
+                  />
                   <span
-                    aria-hidden
-                    className={cn(
-                      "flex size-4 items-center justify-center text-primary",
-                      isActive ? "opacity-100" : "opacity-0",
-                    )}
-                  >
-                    <Check className="size-4" />
-                  </span>
-                </button>
-              </li>
+                    className="block size-4 -ml-1.5 rounded-full border border-border"
+                    style={{ backgroundColor: definition.swatches[1] }}
+                  />
+                </span>
+                <span className="flex-1 font-medium">
+                  {definition.label}
+                </span>
+                <RadioGroupPrimitive.Indicator
+                  aria-hidden
+                  className="flex size-4 items-center justify-center text-primary"
+                >
+                  <Check className="size-4" />
+                </RadioGroupPrimitive.Indicator>
+              </RadioGroupPrimitive.Item>
             );
           })}
-        </ul>
+        </RadioGroupPrimitive.Root>
       </PopoverContent>
     </Popover>
   );

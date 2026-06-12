@@ -169,7 +169,6 @@ describe("buildThemeStorageScrubberScript", () => {
 
   function runScript(script: string, storage: ReturnType<typeof makeStorage>): void {
     // The script uses `localStorage` directly; bind it to the stub.
-    // eslint-disable-next-line no-new-func
     new Function("localStorage", script)(storage);
   }
 
