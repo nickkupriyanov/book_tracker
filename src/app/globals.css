@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* Custom dark variant: the three dark app themes (espresso, night-library,
+   soft-charcoal) all expose the same `dark:` rules. We extend Tailwind's
+   default `dark` selector (which already matches `.dark`) to also match
+   any of the three `data-theme` values, so shadcn components and
+   arbitrary `dark:` utilities keep working across all dark moods. */
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="espresso"], [data-theme="espresso"] *, [data-theme="night-library"], [data-theme="night-library"] *, [data-theme="soft-charcoal"], [data-theme="soft-charcoal"] *));
+
 @theme {
   --color-background: oklch(0.98 0.01 60);
   --color-foreground: oklch(0.25 0.02 50);
@@ -27,6 +34,86 @@
   --radius-sm: 0.25rem;
   --radius: 0.5rem;
   --radius-lg: 0.75rem;
+}
+
+/* Spec 025: per-theme semantic token overrides. The `Paper` values match
+   the @theme defaults above; we restate them inside :root so removing the
+   `data-theme` attribute (e.g. on the server before next-themes applies
+   it) still produces a Paper-compatible look. The three dark moods each
+   override the same set of tokens. Native `color-scheme` follows the
+   `data-theme` selector so form controls and scrollbars behave. */
+:root,
+[data-theme="paper"] {
+  color-scheme: light;
+}
+
+[data-theme="espresso"] {
+  color-scheme: dark;
+  --color-background: oklch(0.18 0.02 40);
+  --color-foreground: oklch(0.94 0.02 70);
+  --color-card: oklch(0.24 0.025 40);
+  --color-card-foreground: oklch(0.94 0.02 70);
+  --color-popover: oklch(0.24 0.025 40);
+  --color-popover-foreground: oklch(0.94 0.02 70);
+  --color-primary: oklch(0.7 0.14 45);
+  --color-primary-foreground: oklch(0.18 0.02 40);
+  --color-secondary: oklch(0.28 0.02 40);
+  --color-secondary-foreground: oklch(0.94 0.02 70);
+  --color-muted: oklch(0.26 0.02 40);
+  --color-muted-foreground: oklch(0.74 0.02 70);
+  --color-accent: oklch(0.3 0.03 45);
+  --color-accent-foreground: oklch(0.94 0.02 70);
+  --color-destructive: oklch(0.62 0.2 25);
+  --color-destructive-foreground: oklch(0.97 0.01 60);
+  --color-border: oklch(0.34 0.02 40);
+  --color-input: oklch(0.3 0.02 40);
+  --color-ring: oklch(0.7 0.14 45);
+}
+
+[data-theme="night-library"] {
+  color-scheme: dark;
+  --color-background: oklch(0.16 0.02 160);
+  --color-foreground: oklch(0.94 0.03 85);
+  --color-card: oklch(0.22 0.03 160);
+  --color-card-foreground: oklch(0.94 0.03 85);
+  --color-popover: oklch(0.22 0.03 160);
+  --color-popover-foreground: oklch(0.94 0.03 85);
+  --color-primary: oklch(0.7 0.13 40);
+  --color-primary-foreground: oklch(0.16 0.02 160);
+  --color-secondary: oklch(0.26 0.03 160);
+  --color-secondary-foreground: oklch(0.94 0.03 85);
+  --color-muted: oklch(0.24 0.03 160);
+  --color-muted-foreground: oklch(0.76 0.03 85);
+  --color-accent: oklch(0.28 0.04 155);
+  --color-accent-foreground: oklch(0.94 0.03 85);
+  --color-destructive: oklch(0.62 0.2 25);
+  --color-destructive-foreground: oklch(0.97 0.01 60);
+  --color-border: oklch(0.32 0.03 160);
+  --color-input: oklch(0.28 0.03 160);
+  --color-ring: oklch(0.7 0.13 40);
+}
+
+[data-theme="soft-charcoal"] {
+  color-scheme: dark;
+  --color-background: oklch(0.2 0.005 60);
+  --color-foreground: oklch(0.94 0.01 80);
+  --color-card: oklch(0.26 0.005 60);
+  --color-card-foreground: oklch(0.94 0.01 80);
+  --color-popover: oklch(0.26 0.005 60);
+  --color-popover-foreground: oklch(0.94 0.01 80);
+  --color-primary: oklch(0.7 0.12 40);
+  --color-primary-foreground: oklch(0.2 0.005 60);
+  --color-secondary: oklch(0.3 0.005 60);
+  --color-secondary-foreground: oklch(0.94 0.01 80);
+  --color-muted: oklch(0.28 0.005 60);
+  --color-muted-foreground: oklch(0.76 0.01 80);
+  --color-accent: oklch(0.32 0.01 60);
+  --color-accent-foreground: oklch(0.94 0.01 80);
+  --color-destructive: oklch(0.62 0.18 25);
+  --color-destructive-foreground: oklch(0.97 0.01 60);
+  --color-border: oklch(0.36 0.005 60);
+  --color-input: oklch(0.32 0.005 60);
+  --color-ring: oklch(0.7 0.12 40);
 }
 
 body {
