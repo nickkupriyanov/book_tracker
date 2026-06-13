@@ -156,6 +156,69 @@ describe("ThemePicker", () => {
     expect(nightLibrary).toBeInTheDocument();
   });
 
+  it("arrow keys move focus only — they do NOT commit a theme or close the popover", async () => {
+    const user = userEvent.setup();
+    render(<ThemePicker />);
+
+    await user.click(screen.getByTestId("header-theme-picker"));
+    const popover = await screen.findByTestId("theme-picker-popover");
+
+    // Walk through every arrow and Home/End key. None of these may
+    // call setTheme or close the popover — that is the contract
+    // the reviewer caught being violated in a real browser.
+    await user.keyboard("{ArrowDown}");
+    await user.keyboard("{ArrowDown}");
+    await user.keyboard("{ArrowDown}");
+    await user.keyboard("{End}");
+    await user.keyboard("{ArrowDown}"); // wraps back
+    await user.keyboard("{Home}");
+    await user.keyboard("{ArrowUp}");
+
+    expect(setThemeMock).not.toHaveBeenCalled();
+    expect(
+      screen.queryByTestId("theme-picker-popover"),
+    ).toBeInTheDocument();
+  });
+
+  it("Enter commits the focused theme and closes the popover", async () => {
+    const user = userEvent.setup();
+    render(<ThemePicker />);
+
+    await user.click(screen.getByTestId("header-theme-picker"));
+    const popover = await screen.findByTestId("theme-picker-popover");
+    const paper = within(popover).getByTestId("theme-option-paper");
+    expect(paper).toHaveFocus();
+
+    // Move focus to Espresso and commit with Enter.
+    await user.keyboard("{ArrowDown}");
+    await user.keyboard("{Enter}");
+
+    expect(setThemeMock).toHaveBeenCalledWith("espresso");
+    expect(setThemeMock).toHaveBeenCalledTimes(1);
+    expect(
+      screen.queryByTestId("theme-picker-popover"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("Space commits the focused theme and closes the popover", async () => {
+    const user = userEvent.setup();
+    render(<ThemePicker />);
+
+    await user.click(screen.getByTestId("header-theme-picker"));
+    const popover = await screen.findByTestId("theme-picker-popover");
+
+    // Move focus to Night Library and commit with Space.
+    await user.keyboard("{End}");
+    await user.keyboard("{ArrowUp}");
+    await user.keyboard(" ");
+
+    expect(setThemeMock).toHaveBeenCalledWith("night-library");
+    expect(setThemeMock).toHaveBeenCalledTimes(1);
+    expect(
+      screen.queryByTestId("theme-picker-popover"),
+    ).not.toBeInTheDocument();
+  });
+
   it("ArrowDown wraps from the last option back to the first (loop)", async () => {
     const user = userEvent.setup();
     render(<ThemePicker />);
@@ -163,21 +226,14 @@ describe("ThemePicker", () => {
     await user.click(screen.getByTestId("header-theme-picker"));
     const popover = await screen.findByTestId("theme-picker-popover");
     const softCharcoal = within(popover).getByTestId("theme-option-soft-charcoal");
-    await user.click(softCharcoal);
-    // After click, the popover closes (selection applies a theme). We
-    // need to re-open it to keep focus inside the group for the
-    // ArrowDown wrap test. Easiest: re-render and use the keyboard.
-    // The loop behaviour is owned by RovingFocusGroup; this test
-    // exercises the next-down wrap path explicitly.
-    await user.click(screen.getByTestId("header-theme-picker"));
-    const popover2 = await screen.findByTestId("theme-picker-popover");
-    const lastOption = within(popover2).getByTestId("theme-option-soft-charcoal");
     act(() => {
-      lastOption.focus();
+      softCharcoal.focus();
     });
     await user.keyboard("{ArrowDown}");
-    const paper = within(popover2).getByTestId("theme-option-paper");
+    const paper = within(popover).getByTestId("theme-option-paper");
     expect(paper).toHaveFocus();
+    // The loop did not commit a theme.
+    expect(setThemeMock).not.toHaveBeenCalled();
   });
 
   it("Escape closes the popover and returns focus to the trigger", async () => {

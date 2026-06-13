@@ -28,10 +28,26 @@ import {
  *
  * Keyboard navigation: the four options are rendered as a Radix
  * `RadioGroup`, which gives us proper Roving Tabindex and
- * ArrowUp/ArrowDown/Home/End/Enter/Space handling for free. The
- * group is the semantically correct primitive for "pick one of N"
- * (ARIA listbox is for non-fixed collections; a finite set of
- * mutually-exclusive choices is a radio group).
+ * ArrowUp/ArrowDown/Home/End navigation. The group is the
+ * semantically correct primitive for "pick one of N" (ARIA listbox
+ * is for non-fixed collections; a finite set of mutually-exclusive
+ * choices is a radio group).
+ *
+ * Commit semantics: Radix RadioGroup fires `onValueChange` both on
+ * keyboard focus change (ArrowUp/ArrowDown/Home/End) and on
+ * pointer click or Enter/Space. If we applied the theme in
+ * `onValueChange`, ArrowDown would immediately switch the theme
+ * and close the popover — the user could never reach the third or
+ * fourth option. The contract is:
+ *
+ * - ArrowUp / ArrowDown / Home / End → only move focus.
+ * - Enter / Space / click → commit (apply theme, close popover).
+ *
+ * `onValueChange` is therefore a no-op for application; the
+ * `onKeyDown` handler on each `RadioGroupItem` listens for Enter
+ * and Space, and `onClick` covers pointer selection. The group's
+ * `value` is still bound to the active theme so `data-state`
+ * (and the visible checkmark) stays in sync after a commit.
  *
  * Hydration: the trigger label and icon are stable across server and
  * client renders. The active checkmark only appears after `mounted`
@@ -56,6 +72,12 @@ export function ThemePicker() {
     ? `Theme: ${activeDefinition.label}`
     : "Change theme";
 
+  function commit(next: string): void {
+    if (!isAppTheme(next)) return;
+    setTheme(next);
+    setOpen(false);
+  }
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
@@ -79,16 +101,37 @@ export function ThemePicker() {
         sideOffset={8}
         className="w-64 p-1"
         data-testid="theme-picker-popover"
+        onKeyDown={(event) => {
+          // Radix RadioGroupItem intercepts Enter on its own
+          // keydown handler (it calls preventDefault to avoid
+          // accidental form submits) and ignores any consumer
+          // onKeyDown prop, so the native click-on-Enter behaviour
+          // is suppressed. We catch Enter / Space at the popover
+          // content level and commit the focused item by reading
+          // data-theme-id from the currently focused element.
+          if (event.key !== "Enter" && event.key !== " " && event.key !== "Spacebar") {
+            return;
+          }
+          const target = event.target as HTMLElement | null;
+          const themeId = target?.getAttribute("data-theme-id") ?? null;
+          if (themeId !== null) {
+            event.preventDefault();
+            commit(themeId);
+          }
+        }}
       >
+        {/*
+          onValueChange is intentionally a no-op. We only bind `value`
+          so the indicator's data-state=checked stays in sync. The
+          actual commit happens on click (pointer), or on Enter /
+          Space caught by the wrapping popover content's onKeyDown
+          above. See the JSDoc on this component for the full
+          rationale.
+        */}
         <RadioGroupPrimitive.Root
           aria-label="Themes"
           value={mounted ? resolved : undefined}
-          onValueChange={(value: string) => {
-            if (isAppTheme(value)) {
-              setTheme(value);
-              setOpen(false);
-            }
-          }}
+          onValueChange={NOOP}
           className="flex flex-col"
         >
           {APP_THEMES.map((definition) => {
@@ -97,8 +140,10 @@ export function ThemePicker() {
               <RadioGroupPrimitive.Item
                 key={definition.id}
                 value={definition.id}
+                data-theme-id={definition.id}
                 data-testid={`theme-option-${definition.id}`}
                 data-active={isActive ? "true" : "false"}
+                onClick={() => commit(definition.id)}
                 className={cn(
                   "flex w-full items-center gap-3 rounded-sm px-2 py-2 text-left text-sm transition-colors",
                   "hover:bg-accent hover:text-accent-foreground",
@@ -136,3 +181,5 @@ export function ThemePicker() {
     </Popover>
   );
 }
+
+const NOOP = (): void => {};
