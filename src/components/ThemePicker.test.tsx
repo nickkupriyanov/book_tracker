@@ -180,6 +180,54 @@ describe("ThemePicker", () => {
     expect(paper).toHaveFocus();
   });
 
+  it("Escape closes the popover and returns focus to the trigger", async () => {
+    const user = userEvent.setup();
+    render(<ThemePicker />);
+
+    const trigger = screen.getByTestId("header-theme-picker");
+    await user.click(trigger);
+    const popover = await screen.findByTestId("theme-picker-popover");
+    expect(popover).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+
+    expect(
+      screen.queryByTestId("theme-picker-popover"),
+    ).not.toBeInTheDocument();
+    // Radix's popover restores focus to the trigger on Escape.
+    expect(trigger).toHaveFocus();
+  });
+
+  it("outside click closes the popover", async () => {
+    const user = userEvent.setup();
+    render(
+      <div>
+        <span data-testid="outside">outside</span>
+        <ThemePicker />
+      </div>,
+    );
+
+    await user.click(screen.getByTestId("header-theme-picker"));
+    expect(
+      await screen.findByTestId("theme-picker-popover"),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByTestId("outside"));
+    expect(
+      screen.queryByTestId("theme-picker-popover"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("trigger exposes an accessible name and the current theme in its label", () => {
+    currentTheme = "night-library";
+    render(<ThemePicker />);
+    const trigger = screen.getByTestId("header-theme-picker");
+    expect(trigger).toHaveAttribute("aria-label", "Theme: Night Library");
+    expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
+    // aria-expanded reflects the popover open state.
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+  });
+
   it("falls back to the default theme when next-themes reports an unknown value", async () => {
     currentTheme = "solarized";
     const user = userEvent.setup();

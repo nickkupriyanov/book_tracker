@@ -74,7 +74,7 @@ acceptance line is satisfied and `npm run lint && npm run test` passes.
 - **Notes:** Prefer semantic tokens. Keep direct black/white only where it is
   intentionally contrast against arbitrary user colors or modal backdrops.
 
-## [x] T8. Complete accessibility and visual QA
+## [ ] T8. Complete accessibility and visual QA
 
 - **Files:** theme components and tests; spec documents only when recording
   accepted completion
@@ -84,6 +84,13 @@ acceptance line is satisfied and `npm run lint && npm run test` passes.
   across all four themes in local and HTTP modes.
 - **Notes:** Confirm theme changes do not lose open dialog input and no page
   shows a light flash, hydration warning, glassmorphism, or unintended motion.
+
+  Subset automated in `ThemePicker.test.tsx` (keyboard navigation,
+  Escape dismissal, outside-click dismissal, focus return to trigger,
+  accessible label, mobile header class contracts). The full cross-
+  route, cross-theme visual sweep is left to the user's manual QA
+  pass — that work cannot be faked with jsdom and would not be honest
+  if marked complete without it.
 
 ## [x] T9. Run final verification and acceptance pass
 

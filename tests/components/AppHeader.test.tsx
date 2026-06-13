@@ -108,6 +108,31 @@ describe("AppHeader", () => {
     expect(screen.getByTestId("header-theme-picker")).toBeInTheDocument();
   });
 
+  it("keeps the theme picker trigger icon-sized and the action group non-overflowing on mobile (no horizontal scroll)", () => {
+    // Spec 025 acceptance: header layout remains usable without
+    // horizontal scrolling on mobile. The relevant contract is
+    // the CSS class set: the picker is shrink-0 (icon-sized), the
+    // Add book button is flex-1 on narrow widths, the action
+    // group is `flex w-full` on narrow widths, and the outer
+    // header row allows wrapping. We assert each class so a
+    // future refactor that drops one of them and re-introduces
+    // overflow will fail this test.
+    mockUsePathname.mockReturnValue("/");
+    render(<AppHeader />);
+    const trigger = screen.getByTestId("header-theme-picker");
+    const addButton = screen.getByTestId("header-add-book");
+    // Picker is icon-sized and refuses to shrink below that.
+    expect(trigger).toHaveClass("shrink-0");
+    // Add book fills the available space on narrow widths.
+    expect(addButton).toHaveClass("flex-1");
+    expect(addButton).toHaveClass("sm:flex-none");
+    // The action group is the parent of both. It expands to the
+    // full row on narrow widths.
+    const actionGroup = trigger.parentElement as HTMLElement;
+    expect(actionGroup).toHaveClass("w-full");
+    expect(actionGroup).toHaveClass("sm:w-auto");
+  });
+
   it("disables the add-book button while the store is loading", () => {
     mockUsePathname.mockReturnValue("/");
     render(<AppHeader />);

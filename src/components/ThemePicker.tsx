@@ -10,6 +10,7 @@ import {
   getAppThemeDefinition,
   isAppTheme,
   resolveAppTheme,
+  type AppTheme,
 } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";

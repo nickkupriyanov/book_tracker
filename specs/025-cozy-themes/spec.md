@@ -160,7 +160,7 @@ it. The preference is not synchronized between browsers or HTTP-mode users.
 - [x] The trigger and popover work with keyboard, Escape, focus return, and
   screen-reader semantics.
 - [x] Header layout remains usable without horizontal scrolling on mobile.
-- [x] Dialogs, forms, toasts, rich text, statistics, achievements, and the
+- [ ] Dialogs, forms, toasts, rich text, statistics, achievements, and the
   reading calendar are visually verified in every theme.
 - [x] Local and HTTP storage modes require no theme-specific integration.
 - [x] `npm run lint`, `npm run test`, and `npm run build` pass.
