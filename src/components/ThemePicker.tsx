@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
 import { Check, Palette } from "lucide-react";
-import { RadioGroup as RadioGroupPrimitive } from "radix-ui";
 
 import {
   APP_THEMES,
@@ -26,28 +25,12 @@ import {
  * decorative swatches, the theme name, and a checkmark for the active
  * theme. Selecting a row applies the theme and closes the popover.
  *
- * Keyboard navigation: the four options are rendered as a Radix
- * `RadioGroup`, which gives us proper Roving Tabindex and
- * ArrowUp/ArrowDown/Home/End navigation. The group is the
- * semantically correct primitive for "pick one of N" (ARIA listbox
- * is for non-fixed collections; a finite set of mutually-exclusive
- * choices is a radio group).
- *
- * Commit semantics: Radix RadioGroup fires `onValueChange` both on
- * keyboard focus change (ArrowUp/ArrowDown/Home/End) and on
- * pointer click or Enter/Space. If we applied the theme in
- * `onValueChange`, ArrowDown would immediately switch the theme
- * and close the popover — the user could never reach the third or
- * fourth option. The contract is:
- *
- * - ArrowUp / ArrowDown / Home / End → only move focus.
- * - Enter / Space / click → commit (apply theme, close popover).
- *
- * `onValueChange` is therefore a no-op for application; the
- * `onKeyDown` handler on each `RadioGroupItem` listens for Enter
- * and Space, and `onClick` covers pointer selection. The group's
- * `value` is still bound to the active theme so `data-state`
- * (and the visible checkmark) stays in sync after a commit.
+ * Keyboard navigation uses an explicit menuitemradio pattern:
+ * ArrowUp / ArrowDown / Home / End only move DOM focus, while
+ * Enter / Space / click commit the focused theme and close the
+ * popover. Radix RadioGroup was deliberately avoided here because
+ * its arrow-key selection semantics fire value changes while moving
+ * focus, which made ArrowDown apply a theme and close the picker.
  *
  * Hydration: the trigger label and icon are stable across server and
  * client renders. The active checkmark only appears after `mounted`
@@ -60,6 +43,7 @@ export function ThemePicker() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
+  const optionRefs = useRef(new Map<AppTheme, HTMLButtonElement>());
 
   useEffect(() => {
     setMounted(true);
@@ -72,10 +56,34 @@ export function ThemePicker() {
     ? `Theme: ${activeDefinition.label}`
     : "Change theme";
 
+  useEffect(() => {
+    if (!open || !mounted) return;
+    optionRefs.current.get(resolved)?.focus();
+  }, [mounted, open, resolved]);
+
   function commit(next: string): void {
     if (!isAppTheme(next)) return;
     setTheme(next);
     setOpen(false);
+  }
+
+  function focusTheme(id: AppTheme): void {
+    optionRefs.current.get(id)?.focus();
+  }
+
+  function focusByOffset(current: AppTheme, offset: number): void {
+    const currentIndex = APP_THEMES.findIndex((item) => item.id === current);
+    const nextIndex =
+      (currentIndex + offset + APP_THEMES.length) % APP_THEMES.length;
+    focusTheme(APP_THEMES[nextIndex]?.id ?? activeDefinition.id);
+  }
+
+  function setOptionRef(id: AppTheme, element: HTMLButtonElement | null): void {
+    if (element === null) {
+      optionRefs.current.delete(id);
+      return;
+    }
+    optionRefs.current.set(id, element);
   }
 
   return (
@@ -102,47 +110,63 @@ export function ThemePicker() {
         className="w-64 p-1"
         data-testid="theme-picker-popover"
         onKeyDown={(event) => {
-          // Radix RadioGroupItem intercepts Enter on its own
-          // keydown handler (it calls preventDefault to avoid
-          // accidental form submits) and ignores any consumer
-          // onKeyDown prop, so the native click-on-Enter behaviour
-          // is suppressed. We catch Enter / Space at the popover
-          // content level and commit the focused item by reading
-          // data-theme-id from the currently focused element.
-          if (event.key !== "Enter" && event.key !== " " && event.key !== "Spacebar") {
+          const target = event.target as HTMLElement | null;
+          const themeId = target?.getAttribute("data-theme-id");
+          if (!isAppTheme(themeId)) {
             return;
           }
-          const target = event.target as HTMLElement | null;
-          const themeId = target?.getAttribute("data-theme-id") ?? null;
-          if (themeId !== null) {
+
+          if (event.key === "ArrowDown") {
+            event.preventDefault();
+            focusByOffset(themeId, 1);
+            return;
+          }
+          if (event.key === "ArrowUp") {
+            event.preventDefault();
+            focusByOffset(themeId, -1);
+            return;
+          }
+          if (event.key === "Home") {
+            event.preventDefault();
+            focusTheme(APP_THEMES[0]?.id ?? activeDefinition.id);
+            return;
+          }
+          if (event.key === "End") {
+            event.preventDefault();
+            focusTheme(
+              APP_THEMES[APP_THEMES.length - 1]?.id ?? activeDefinition.id,
+            );
+            return;
+          }
+          if (
+            event.key === "Enter" ||
+            event.key === " " ||
+            event.key === "Spacebar"
+          ) {
             event.preventDefault();
             commit(themeId);
           }
         }}
       >
-        {/*
-          onValueChange is intentionally a no-op. We only bind `value`
-          so the indicator's data-state=checked stays in sync. The
-          actual commit happens on click (pointer), or on Enter /
-          Space caught by the wrapping popover content's onKeyDown
-          above. See the JSDoc on this component for the full
-          rationale.
-        */}
-        <RadioGroupPrimitive.Root
+        <div
+          role="menu"
           aria-label="Themes"
-          value={mounted ? resolved : undefined}
-          onValueChange={NOOP}
           className="flex flex-col"
         >
           {APP_THEMES.map((definition) => {
             const isActive = mounted && resolved === definition.id;
             return (
-              <RadioGroupPrimitive.Item
+              <button
                 key={definition.id}
-                value={definition.id}
+                ref={(element) => setOptionRef(definition.id, element)}
+                type="button"
+                role="menuitemradio"
+                aria-checked={isActive}
                 data-theme-id={definition.id}
                 data-testid={`theme-option-${definition.id}`}
                 data-active={isActive ? "true" : "false"}
+                data-state={isActive ? "checked" : "unchecked"}
+                tabIndex={isActive ? 0 : -1}
                 onClick={() => commit(definition.id)}
                 className={cn(
                   "flex w-full items-center gap-3 rounded-sm px-2 py-2 text-left text-sm transition-colors",
@@ -167,19 +191,20 @@ export function ThemePicker() {
                 <span className="flex-1 font-medium">
                   {definition.label}
                 </span>
-                <RadioGroupPrimitive.Indicator
+                <span
                   aria-hidden
-                  className="flex size-4 items-center justify-center text-primary"
+                  className={cn(
+                    "flex size-4 items-center justify-center text-primary",
+                    isActive ? "opacity-100" : "opacity-0",
+                  )}
                 >
                   <Check className="size-4" />
-                </RadioGroupPrimitive.Indicator>
-              </RadioGroupPrimitive.Item>
+                </span>
+              </button>
             );
           })}
-        </RadioGroupPrimitive.Root>
+        </div>
       </PopoverContent>
     </Popover>
   );
 }
-
-const NOOP = (): void => {};

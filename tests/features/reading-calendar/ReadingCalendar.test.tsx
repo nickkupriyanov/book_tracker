@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ReadingCalendar } from "@/features/reading-calendar/ReadingCalendar";
 import { LocalStorageAdapter } from "@/storage/local-storage-adapter";
@@ -89,6 +89,7 @@ describe("ReadingCalendar (spec 013)", () => {
     // we just want the calendar to render its logged state. The
     // spec covers both shapes elsewhere.
     render(<ReadingCalendar books={[book]} />);
+    navigateTo(2026, 5);
     expect(screen.getByTestId("reading-calendar-grid")).toBeInTheDocument();
     // When the visible month has logged days, the empty note
     // is suppressed (it would be misleading).
@@ -279,9 +280,9 @@ function navigateTo(year: number, month: number): void {
     safety++;
     const current = labelEl.textContent ?? "";
     if (compareMonthStrings(current, target) < 0) {
-      screen.getByTestId("reading-calendar-next").click();
+      fireEvent.click(screen.getByTestId("reading-calendar-next"));
     } else {
-      screen.getByTestId("reading-calendar-prev").click();
+      fireEvent.click(screen.getByTestId("reading-calendar-prev"));
     }
   }
 }

@@ -55,8 +55,7 @@ describe("ThemePicker", () => {
       expect(option).toBeInTheDocument();
       expect(within(popover).getByText(theme.label)).toBeInTheDocument();
     }
-    // Each row is a Radix RadioGroupItem, which renders as role="radio".
-    expect(within(popover).getAllByRole("radio")).toHaveLength(
+    expect(within(popover).getAllByRole("menuitemradio")).toHaveLength(
       APP_THEMES.length,
     );
   });
@@ -68,10 +67,10 @@ describe("ThemePicker", () => {
     await user.click(screen.getByTestId("header-theme-picker"));
 
     const popover = await screen.findByTestId("theme-picker-popover");
-    const radios = within(popover).getAllByRole("radio");
-    const checked = radios.filter((radio) =>
-      radio.getAttribute("data-state") === "checked" ||
-      radio.getAttribute("aria-checked") === "true",
+    const options = within(popover).getAllByRole("menuitemradio");
+    const checked = options.filter((option) =>
+      option.getAttribute("data-state") === "checked" ||
+      option.getAttribute("aria-checked") === "true",
     );
     expect(checked).toHaveLength(1);
     expect(checked[0]?.getAttribute("data-testid")).toBe(
@@ -148,8 +147,8 @@ describe("ThemePicker", () => {
     // Home jumps to the first option.
     await user.keyboard("{Home}");
     const nightLibrary = within(popover).getByTestId("theme-option-night-library");
-    // First focusable item is paper; navigation through the radio group
-    // follows DOM order, so Home puts focus on paper.
+    // First focusable item is paper; navigation follows DOM order,
+    // so Home puts focus on paper.
     const firstItem = within(popover).getByTestId("theme-option-paper");
     expect(firstItem).toHaveFocus();
     // Sanity: night-library still exists.
@@ -161,7 +160,7 @@ describe("ThemePicker", () => {
     render(<ThemePicker />);
 
     await user.click(screen.getByTestId("header-theme-picker"));
-    const popover = await screen.findByTestId("theme-picker-popover");
+    await screen.findByTestId("theme-picker-popover");
 
     // Walk through every arrow and Home/End key. None of these may
     // call setTheme or close the popover — that is the contract
@@ -205,7 +204,7 @@ describe("ThemePicker", () => {
     render(<ThemePicker />);
 
     await user.click(screen.getByTestId("header-theme-picker"));
-    const popover = await screen.findByTestId("theme-picker-popover");
+    await screen.findByTestId("theme-picker-popover");
 
     // Move focus to Night Library and commit with Space.
     await user.keyboard("{End}");
@@ -297,8 +296,8 @@ describe("ThemePicker", () => {
 
     await user.click(trigger);
     const popover = await screen.findByTestId("theme-picker-popover");
-    const radios = within(popover).getAllByRole("radio");
-    const checked = radios.filter(
+    const options = within(popover).getAllByRole("menuitemradio");
+    const checked = options.filter(
       (r) =>
         r.getAttribute("data-state") === "checked" ||
         r.getAttribute("aria-checked") === "true",
