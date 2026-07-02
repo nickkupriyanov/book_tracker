@@ -1,6 +1,6 @@
 # Tasks: Cozy Themes
 
-> **Status:** Draft
+> **Status:** Complete
 > **Spec:** `./spec.md`
 > **Plan:** `./plan.md`
 
@@ -74,7 +74,7 @@ acceptance line is satisfied and `npm run lint && npm run test` passes.
 - **Notes:** Prefer semantic tokens. Keep direct black/white only where it is
   intentionally contrast against arbitrary user colors or modal backdrops.
 
-## [ ] T8. Complete accessibility and visual QA
+## [x] T8. Complete accessibility and visual QA
 
 - **Files:** theme components and tests; spec documents only when recording
   accepted completion
