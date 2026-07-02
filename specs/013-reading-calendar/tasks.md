@@ -1,8 +1,8 @@
 # Tasks: Reading Calendar
 
-> **Status:** Draft
-> **Spec:** `./spec.md` (Draft)
-> **Plan:** `./plan.md` (Draft)
+> **Status:** Complete
+> **Spec:** `./spec.md` (Complete)
+> **Plan:** `./plan.md` (Complete)
 
 Each task is small enough to be one commit. Mark a task `[x]` only when its
 acceptance line is satisfied and `npm run lint && npm run test` passes.
